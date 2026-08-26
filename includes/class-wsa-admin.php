@@ -230,6 +230,13 @@ class Admin
                 <h2 class="title"><?php esc_html_e('Appearance', 'woocommerce-shop-agent'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
+                        <th scope="row"><label for="wsa-launcher-label"><?php esc_html_e('Bubble label', 'woocommerce-shop-agent'); ?></label></th>
+                        <td>
+                            <input type="text" name="launcher_label" id="wsa-launcher-label" class="regular-text" value="<?php echo esc_attr($s['launcher_label']); ?>">
+                            <p class="description"><?php esc_html_e('Text on the closed chat bubble. Leave empty for a plain circle. Hidden on phones either way.', 'woocommerce-shop-agent'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th scope="row"><label for="wsa-title"><?php esc_html_e('Header title', 'woocommerce-shop-agent'); ?></label></th>
                         <td><input type="text" name="title" id="wsa-title" class="regular-text" value="<?php echo esc_attr($s['title']); ?>"></td>
                     </tr>

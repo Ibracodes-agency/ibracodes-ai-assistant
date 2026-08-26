@@ -1,278 +1,510 @@
 /**
- * Shop Agent widget.
+ * Shop Agent widget styles.
  *
- * Every rule is scoped under .wsa-root and every property it needs is set
- * explicitly rather than inherited, because the host theme is unknown and
- * usually opinionated. Logical properties (inline-start/end) throughout, so
- * RTL works without a second stylesheet.
- *
- * Deliberately light-only: a storefront's palette is its own, and guessing a
- * dark scheme from the visitor's OS clashes far more often than it helps.
+ * Lifted verbatim from the design file (Shop Agent Widget.dc.html), which is
+ * the source of truth for this widget's appearance. Do not restyle here: change
+ * the design, then re-lift. Only the accent is dynamic, set as --wsa-accent on
+ * the root from the shop owner's setting.
  */
 
-.wsa-root {
-	--wsa-accent: #111827;
-	--wsa-ink: #17181c;
-	--wsa-muted: #6b7280;
-	--wsa-surface: #ffffff;
-	--wsa-tint: #f4f5f7;
-	--wsa-line: #e5e7eb;
-	--wsa-radius: 14px;
+/* ============================================================
+   SHOP AGENT WIDGET — lift everything below into the plugin.
+   Self-contained. No framework, no webfont, no !important.
+   ============================================================ */
 
-	position: fixed;
-	inset-block-end: 20px;
-	z-index: 99999;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-	font-size: 15px;
-	line-height: 1.5;
-	color: var(--wsa-ink);
-}
-.wsa-root[data-position="right"] { inset-inline-end: 20px; }
-.wsa-root[data-position="left"] { inset-inline-start: 20px; }
+.wsa-root{
+  --wsa-accent:#0f62fe;
+  --wsa-on-accent:#ffffff;
+  --wsa-ink:#16181d;
+  --wsa-ink-2:#565b66;
+  --wsa-ink-3:#8a8f9a;
+  --wsa-surface:#ffffff;
+  --wsa-body-bg:#f4f5f8;
+  --wsa-line:#e4e6ec;
+  --wsa-line-soft:#eef0f4;
+  --wsa-radius:16px;
+  --wsa-shadow:0 18px 48px -14px rgba(16,18,24,.28), 0 2px 6px rgba(16,18,24,.06);
 
-.wsa-root button,
-.wsa-root input,
-.wsa-root a { font: inherit; color: inherit; box-sizing: border-box; }
-.wsa-root *, .wsa-root *::before, .wsa-root *::after { box-sizing: border-box; }
+  position:fixed;
+  inset-block-end:20px;
+  z-index:999999;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  color:var(--wsa-ink);
+  text-align:start;
+  margin:0;
+  padding:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wsa-root *,.wsa-root *::before,.wsa-root *::after{box-sizing:border-box;}
+/* Physical, not logical, and deliberately the one exception in this file: the
+   shop owner picks "bottom left" or "bottom right" in the settings and means a
+   side of the screen. Logical properties would flip that on an RTL store, so
+   choosing "left" would put the widget on the right. Everything else here stays
+   logical so the panel's own contents mirror correctly. */
+.wsa-root[data-position="right"]{right:20px;left:auto;}
+.wsa-root[data-position="left"]{left:20px;right:auto;}
 
-/* ------------------------------------------------------------------ launcher */
-.wsa-launcher {
-	width: 56px;
-	height: 56px;
-	border-radius: 50%;
-	border: 0;
-	padding: 0;
-	background: var(--wsa-accent);
-	color: #fff;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	box-shadow: 0 6px 20px rgba(15, 18, 25, .22);
-	transition: transform .15s ease;
+/* ---------- launcher ---------- */
+.wsa-launcher{
+  appearance:none;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  inline-size:56px;
+  block-size:56px;
+  min-inline-size:44px;
+  min-block-size:44px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;
+  cursor:pointer;
+  box-shadow:var(--wsa-shadow);
+  transition:transform .18s ease, box-shadow .18s ease;
 }
-.wsa-launcher:hover { transform: translateY(-2px); }
-.wsa-launcher svg { width: 26px; height: 26px; }
-.wsa-root.is-open .wsa-launcher { display: none; }
+/* with a label it becomes a pill — reads as an invitation, not a mystery button */
+.wsa-launcher:has(.wsa-launcher-label){inline-size:auto;padding-inline:19px 22px;}
+.wsa-launcher-label{
+  margin:0;padding:0;
+  font-size:15px;font-weight:600;letter-spacing:-.012em;line-height:1;
+  white-space:nowrap;
+}
+.wsa-launcher-dot{
+  position:absolute;
+  inset-block-start:-1px;
+  inset-inline-end:-1px;
+  inline-size:13px;block-size:13px;
+  border-radius:100px;
+  background:#e0392b;
+  box-shadow:0 0 0 2.5px var(--wsa-surface);
+}
+.wsa-launcher:hover{transform:translateY(-2px);}
+.wsa-launcher:active{transform:translateY(0);}
+.wsa-launcher svg{inline-size:25px;block-size:25px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.wsa-root.is-open .wsa-launcher{display:none;}
 
-/* --------------------------------------------------------------------- panel */
-.wsa-panel {
-	width: min(380px, calc(100vw - 32px));
-	height: min(560px, calc(100vh - 110px));
-	background: var(--wsa-surface);
-	border: 1px solid var(--wsa-line);
-	border-radius: var(--wsa-radius);
-	box-shadow: 0 18px 50px rgba(15, 18, 25, .18);
-	display: flex;
-	flex-direction: column;
-	overflow: hidden;
+/* ---------- panel ---------- */
+.wsa-panel{
+  display:flex;
+  flex-direction:column;
+  inline-size:min(384px, calc(100vw - 32px));
+  block-size:min(576px, calc(100vh - 110px));
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--wsa-line);
+  border-radius:var(--wsa-radius);
+  background:var(--wsa-surface);
+  box-shadow:var(--wsa-shadow);
+  text-align:start;
 }
-.wsa-panel[hidden] { display: none; }
+.wsa-panel[hidden]{display:none;}
 
-.wsa-head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 14px 16px;
-	background: var(--wsa-accent);
-	color: #fff;
+/* ---------- header ---------- */
+.wsa-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex:0 0 auto;
+  margin:0;
+  padding:14px 16px;
+  background:var(--wsa-surface);
+  border-block-end:1px solid var(--wsa-line-soft);
 }
-.wsa-head-text { display: flex; flex-direction: column; min-width: 0; }
-.wsa-title { font-weight: 600; }
-.wsa-subtitle { font-size: 13px; opacity: .8; }
-.wsa-close {
-	background: transparent;
-	border: 0;
-	padding: 6px;
-	cursor: pointer;
-	color: #fff;
-	opacity: .85;
-	border-radius: 6px;
-	line-height: 0;
+.wsa-head::before{
+  content:"";
+  flex:0 0 auto;
+  inline-size:34px;
+  block-size:34px;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  box-shadow:inset 0 0 0 5px rgba(255,255,255,.34);
 }
-.wsa-close:hover { opacity: 1; }
-.wsa-close svg { width: 16px; height: 16px; }
+.wsa-head-text{display:flex;flex-direction:column;gap:1px;min-inline-size:0;flex:1 1 auto;text-align:start;}
+.wsa-title{
+  margin:0;padding:0;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.25;
+  color:var(--wsa-ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wsa-subtitle{
+  margin:0;padding:0;
+  font-size:12.5px;font-weight:400;line-height:1.35;
+  color:var(--wsa-ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wsa-close{
+  appearance:none;
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  inline-size:44px;block-size:44px;
+  margin:-6px;
+  margin-inline-start:auto;
+  padding:0;
+  border:0;border-radius:100px;
+  background:transparent;color:var(--wsa-ink-2);
+  font:inherit;cursor:pointer;
+  transition:background .16s ease,color .16s ease;
+}
+.wsa-close:hover{background:var(--wsa-body-bg);color:var(--wsa-ink);}
+.wsa-close svg{inline-size:17px;block-size:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;}
 
-/* ---------------------------------------------------------------------- body */
-.wsa-body {
-	flex: 1;
-	overflow-y: auto;
-	padding: 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	background: var(--wsa-tint);
+/* ---------- body ---------- */
+.wsa-body{
+  flex:1 1 auto;
+  min-block-size:0;
+  margin:0;
+  padding:16px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--wsa-body-bg);
+  background-image:linear-gradient(rgba(16,18,24,.05), rgba(16,18,24,0) 12px);
+  background-repeat:no-repeat;
+  background-attachment:local;
+  text-align:start;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
+.wsa-body > * + *{margin-block-start:14px;}
+/* wider break when the speaker changes, tighter within one turn */
+.wsa-body > .wsa-msg.is-user + .wsa-msg.is-assistant,
+.wsa-body > .wsa-msg.is-assistant + .wsa-msg.is-user{margin-block-start:20px;}
+.wsa-body > .wsa-msg + .wsa-chips{margin-block-start:10px;}
+.wsa-body > .wsa-msg + .wsa-cards{margin-block-start:10px;}
+.wsa-body > .wsa-chips + .wsa-msg,
+.wsa-body > .wsa-cards + .wsa-msg{margin-block-start:20px;}
 
-.wsa-msg { display: flex; }
-.wsa-msg.is-user { justify-content: flex-end; }
-.wsa-msg-text {
-	max-width: 85%;
-	padding: 10px 13px;
-	border-radius: 13px;
-	background: var(--wsa-surface);
-	border: 1px solid var(--wsa-line);
-	white-space: pre-wrap;
-	overflow-wrap: anywhere;
+/* ---------- messages ---------- */
+.wsa-msg{display:flex;margin:0;padding:0;}
+.wsa-msg.is-assistant{justify-content:flex-start;}
+.wsa-msg.is-user{justify-content:flex-end;}
+.wsa-msg-text{
+  max-inline-size:86%;
+  margin:0;
+  padding:10px 13px;
+  border-radius:14px;
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  font-size:14.5px;
+  line-height:1.5;
+  text-align:start;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  box-shadow:0 1px 2px rgba(16,18,24,.06);
 }
-.wsa-msg.is-user .wsa-msg-text {
-	background: var(--wsa-accent);
-	border-color: var(--wsa-accent);
-	color: #fff;
-}
-
-/* typing indicator */
-.wsa-typing .wsa-msg-text { display: flex; gap: 4px; padding: 13px; }
-.wsa-typing span {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--wsa-muted);
-	animation: wsa-bounce 1.2s infinite;
-}
-.wsa-typing span:nth-child(2) { animation-delay: .15s; }
-.wsa-typing span:nth-child(3) { animation-delay: .3s; }
-@keyframes wsa-bounce {
-	0%, 60%, 100% { opacity: .3; transform: translateY(0); }
-	30% { opacity: 1; transform: translateY(-3px); }
-}
-
-/* --------------------------------------------------------------------- chips */
-.wsa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.wsa-chip {
-	background: var(--wsa-surface);
-	border: 1px solid var(--wsa-line);
-	border-radius: 100px;
-	padding: 6px 12px;
-	font-size: 13px;
-	cursor: pointer;
-	color: var(--wsa-ink);
-	text-decoration: none;
-}
-.wsa-chip:hover { border-color: var(--wsa-accent); }
-.wsa-chip.is-handoff { background: var(--wsa-accent); border-color: var(--wsa-accent); color: #fff; }
-
-/* --------------------------------------------------------------------- cards */
-.wsa-cards { display: flex; flex-direction: column; gap: 8px; }
-.wsa-card {
-	display: flex;
-	gap: 12px;
-	padding: 10px;
-	background: var(--wsa-surface);
-	border: 1px solid var(--wsa-line);
-	border-radius: 11px;
-}
-.wsa-card-media { position: relative; flex: 0 0 66px; line-height: 0; }
-.wsa-card-media img {
-	width: 66px;
-	height: 66px;
-	object-fit: cover;
-	border-radius: 8px;
-	display: block;
-}
-.wsa-badge {
-	position: absolute;
-	inset-block-start: 3px;
-	inset-inline-start: 3px;
-	background: #b42318;
-	color: #fff;
-	font-size: 10px;
-	padding: 1px 5px;
-	border-radius: 4px;
-	line-height: 1.6;
-}
-.wsa-card-info {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 4px;
-	min-width: 0;
-	flex: 1;
-}
-.wsa-card-name {
-	font-size: 14px;
-	font-weight: 500;
-	text-decoration: none;
-	color: var(--wsa-ink);
-	overflow-wrap: anywhere;
-}
-.wsa-card-name:hover { text-decoration: underline; }
-.wsa-card-price { font-size: 14px; color: var(--wsa-ink); }
-.wsa-card-price del { opacity: .55; margin-inline-end: 4px; }
-.wsa-card-price ins { text-decoration: none; font-weight: 600; }
-.wsa-card-stock { font-size: 12px; color: #b42318; }
-/* the button sits at the bottom of the card whatever the title length, so a
-   row of cards never shows buttons at three different heights */
-.wsa-card-btn {
-	margin-block-start: auto;
-	background: var(--wsa-accent);
-	color: #fff;
-	border: 1px solid var(--wsa-accent);
-	border-radius: 7px;
-	padding: 6px 12px;
-	font-size: 13px;
-	cursor: pointer;
-	text-decoration: none;
-	display: inline-block;
-}
-.wsa-card-btn.is-ghost { background: transparent; color: var(--wsa-ink); border-color: var(--wsa-line); }
-.wsa-card-btn.loading { opacity: .6; pointer-events: none; }
-.wsa-card-btn.added { display: inline-block; }
-/* WooCommerce injects a "View cart" link after a successful ajax add */
-.wsa-card-info .added_to_cart {
-	font-size: 12px;
-	color: var(--wsa-muted);
-	text-decoration: underline;
+.wsa-msg.is-assistant .wsa-msg-text{border-start-start-radius:5px;}
+.wsa-msg.is-user .wsa-msg-text{
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  border-end-end-radius:5px;
+  box-shadow:none;
 }
 
-/* --------------------------------------------------------------------- form */
-.wsa-form {
-	display: flex;
-	gap: 8px;
-	padding: 12px;
-	border-block-start: 1px solid var(--wsa-line);
-	background: var(--wsa-surface);
+/* typing */
+.wsa-typing .wsa-msg-text{display:flex;align-items:center;gap:4px;padding:14px 15px;}
+.wsa-typing span{
+  inline-size:6px;block-size:6px;
+  border-radius:100px;
+  background:var(--wsa-ink-3);
+  animation:wsa-bounce 1.15s ease-in-out infinite;
 }
-.wsa-input {
-	flex: 1;
-	min-width: 0;
-	padding: 10px 12px;
-	border: 1px solid var(--wsa-line);
-	border-radius: 9px;
-	background: var(--wsa-surface);
-	outline: none;
-}
-.wsa-input:focus { border-color: var(--wsa-accent); }
-.wsa-send {
-	flex: 0 0 auto;
-	width: 40px;
-	border: 0;
-	border-radius: 9px;
-	background: var(--wsa-accent);
-	color: #fff;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-}
-.wsa-send:disabled { opacity: .5; cursor: default; }
-.wsa-send svg { width: 17px; height: 17px; }
-/* the arrow points at the send direction, which flips with the writing mode */
-[dir="rtl"] .wsa-send svg { transform: scaleX(-1); }
+.wsa-typing span:nth-child(2){animation-delay:.16s;}
+.wsa-typing span:nth-child(3){animation-delay:.32s;}
+@keyframes wsa-bounce{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 
-.wsa-root :focus-visible { outline: 2px solid var(--wsa-accent); outline-offset: 2px; }
-.wsa-launcher:focus-visible, .wsa-close:focus-visible { outline-color: #fff; }
+/* ---------- chips ---------- */
+.wsa-chips{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin:0;padding:0;
+  text-align:start;
+}
+.wsa-chip{
+  appearance:none;
+  display:inline-flex;align-items:center;
+  min-block-size:34px;
+  margin:0;
+  padding:7px 13px;
+  border:1px solid var(--wsa-line);
+  border-radius:100px;
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  font:inherit;
+  font-size:13.5px;
+  line-height:1.3;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+  transition:border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.wsa-chip:hover{border-color:var(--wsa-ink-3);transform:translateY(-1px);}
+.wsa-chip.is-handoff{
+  border-color:transparent;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font-weight:600;
+  padding-inline:15px;
+}
+.wsa-chip.is-handoff:hover{border-color:transparent;filter:brightness(.94);}
 
-@media (max-width: 480px) {
-	.wsa-root { inset-block-end: 12px; }
-	.wsa-root[data-position="right"] { inset-inline-end: 12px; }
-	.wsa-root[data-position="left"] { inset-inline-start: 12px; }
-	.wsa-panel { height: min(70vh, calc(100vh - 90px)); }
+/* ---------- product cards ---------- */
+.wsa-cards{
+  display:flex;flex-direction:column;gap:8px;
+  margin:0;padding:0;
+}
+.wsa-card{
+  display:flex;
+  align-items:stretch;
+  gap:0;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--wsa-line);
+  border-radius:13px;
+  background:var(--wsa-surface);
+  text-align:start;
+  transition:box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+}
+.wsa-card:hover{
+  border-color:#d3d7e0;
+  box-shadow:0 8px 20px -12px rgba(16,18,24,.3);
+  transform:translateY(-1px);
+}
+.wsa-card-media{
+  position:relative;
+  flex:0 0 auto;
+  display:block;
+  inline-size:92px;
+  margin:0;
+  padding:0;
+  background:var(--wsa-line-soft);
+  text-decoration:none;
+}
+.wsa-card-media img{
+  display:block;
+  inline-size:100%;
+  block-size:100%;
+  min-block-size:92px;
+  margin:0;
+  object-fit:cover;
+  border:0;
+  border-radius:0;
+}
+.wsa-badge{
+  position:absolute;
+  inset-block-start:5px;
+  inset-inline-start:5px;
+  margin:0;
+  padding:2px 7px;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font-size:10.5px;
+  font-weight:700;
+  line-height:1.45;
+  letter-spacing:.02em;
+  text-align:center;
+}
+.wsa-card-info{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  flex:1 1 auto;
+  min-inline-size:0;
+  margin:0;
+  padding:11px 12px 11px 13px;
+  text-align:start;
+}
+.wsa-card-name{
+  display:-webkit-box;
+  margin:0;
+  padding:0;
+  color:var(--wsa-ink);
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.35;
+  letter-spacing:-.005em;
+  text-align:start;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  overflow:hidden;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.wsa-card-name:hover{text-decoration:underline;}
+.wsa-card-price{
+  margin:0;
+  padding:0;
+  color:var(--wsa-ink);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  line-height:1.4;
+  text-align:start;
+}
+.wsa-card-price del{
+  margin:0;
+  margin-inline-end:6px;
+  color:var(--wsa-ink-3);
+  font-weight:400;
+  font-size:12.5px;
+  text-decoration:line-through;
+}
+.wsa-card-price ins{
+  margin:0;
+  color:var(--wsa-ink);
+  font-weight:700;
+  text-decoration:none;
+}
+.wsa-card-stock{
+  align-self:flex-start;
+  margin:0;
+  padding:2px 8px;
+  border-radius:100px;
+  background:#fbeceb;
+  color:#a3341f;
+  font-size:11.5px;
+  font-weight:600;
+  line-height:1.45;
+  text-align:start;
+}
+.wsa-card-btn{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-block-size:38px;
+  margin:0;
+  margin-block-start:auto;
+  padding:9px 14px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.25;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+  transition:filter .16s ease, border-color .16s ease;
+}
+.wsa-card-btn:hover{filter:brightness(.94);}
+.wsa-card-btn.is-ghost{
+  border-color:var(--wsa-line);
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  filter:none;
+}
+.wsa-card-btn.is-ghost:hover{border-color:var(--wsa-ink-3);filter:none;}
+.wsa-card-info .added_to_cart{
+  display:block;
+  margin:0;
+  margin-block-start:6px;
+  padding:0;
+  color:var(--wsa-ink-2);
+  font-size:12.5px;
+  font-weight:500;
+  line-height:1.4;
+  text-align:start;
+  text-decoration:underline;
+}
+.wsa-card-info .added_to_cart:hover{color:var(--wsa-ink);}
+
+/* ---------- form ---------- */
+.wsa-form{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  flex:0 0 auto;
+  margin:0;
+  padding:12px;
+  background:var(--wsa-surface);
+  border-block-start:1px solid var(--wsa-line-soft);
+}
+.wsa-input{
+  flex:1 1 auto;
+  min-inline-size:0;
+  min-block-size:44px;
+  margin:0;
+  padding:11px 14px;
+  border:1px solid var(--wsa-line);
+  border-radius:100px;
+  background:var(--wsa-body-bg);
+  color:var(--wsa-ink);
+  font:inherit;
+  font-size:14.5px;
+  line-height:1.4;
+  text-align:start;
+  transition:border-color .16s ease, background .16s ease;
+}
+.wsa-input::placeholder{color:var(--wsa-ink-3);opacity:1;}
+.wsa-input:hover{border-color:var(--wsa-ink-3);}
+.wsa-input:focus{outline:none;border-color:var(--wsa-accent);background:var(--wsa-surface);}
+.wsa-send{
+  appearance:none;
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  inline-size:44px;block-size:44px;
+  margin:0;padding:0;
+  border:0;border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;cursor:pointer;
+  transition:filter .16s ease, opacity .16s ease;
+}
+.wsa-send:hover{filter:brightness(.94);}
+.wsa-send svg{inline-size:19px;block-size:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.wsa-send[disabled]{opacity:.4;cursor:not-allowed;filter:none;}
+[dir="rtl"] .wsa-send svg{transform:scaleX(-1);}
+.wsa-root.is-busy .wsa-input{color:var(--wsa-ink-3);}
+
+/* ---------- focus ---------- */
+.wsa-launcher:focus-visible,
+.wsa-close:focus-visible,
+.wsa-chip:focus-visible,
+.wsa-card-btn:focus-visible,
+.wsa-card-name:focus-visible,
+.wsa-card-media:focus-visible,
+.wsa-send:focus-visible,
+.wsa-input:focus-visible{
+  outline:2px solid var(--wsa-ink);
+  outline-offset:2px;
+}
+.wsa-input:focus-visible{outline-offset:1px;border-color:var(--wsa-accent);background:var(--wsa-surface);}
+
+/* ---------- mobile ---------- */
+@media (max-width:480px){
+  .wsa-root{inset-block-end:12px;}
+  .wsa-root[data-position="right"]{right:12px;}
+  .wsa-root[data-position="left"]{left:12px;}
+  .wsa-panel{
+    inline-size:calc(100vw - 24px);
+    block-size:min(78vh, calc(100vh - 92px));
+    border-radius:18px;
+  }
+  .wsa-body{padding:14px;}
+  .wsa-card-media{inline-size:82px;}
+  .wsa-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block-end:2px;}
+  .wsa-chips::-webkit-scrollbar{display:none;}
+  .wsa-chip{flex:0 0 auto;}
+  .wsa-launcher:has(.wsa-launcher-label){inline-size:56px;padding-inline:0;}
+  .wsa-launcher-label{display:none;}
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.wsa-root *, .wsa-root *::before, .wsa-root *::after {
-		animation-duration: .001ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: .001ms !important;
-	}
+@media (prefers-reduced-motion: reduce){
+  .wsa-root *,.wsa-root *::before,.wsa-root *::after{
+    animation-duration:.001ms;
+    animation-iteration-count:1;
+    transition-duration:.001ms;
+  }
+  .wsa-launcher:hover,.wsa-chip:hover{transform:none;}
 }

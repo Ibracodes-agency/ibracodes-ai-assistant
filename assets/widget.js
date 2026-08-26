@@ -1,12 +1,16 @@
 /**
  * Shop Agent chat widget.
  *
+ * The markup here mirrors the design file (docs: Shop Agent Widget.dc.html)
+ * element for element, because the stylesheet is lifted from it verbatim. If a
+ * class or nesting level changes here, it has to change there too.
+ *
  * Self-injecting and dependency-free: it builds its own DOM, owns every class
- * under the wsa- prefix, and never assumes anything about the host theme.
- * Product text is written with textContent; the only innerHTML is WooCommerce's
- * own price markup, which the server produced.
+ * under the wsa- prefix, and assumes nothing about the host theme. Product text
+ * is written with textContent; the only innerHTML is WooCommerce's own price
+ * markup and our own inline icons.
  */
-(function () {
+( function () {
 	'use strict';
 
 	var cfg = window.wsaConfig;
@@ -18,6 +22,13 @@
 	var history = [];
 	var busy = false;
 	var opened = false;
+	var SEEN_KEY = 'wsa-seen';
+
+	var ICON = {
+		chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>',
+		close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
+		send: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>',
+	};
 
 	// ---------------------------------------------------------------- helpers
 	function el( tag, className, text ) {
@@ -35,6 +46,19 @@
 		body.scrollTop = body.scrollHeight;
 	}
 
+	/** Storage throws in some privacy modes; a missing dot is not worth a crash. */
+	function seen( write ) {
+		try {
+			if ( write ) {
+				window.localStorage.setItem( SEEN_KEY, '1' );
+				return true;
+			}
+			return window.localStorage.getItem( SEEN_KEY ) === '1';
+		} catch ( e ) {
+			return true;
+		}
+	}
+
 	// ------------------------------------------------------------------- DOM
 	var root = el( 'div', 'wsa-root' );
 	root.setAttribute( 'data-position', cfg.position === 'left' ? 'left' : 'right' );
@@ -45,13 +69,21 @@
 	var launcher = el( 'button', 'wsa-launcher' );
 	launcher.type = 'button';
 	launcher.setAttribute( 'aria-label', t.open );
-	launcher.innerHTML =
-		'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-		'<path fill="currentColor" d="M12 3c-4.97 0-9 3.36-9 7.5 0 2.3 1.25 4.36 3.2 5.73-.13 1.1-.6 2.2-1.4 3.06a.5.5 0 0 0 .45.84c1.9-.36 3.36-1.2 4.3-1.92.78.16 1.6.25 2.45.25 4.97 0 9-3.36 9-7.96C21 6.36 16.97 3 12 3z"/>' +
-		'</svg>';
+	launcher.innerHTML = ICON.chat;
+	// both inner spans are optional per the design: no label collapses the pill
+	// back to a 56px circle
+	if ( cfg.launcherLabel ) {
+		launcher.appendChild( el( 'span', 'wsa-launcher-label', cfg.launcherLabel ) );
+	}
+	if ( ! seen() ) {
+		var dot = el( 'span', 'wsa-launcher-dot' );
+		dot.setAttribute( 'aria-hidden', 'true' );
+		launcher.appendChild( dot );
+	}
 
 	var panel = el( 'div', 'wsa-panel' );
 	panel.setAttribute( 'role', 'dialog' );
+	panel.setAttribute( 'aria-modal', 'false' );
 	panel.setAttribute( 'aria-label', cfg.title || t.conversation );
 	panel.hidden = true;
 
@@ -64,14 +96,13 @@
 	var close = el( 'button', 'wsa-close' );
 	close.type = 'button';
 	close.setAttribute( 'aria-label', t.close );
-	close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4L10.6 10.6l6.3-6.3z"/></svg>';
+	close.innerHTML = ICON.close;
 	head.appendChild( headText );
 	head.appendChild( close );
 
 	var body = el( 'div', 'wsa-body' );
 	body.setAttribute( 'role', 'log' );
 	body.setAttribute( 'aria-live', 'polite' );
-	body.setAttribute( 'aria-label', t.conversation );
 
 	var form = el( 'form', 'wsa-form' );
 	var input = el( 'input', 'wsa-input' );
@@ -82,7 +113,7 @@
 	var send = el( 'button', 'wsa-send' );
 	send.type = 'submit';
 	send.setAttribute( 'aria-label', t.send );
-	send.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10.2 15 12 3.4 13.8z"/></svg>';
+	send.innerHTML = ICON.send;
 	form.appendChild( input );
 	form.appendChild( send );
 
@@ -102,9 +133,13 @@
 	}
 
 	function addTyping() {
-		var wrap = el( 'div', 'wsa-msg is-assistant wsa-typing' );
+		var wrap = el( 'div', 'wsa-msg wsa-typing is-assistant' );
 		wrap.setAttribute( 'aria-label', t.thinking );
-		wrap.innerHTML = '<div class="wsa-msg-text"><span></span><span></span><span></span></div>';
+		var bubble = el( 'div', 'wsa-msg-text' );
+		bubble.appendChild( el( 'span' ) );
+		bubble.appendChild( el( 'span' ) );
+		bubble.appendChild( el( 'span' ) );
+		wrap.appendChild( bubble );
 		body.appendChild( wrap );
 		scrollDown();
 		return wrap;
@@ -137,15 +172,15 @@
 		products.forEach( function ( p ) {
 			var card = el( 'div', 'wsa-card' );
 
-			var link = el( 'a', 'wsa-card-media' );
-			link.href = p.url;
+			var media = el( 'a', 'wsa-card-media' );
+			media.href = p.url;
 			var img = el( 'img' );
 			img.src = p.image;
 			img.alt = p.name;
 			img.loading = 'lazy';
-			link.appendChild( img );
+			media.appendChild( img );
 			if ( p.on_sale ) {
-				link.appendChild( el( 'span', 'wsa-badge', t.onSale ) );
+				media.appendChild( el( 'span', 'wsa-badge', t.onSale ) );
 			}
 
 			var info = el( 'div', 'wsa-card-info' );
@@ -153,19 +188,21 @@
 			name.href = p.url;
 			info.appendChild( name );
 
+			// out of stock reads above the price, per the design
+			if ( ! p.in_stock ) {
+				info.appendChild( el( 'div', 'wsa-card-stock', t.outOfStock ) );
+			}
+
 			var price = el( 'div', 'wsa-card-price' );
 			// WooCommerce's own price markup, rendered server-side
 			price.innerHTML = p.price_html;
 			info.appendChild( price );
 
-			if ( ! p.in_stock ) {
-				info.appendChild( el( 'span', 'wsa-card-stock', t.outOfStock ) );
-			}
-
 			var action;
 			if ( p.can_add ) {
 				// WooCommerce's own classes: its script upgrades this to an ajax
-				// add, and without that script it is still a working link
+				// add and appends its "View cart" link, and without that script
+				// it is still a working link
 				action = el( 'a', 'wsa-card-btn add_to_cart_button ajax_add_to_cart', t.addToCart );
 				action.href = p.add_url;
 				action.setAttribute( 'data-product_id', p.id );
@@ -177,7 +214,7 @@
 			}
 			info.appendChild( action );
 
-			card.appendChild( link );
+			card.appendChild( media );
 			card.appendChild( info );
 			list.appendChild( card );
 		} );
@@ -199,13 +236,17 @@
 	}
 
 	// ------------------------------------------------------------------- send
+	function setBusy( state ) {
+		busy = state;
+		root.classList.toggle( 'is-busy', state );
+		send.disabled = state;
+	}
+
 	function ask( text ) {
 		if ( busy || ! text ) {
 			return;
 		}
-		busy = true;
-		root.classList.add( 'is-busy' );
-		send.disabled = true;
+		setBusy( true );
 		input.value = '';
 		addMessage( 'user', text );
 		history.push( { role: 'user', text: text } );
@@ -243,9 +284,7 @@
 				addHandoff();
 			} )
 			.finally( function () {
-				busy = false;
-				root.classList.remove( 'is-busy' );
-				send.disabled = false;
+				setBusy( false );
 				input.focus();
 			} );
 	}
@@ -254,6 +293,11 @@
 	function open() {
 		panel.hidden = false;
 		root.classList.add( 'is-open' );
+		seen( true );
+		var dotNode = launcher.querySelector( '.wsa-launcher-dot' );
+		if ( dotNode ) {
+			dotNode.remove();
+		}
 		if ( ! opened ) {
 			opened = true;
 			if ( cfg.welcome ) {

@@ -39,6 +39,7 @@ class Settings
             'handoff_url' => '',
 
             // widget presentation
+            'launcher_label' => __('Ask us anything', 'woocommerce-shop-agent'),
             'title' => __('Have a question?', 'woocommerce-shop-agent'),
             'subtitle' => __('Ask me anything', 'woocommerce-shop-agent'),
             'welcome' => __('Hi, can I help you find a product or answer a question?', 'woocommerce-shop-agent'),

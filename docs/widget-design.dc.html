@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta charset="utf-8">
+<title>Shop Agent — chat widget states</title>
+<style>
+/* ============================================================
+   SHOP AGENT WIDGET — lift everything below into the plugin.
+   Self-contained. No framework, no webfont, no !important.
+   ============================================================ */
+
+.wsa-root{
+  --wsa-accent:#0f62fe;
+  --wsa-on-accent:#ffffff;
+  --wsa-ink:#16181d;
+  --wsa-ink-2:#565b66;
+  --wsa-ink-3:#8a8f9a;
+  --wsa-surface:#ffffff;
+  --wsa-body-bg:#f4f5f8;
+  --wsa-line:#e4e6ec;
+  --wsa-line-soft:#eef0f4;
+  --wsa-radius:16px;
+  --wsa-shadow:0 18px 48px -14px rgba(16,18,24,.28), 0 2px 6px rgba(16,18,24,.06);
+
+  position:fixed;
+  inset-block-end:20px;
+  z-index:999999;
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  color:var(--wsa-ink);
+  text-align:start;
+  margin:0;
+  padding:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wsa-root *,.wsa-root *::before,.wsa-root *::after{box-sizing:border-box;}
+.wsa-root[data-position="right"]{inset-inline-end:20px;inset-inline-start:auto;}
+.wsa-root[data-position="left"]{inset-inline-start:20px;inset-inline-end:auto;}
+
+/* ---------- launcher ---------- */
+.wsa-launcher{
+  appearance:none;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  inline-size:56px;
+  block-size:56px;
+  min-inline-size:44px;
+  min-block-size:44px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;
+  cursor:pointer;
+  box-shadow:var(--wsa-shadow);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+/* with a label it becomes a pill — reads as an invitation, not a mystery button */
+.wsa-launcher:has(.wsa-launcher-label){inline-size:auto;padding-inline:19px 22px;}
+.wsa-launcher-label{
+  margin:0;padding:0;
+  font-size:15px;font-weight:600;letter-spacing:-.012em;line-height:1;
+  white-space:nowrap;
+}
+.wsa-launcher-dot{
+  position:absolute;
+  inset-block-start:-1px;
+  inset-inline-end:-1px;
+  inline-size:13px;block-size:13px;
+  border-radius:100px;
+  background:#e0392b;
+  box-shadow:0 0 0 2.5px var(--wsa-surface);
+}
+.wsa-launcher:hover{transform:translateY(-2px);}
+.wsa-launcher:active{transform:translateY(0);}
+.wsa-launcher svg{inline-size:25px;block-size:25px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.wsa-root.is-open .wsa-launcher{display:none;}
+
+/* ---------- panel ---------- */
+.wsa-panel{
+  display:flex;
+  flex-direction:column;
+  inline-size:min(384px, calc(100vw - 32px));
+  block-size:min(576px, calc(100vh - 110px));
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--wsa-line);
+  border-radius:var(--wsa-radius);
+  background:var(--wsa-surface);
+  box-shadow:var(--wsa-shadow);
+  text-align:start;
+}
+.wsa-panel[hidden]{display:none;}
+
+/* ---------- header ---------- */
+.wsa-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex:0 0 auto;
+  margin:0;
+  padding:14px 16px;
+  background:var(--wsa-surface);
+  border-block-end:1px solid var(--wsa-line-soft);
+}
+.wsa-head::before{
+  content:"";
+  flex:0 0 auto;
+  inline-size:34px;
+  block-size:34px;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  box-shadow:inset 0 0 0 5px rgba(255,255,255,.34);
+}
+.wsa-head-text{display:flex;flex-direction:column;gap:1px;min-inline-size:0;flex:1 1 auto;text-align:start;}
+.wsa-title{
+  margin:0;padding:0;
+  font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.25;
+  color:var(--wsa-ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wsa-subtitle{
+  margin:0;padding:0;
+  font-size:12.5px;font-weight:400;line-height:1.35;
+  color:var(--wsa-ink-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.wsa-close{
+  appearance:none;
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  inline-size:44px;block-size:44px;
+  margin:-6px;
+  margin-inline-start:auto;
+  padding:0;
+  border:0;border-radius:100px;
+  background:transparent;color:var(--wsa-ink-2);
+  font:inherit;cursor:pointer;
+  transition:background .16s ease,color .16s ease;
+}
+.wsa-close:hover{background:var(--wsa-body-bg);color:var(--wsa-ink);}
+.wsa-close svg{inline-size:17px;block-size:17px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;}
+
+/* ---------- body ---------- */
+.wsa-body{
+  flex:1 1 auto;
+  min-block-size:0;
+  margin:0;
+  padding:16px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--wsa-body-bg);
+  background-image:linear-gradient(rgba(16,18,24,.05), rgba(16,18,24,0) 12px);
+  background-repeat:no-repeat;
+  background-attachment:local;
+  text-align:start;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.wsa-body > * + *{margin-block-start:14px;}
+/* wider break when the speaker changes, tighter within one turn */
+.wsa-body > .wsa-msg.is-user + .wsa-msg.is-assistant,
+.wsa-body > .wsa-msg.is-assistant + .wsa-msg.is-user{margin-block-start:20px;}
+.wsa-body > .wsa-msg + .wsa-chips{margin-block-start:10px;}
+.wsa-body > .wsa-msg + .wsa-cards{margin-block-start:10px;}
+.wsa-body > .wsa-chips + .wsa-msg,
+.wsa-body > .wsa-cards + .wsa-msg{margin-block-start:20px;}
+
+/* ---------- messages ---------- */
+.wsa-msg{display:flex;margin:0;padding:0;}
+.wsa-msg.is-assistant{justify-content:flex-start;}
+.wsa-msg.is-user{justify-content:flex-end;}
+.wsa-msg-text{
+  max-inline-size:86%;
+  margin:0;
+  padding:10px 13px;
+  border-radius:14px;
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  font-size:14.5px;
+  line-height:1.5;
+  text-align:start;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  box-shadow:0 1px 2px rgba(16,18,24,.06);
+}
+.wsa-msg.is-assistant .wsa-msg-text{border-start-start-radius:5px;}
+.wsa-msg.is-user .wsa-msg-text{
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  border-end-end-radius:5px;
+  box-shadow:none;
+}
+
+/* typing */
+.wsa-typing .wsa-msg-text{display:flex;align-items:center;gap:4px;padding:14px 15px;}
+.wsa-typing span{
+  inline-size:6px;block-size:6px;
+  border-radius:100px;
+  background:var(--wsa-ink-3);
+  animation:wsa-bounce 1.15s ease-in-out infinite;
+}
+.wsa-typing span:nth-child(2){animation-delay:.16s;}
+.wsa-typing span:nth-child(3){animation-delay:.32s;}
+@keyframes wsa-bounce{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* ---------- chips ---------- */
+.wsa-chips{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin:0;padding:0;
+  text-align:start;
+}
+.wsa-chip{
+  appearance:none;
+  display:inline-flex;align-items:center;
+  min-block-size:34px;
+  margin:0;
+  padding:7px 13px;
+  border:1px solid var(--wsa-line);
+  border-radius:100px;
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  font:inherit;
+  font-size:13.5px;
+  line-height:1.3;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+  transition:border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.wsa-chip:hover{border-color:var(--wsa-ink-3);transform:translateY(-1px);}
+.wsa-chip.is-handoff{
+  border-color:transparent;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font-weight:600;
+  padding-inline:15px;
+}
+.wsa-chip.is-handoff:hover{border-color:transparent;filter:brightness(.94);}
+
+/* ---------- product cards ---------- */
+.wsa-cards{
+  display:flex;flex-direction:column;gap:8px;
+  margin:0;padding:0;
+}
+.wsa-card{
+  display:flex;
+  align-items:stretch;
+  gap:0;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--wsa-line);
+  border-radius:13px;
+  background:var(--wsa-surface);
+  text-align:start;
+  transition:box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+}
+.wsa-card:hover{
+  border-color:#d3d7e0;
+  box-shadow:0 8px 20px -12px rgba(16,18,24,.3);
+  transform:translateY(-1px);
+}
+.wsa-card-media{
+  position:relative;
+  flex:0 0 auto;
+  display:block;
+  inline-size:92px;
+  margin:0;
+  padding:0;
+  background:var(--wsa-line-soft);
+  text-decoration:none;
+}
+.wsa-card-media img{
+  display:block;
+  inline-size:100%;
+  block-size:100%;
+  min-block-size:92px;
+  margin:0;
+  object-fit:cover;
+  border:0;
+  border-radius:0;
+}
+.wsa-badge{
+  position:absolute;
+  inset-block-start:5px;
+  inset-inline-start:5px;
+  margin:0;
+  padding:2px 7px;
+  border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font-size:10.5px;
+  font-weight:700;
+  line-height:1.45;
+  letter-spacing:.02em;
+  text-align:center;
+}
+.wsa-card-info{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  flex:1 1 auto;
+  min-inline-size:0;
+  margin:0;
+  padding:11px 12px 11px 13px;
+  text-align:start;
+}
+.wsa-card-name{
+  display:-webkit-box;
+  margin:0;
+  padding:0;
+  color:var(--wsa-ink);
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.35;
+  letter-spacing:-.005em;
+  text-align:start;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  overflow:hidden;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.wsa-card-name:hover{text-decoration:underline;}
+.wsa-card-price{
+  margin:0;
+  padding:0;
+  color:var(--wsa-ink);
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.01em;
+  line-height:1.4;
+  text-align:start;
+}
+.wsa-card-price del{
+  margin:0;
+  margin-inline-end:6px;
+  color:var(--wsa-ink-3);
+  font-weight:400;
+  font-size:12.5px;
+  text-decoration:line-through;
+}
+.wsa-card-price ins{
+  margin:0;
+  color:var(--wsa-ink);
+  font-weight:700;
+  text-decoration:none;
+}
+.wsa-card-stock{
+  align-self:flex-start;
+  margin:0;
+  padding:2px 8px;
+  border-radius:100px;
+  background:#fbeceb;
+  color:#a3341f;
+  font-size:11.5px;
+  font-weight:600;
+  line-height:1.45;
+  text-align:start;
+}
+.wsa-card-btn{
+  appearance:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-block-size:38px;
+  margin:0;
+  margin-block-start:auto;
+  padding:9px 14px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;
+  font-size:13.5px;
+  font-weight:600;
+  line-height:1.25;
+  text-align:center;
+  text-decoration:none;
+  cursor:pointer;
+  transition:filter .16s ease, border-color .16s ease;
+}
+.wsa-card-btn:hover{filter:brightness(.94);}
+.wsa-card-btn.is-ghost{
+  border-color:var(--wsa-line);
+  background:var(--wsa-surface);
+  color:var(--wsa-ink);
+  filter:none;
+}
+.wsa-card-btn.is-ghost:hover{border-color:var(--wsa-ink-3);filter:none;}
+.wsa-card-info .added_to_cart{
+  display:block;
+  margin:0;
+  margin-block-start:6px;
+  padding:0;
+  color:var(--wsa-ink-2);
+  font-size:12.5px;
+  font-weight:500;
+  line-height:1.4;
+  text-align:start;
+  text-decoration:underline;
+}
+.wsa-card-info .added_to_cart:hover{color:var(--wsa-ink);}
+
+/* ---------- form ---------- */
+.wsa-form{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  flex:0 0 auto;
+  margin:0;
+  padding:12px;
+  background:var(--wsa-surface);
+  border-block-start:1px solid var(--wsa-line-soft);
+}
+.wsa-input{
+  flex:1 1 auto;
+  min-inline-size:0;
+  min-block-size:44px;
+  margin:0;
+  padding:11px 14px;
+  border:1px solid var(--wsa-line);
+  border-radius:100px;
+  background:var(--wsa-body-bg);
+  color:var(--wsa-ink);
+  font:inherit;
+  font-size:14.5px;
+  line-height:1.4;
+  text-align:start;
+  transition:border-color .16s ease, background .16s ease;
+}
+.wsa-input::placeholder{color:var(--wsa-ink-3);opacity:1;}
+.wsa-input:hover{border-color:var(--wsa-ink-3);}
+.wsa-input:focus{outline:none;border-color:var(--wsa-accent);background:var(--wsa-surface);}
+.wsa-send{
+  appearance:none;
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  inline-size:44px;block-size:44px;
+  margin:0;padding:0;
+  border:0;border-radius:100px;
+  background:var(--wsa-accent);
+  color:var(--wsa-on-accent);
+  font:inherit;cursor:pointer;
+  transition:filter .16s ease, opacity .16s ease;
+}
+.wsa-send:hover{filter:brightness(.94);}
+.wsa-send svg{inline-size:19px;block-size:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.wsa-send[disabled]{opacity:.4;cursor:not-allowed;filter:none;}
+[dir="rtl"] .wsa-send svg{transform:scaleX(-1);}
+.wsa-root.is-busy .wsa-input{color:var(--wsa-ink-3);}
+
+/* ---------- focus ---------- */
+.wsa-launcher:focus-visible,
+.wsa-close:focus-visible,
+.wsa-chip:focus-visible,
+.wsa-card-btn:focus-visible,
+.wsa-card-name:focus-visible,
+.wsa-card-media:focus-visible,
+.wsa-send:focus-visible,
+.wsa-input:focus-visible{
+  outline:2px solid var(--wsa-ink);
+  outline-offset:2px;
+}
+.wsa-input:focus-visible{outline-offset:1px;border-color:var(--wsa-accent);background:var(--wsa-surface);}
+
+/* ---------- mobile ---------- */
+@media (max-width:480px){
+  .wsa-root{inset-block-end:12px;}
+  .wsa-root[data-position="right"]{inset-inline-end:12px;}
+  .wsa-root[data-position="left"]{inset-inline-start:12px;}
+  .wsa-panel{
+    inline-size:calc(100vw - 24px);
+    block-size:min(78vh, calc(100vh - 92px));
+    border-radius:18px;
+  }
+  .wsa-body{padding:14px;}
+  .wsa-card-media{inline-size:82px;}
+  .wsa-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-block-end:2px;}
+  .wsa-chips::-webkit-scrollbar{display:none;}
+  .wsa-chip{flex:0 0 auto;}
+  .wsa-launcher:has(.wsa-launcher-label){inline-size:56px;padding-inline:0;}
+  .wsa-launcher-label{display:none;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .wsa-root *,.wsa-root *::before,.wsa-root *::after{
+    animation-duration:.001ms;
+    animation-iteration-count:1;
+    transition-duration:.001ms;
+  }
+  .wsa-launcher:hover,.wsa-chip:hover{transform:none;}
+}
+
+/* ============================================================
+   Page scaffolding for this spec sheet only — do NOT ship.
+   ============================================================ */
+html,body{margin:0;padding:0;background:#eef0f4;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#16181d;}
+.sheet{max-width:1240px;margin:0 auto;padding:44px 32px 80px;}
+.sheet h1{font-size:34px;font-weight:600;letter-spacing:-.03em;margin:12px 0 0;}
+.sheet .lede{font-size:16px;line-height:1.6;color:#565b66;margin:10px 0 0;max-width:660px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(452px,1fr));gap:16px;margin-top:34px;align-items:start;}
+.state{background:#fff;border:1px solid #e4e6ec;border-radius:16px;padding:18px;}
+.state.wide{grid-column:1/-1;}
+.state h2{font-size:13px;font-weight:600;letter-spacing:.1em;color:#8a8f9a;margin:0 0 4px;text-transform:uppercase;}
+.state p{font-size:13.5px;line-height:1.5;color:#565b66;margin:0 0 14px;}
+.stage{position:relative;background:#e9ebf0;border-radius:12px;padding:16px;min-height:120px;display:flex;justify-content:flex-end;overflow:hidden;}
+.stage .wsa-panel{block-size:auto;max-block-size:none;}
+.stage.tall .wsa-panel{block-size:560px;}
+.stage.mid .wsa-panel{block-size:380px;}
+
+.stage.start{justify-content:flex-start;}
+/* neutralise position:fixed inside the spec stage only */
+.stage .wsa-root{position:static;inset:auto;}
+.swatch{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.swatch div{font-size:12px;padding:6px 12px;border-radius:100px;border:1px solid #e4e6ec;background:#f8f9fb;color:#565b66;}
+</style>
+</helmet>
+<div class="sheet">
+  <div style="font-size:13px; letter-spacing:.14em; color:#8a8f9a;">WOOCOMMERCE PLUGIN · STOREFRONT WIDGET</div>
+  <h1>Shop Agent chat widget</h1>
+  <p class="lede">Every state below is real markup using the exact class inventory. All CSS sits in the one style block at the top of this file, scoped under <code>.wsa-root</code>, logical properties only, no framework and no script. Accent is a single variable, so swapping <code>--wsa-accent</code> per shop is the whole theming story.</p>
+  <div class="swatch">
+    <div>One root: <code>.wsa-root</code></div>
+    <div>All classes <code>wsa-</code></div>
+    <div>Inline SVG icons only</div>
+    <div>Logical properties only</div>
+    <div>Light only</div>
+    <div>44px touch targets</div>
+    <div>New: <code>.wsa-launcher-label</code>, <code>.wsa-launcher-dot</code>, both optional</div>
+  </div>
+
+  <div class="grid">
+
+    <div class="state">
+      <h2>01 — Closed</h2>
+      <p>Launcher only: a 56px-tall accent pill carrying a label and an unread dot, collapsing to a 56px circle under 480px. Both inner spans are optional.</p>
+      <div class="stage">
+        <div class="wsa-root" data-position="right">
+          <button class="wsa-launcher" type="button" aria-label="Open shop assistant">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>
+            <span class="wsa-launcher-label">Ask us anything</span>
+            <span class="wsa-launcher-dot" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+      <div class="swatch">
+        <div>Pill on desktop, 56px circle under 480px</div>
+        <div>Dot only on a first-time visit</div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>11 — Focus visible</h2>
+      <p>Ink outline with offset, so it reads against any accent. Shown on launcher and chip; the input focus state is in section 08.</p>
+      <div class="stage" style="flex-direction:column; align-items:flex-end; gap:16px;">
+        <div class="wsa-root" data-position="right">
+          <button class="wsa-launcher" type="button" aria-label="Open shop assistant" style="outline:2px solid var(--wsa-ink); outline-offset:2px;">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>
+            <span class="wsa-launcher-label">Ask us anything</span>
+          </button>
+        </div>
+        <div class="wsa-root" data-position="right">
+          <div class="wsa-chips">
+            <button class="wsa-chip" type="button" style="outline:2px solid var(--wsa-ink); outline-offset:2px;">What is the warranty?</button>
+            <button class="wsa-chip" type="button">More models?</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>02 — Open, fresh</h2>
+      <p>Welcome line plus opening chips. Input empty, send enabled.</p>
+      <div class="stage tall">
+        <div class="wsa-root is-open" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-modal="false" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">Hi — can I help you find a product or answer a question?</div></div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">Home security camera</button>
+                <button class="wsa-chip" type="button">What is the warranty?</button>
+                <button class="wsa-chip" type="button">More models?</button>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+              <button class="wsa-send" type="submit" aria-label="Send">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>03 — In conversation · 04 — Thinking</h2>
+      <p>Customer bubble accent-filled at the end edge, agent reply at the start edge, typing bubble waiting on the answer.</p>
+      <div class="stage tall">
+        <div class="wsa-root is-open" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">Hi — can I help you find a product or answer a question?</div></div>
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">I'm looking for a security camera for my home, what do you recommend?</div></div>
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">Most people in your situation go for an indoor pan-and-tilt camera with night vision. Do you want to cover one room or the whole floor?</div></div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">One room</button>
+                <button class="wsa-chip" type="button">Whole floor</button>
+                <button class="wsa-chip" type="button">Outdoor too</button>
+              </div>
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">One room</div></div>
+              <div class="wsa-msg wsa-typing is-assistant" aria-label="Assistant is typing">
+                <div class="wsa-msg-text"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+              <button class="wsa-send" type="submit" aria-label="Send">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>05 — One product card</h2>
+      <p>In stock, add-to-cart live. Card is a horizontal strip so the thumbnail never eats the panel height.</p>
+      <div class="stage tall">
+        <div class="wsa-root is-open" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">One room, indoor</div></div>
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">This one fits: pan and tilt, 2K, night vision. You can add it to the cart straight from the card.</div></div>
+              <div class="wsa-cards">
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="TP-Link Tapo C210">
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K Indoor Security Camera</a>
+                    <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                    <button class="wsa-card-btn" type="button">Add to cart</button>
+                  </div>
+                </div>
+              </div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">Does it work at night?</button>
+                <button class="wsa-chip" type="button">Cheaper option?</button>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+              <button class="wsa-send" type="submit" aria-label="Send">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>06 — Three cards</h2>
+      <p>Uneven name lengths, a sale badge with struck price, an out-of-stock row, a ghost "View product", and WooCommerce's own injected <code>.added_to_cart</code> link. Buttons stay pinned to each card's bottom edge.</p>
+      <div class="stage tall">
+        <div class="wsa-root is-open" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">Here are three that match. The kit is the best value if you want full coverage.</div></div>
+              <div class="wsa-cards">
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="Reolink NVS16 kit">
+                    <span class="wsa-badge">Sale</span>
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">Reolink NVS16 4-Camera 8MP 4K Security System with NVR and Hard Drive</a>
+                    <div class="wsa-card-price"><del><span class="woocommerce-Price-amount">2,490.00₪</span></del><ins><span class="woocommerce-Price-amount">1,990.00₪</span></ins></div>
+                    <button class="wsa-card-btn" type="button">Add to cart</button>
+                    <a href="#" class="added_to_cart">View cart</a>
+                  </div>
+                </div>
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="Tapo C210">
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K</a>
+                    <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                    <button class="wsa-card-btn is-ghost" type="button">View product</button>
+                  </div>
+                </div>
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="Ajax MotionProtect">
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">Ajax MotionProtect Plus Wireless Motion Detector</a>
+                    <div class="wsa-card-stock">Out of stock</div>
+                    <div class="wsa-card-price"><span class="woocommerce-Price-amount">349.00₪</span></div>
+                    <button class="wsa-card-btn is-ghost" type="button">View product</button>
+                  </div>
+                </div>
+              </div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">Compare these</button>
+                <a class="wsa-chip is-handoff" href="#">Talk to a person</a>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+              <button class="wsa-send" type="submit" aria-label="Send">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>07 — Error + handoff</h2>
+      <p>Failure copy stays inside a normal agent bubble, so nothing new has to be styled. The handoff chip is the only accent-filled thing on screen.</p>
+      <div class="stage mid">
+        <div class="wsa-root is-open" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">Is the Reolink kit in stock?</div></div>
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">The chat is busy right now — try again in a moment.</div></div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">Try again</button>
+                <a class="wsa-chip is-handoff" href="#">Talk to a person</a>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+              <button class="wsa-send" type="submit" aria-label="Send">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>08 — Busy + input focus</h2>
+      <p><code>.is-busy</code> on the root, <code>disabled</code> on send, and the focus ring on the input shown together.</p>
+      <div class="stage mid">
+        <div class="wsa-root is-open is-busy" data-position="right">
+          <div class="wsa-panel" role="dialog" aria-label="Shop assistant">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">Have a question?</span>
+                <span class="wsa-subtitle">Ask me anything</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">What is the warranty on the Tapo?</div></div>
+              <div class="wsa-msg wsa-typing is-assistant" aria-label="Assistant is typing">
+                <div class="wsa-msg-text"><span></span><span></span><span></span></div>
+              </div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="Ask about a product…" value="And shipping time?" style="outline:2px solid var(--wsa-ink); outline-offset:1px; border-color:var(--wsa-accent); background:var(--wsa-surface);">
+              <button class="wsa-send" type="submit" aria-label="Send" disabled="disabled">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state">
+      <h2>10 — RTL, Hebrew, left corner</h2>
+      <p><code>dir="rtl"</code> plus <code>data-position="left"</code>. Same stylesheet, mirrored by logical properties, send arrow flipped by the one RTL rule.</p>
+      <div class="stage tall start">
+        <div class="wsa-root is-open" data-position="left" dir="rtl">
+          <div class="wsa-panel" role="dialog" aria-label="עוזר חנות">
+            <div class="wsa-head">
+              <div class="wsa-head-text">
+                <span class="wsa-title">עוזר חנות</span>
+                <span class="wsa-subtitle">שאלו אותי הכל</span>
+              </div>
+              <button class="wsa-close" type="button" aria-label="סגירה">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="wsa-body" role="log" aria-live="polite">
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">היי, אפשר לעזור למצוא מוצר או לענות על שאלה?</div></div>
+              <div class="wsa-msg is-user"><div class="wsa-msg-text">אני מחפש מצלמת אבטחה לבית, מה אתם ממליצים?</div></div>
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">מצאתי מצלמת אבטחה ביתית שמתאימה לבית, עם סיבוב וראיית לילה. אפשר להוסיף לסל ישירות מהכרטיס.</div></div>
+              <div class="wsa-cards">
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="Tapo C210">
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">מצלמת אבטחה ביתית TP-Link Tapo C210 Pan/Tilt 2K</a>
+                    <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                    <button class="wsa-card-btn" type="button">הוספה לסל</button>
+                  </div>
+                </div>
+                <div class="wsa-card">
+                  <a class="wsa-card-media" href="#">
+                    <img src="wsa-ph.svg" alt="Reolink NVS16">
+                    <span class="wsa-badge">מבצע</span>
+                  </a>
+                  <div class="wsa-card-info">
+                    <a class="wsa-card-name" href="#">מערכת 4 מצלמות אבטחה Reolink NVS16 8MP 4K עם NVR וכונן קשיח</a>
+                    <div class="wsa-card-price"><del><span class="woocommerce-Price-amount">2,490.00₪</span></del><ins><span class="woocommerce-Price-amount">1,990.00₪</span></ins></div>
+                    <button class="wsa-card-btn is-ghost" type="button">לצפייה במוצר</button>
+                  </div>
+                </div>
+              </div>
+              <div class="wsa-chips">
+                <button class="wsa-chip" type="button">מצלמת אבטחה לבית</button>
+                <button class="wsa-chip" type="button">מה זמן האחריות?</button>
+                <button class="wsa-chip" type="button">עוד דגמים?</button>
+                <a class="wsa-chip is-handoff" href="#">דברו איתנו</a>
+              </div>
+              <div class="wsa-msg is-assistant"><div class="wsa-msg-text">הצ׳אט עמוס כרגע, נסו שוב בעוד רגע.</div></div>
+            </div>
+            <form class="wsa-form">
+              <input class="wsa-input" type="text" placeholder="שאלו על מוצר…" value="">
+              <button class="wsa-send" type="submit" aria-label="שליחה">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state wide">
+      <h2>09 — Mobile sheet, under 480px</h2>
+      <p>Panel fills the viewport width minus 24px and caps at 78vh, so the page stays visible behind it and the customer keeps their bearings. Radius goes up to 18px, thumbnails down to 72px, padding to 14px. The two frames below are 390px wide.</p>
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="stage" style="inline-size:390px; min-height:660px; padding:12px; align-items:flex-end;">
+          <div class="wsa-root is-open" data-position="right" style="inline-size:100%;">
+            <div class="wsa-panel" role="dialog" aria-label="Shop assistant" style="inline-size:100%; block-size:520px; border-radius:18px;">
+              <div class="wsa-head">
+                <div class="wsa-head-text">
+                  <span class="wsa-title">Have a question?</span>
+                  <span class="wsa-subtitle">Ask me anything</span>
+                </div>
+                <button class="wsa-close" type="button" aria-label="Close">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+                </button>
+              </div>
+              <div class="wsa-body" role="log" style="padding:14px;">
+                <div class="wsa-msg is-user"><div class="wsa-msg-text">Indoor camera under 200</div></div>
+                <div class="wsa-msg is-assistant"><div class="wsa-msg-text">This one fits your budget and covers a full room.</div></div>
+                <div class="wsa-cards">
+                  <div class="wsa-card">
+                    <a class="wsa-card-media" href="#" style="inline-size:72px;">
+                      <img src="wsa-ph.svg" alt="Tapo C210">
+                    </a>
+                    <div class="wsa-card-info">
+                      <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K Indoor Camera</a>
+                      <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                      <button class="wsa-card-btn" type="button">Add to cart</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="wsa-chips">
+                  <button class="wsa-chip" type="button">Night vision?</button>
+                  <a class="wsa-chip is-handoff" href="#">Talk to a person</a>
+                </div>
+              </div>
+              <form class="wsa-form">
+                <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+                <button class="wsa-send" type="submit" aria-label="Send">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage start" style="inline-size:390px; min-height:660px; padding:12px; align-items:flex-end;">
+          <div class="wsa-root is-open" data-position="left" dir="rtl" style="inline-size:100%;">
+            <div class="wsa-panel" role="dialog" aria-label="עוזר חנות" style="inline-size:100%; block-size:520px; border-radius:18px;">
+              <div class="wsa-head">
+                <div class="wsa-head-text">
+                  <span class="wsa-title">עוזר חנות</span>
+                  <span class="wsa-subtitle">שאלו אותי הכל</span>
+                </div>
+                <button class="wsa-close" type="button" aria-label="סגירה">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+                </button>
+              </div>
+              <div class="wsa-body" role="log" style="padding:14px;">
+                <div class="wsa-msg is-assistant"><div class="wsa-msg-text">היי, אפשר לעזור למצוא מוצר או לענות על שאלה?</div></div>
+                <div class="wsa-msg is-user"><div class="wsa-msg-text">מצלמה לבית עד 200 שקל</div></div>
+                <div class="wsa-cards">
+                  <div class="wsa-card">
+                    <a class="wsa-card-media" href="#" style="inline-size:72px;">
+                      <img src="wsa-ph.svg" alt="Tapo C210">
+                    </a>
+                    <div class="wsa-card-info">
+                      <a class="wsa-card-name" href="#">מצלמת אבטחה ביתית TP-Link Tapo C210 Pan/Tilt 2K</a>
+                      <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                      <button class="wsa-card-btn" type="button">הוספה לסל</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="wsa-chips">
+                  <button class="wsa-chip" type="button">מה זמן האחריות?</button>
+                  <a class="wsa-chip is-handoff" href="#">דברו איתנו</a>
+                </div>
+              </div>
+              <form class="wsa-form">
+                <input class="wsa-input" type="text" placeholder="שאלו על מוצר…" value="">
+                <button class="wsa-send" type="submit" aria-label="שליחה">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state wide">
+      <h2>Accent stress test</h2>
+      <p>Same markup, three different <code>--wsa-accent</code> values including a pale yellow that needs near-black on-accent text. The only per-shop override is the two variables shown under each frame.</p>
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+
+        <div class="stage" style="inline-size:360px; min-height:330px;">
+          <div class="wsa-root is-open" data-position="right" style="--wsa-accent:#e6157b; inline-size:100%;">
+            <div class="wsa-panel" role="dialog" aria-label="Shop assistant" style="inline-size:100%; block-size:290px;">
+              <div class="wsa-head">
+                <div class="wsa-head-text"><span class="wsa-title">Have a question?</span><span class="wsa-subtitle">Ask me anything</span></div>
+                <button class="wsa-close" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+              <div class="wsa-body" role="log">
+                <div class="wsa-msg is-user"><div class="wsa-msg-text">Hot pink accent</div></div>
+                <div class="wsa-cards">
+                  <div class="wsa-card">
+                    <a class="wsa-card-media" href="#"><img src="wsa-ph.svg" alt=""></a>
+                    <div class="wsa-card-info">
+                      <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K</a>
+                      <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                      <button class="wsa-card-btn" type="button">Add to cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <form class="wsa-form">
+                <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+                <button class="wsa-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg></button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" style="inline-size:360px; min-height:330px;">
+          <div class="wsa-root is-open" data-position="right" style="--wsa-accent:#16181d; inline-size:100%;">
+            <div class="wsa-panel" role="dialog" aria-label="Shop assistant" style="inline-size:100%; block-size:290px;">
+              <div class="wsa-head">
+                <div class="wsa-head-text"><span class="wsa-title">Have a question?</span><span class="wsa-subtitle">Ask me anything</span></div>
+                <button class="wsa-close" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+              <div class="wsa-body" role="log">
+                <div class="wsa-msg is-user"><div class="wsa-msg-text">Near-black accent</div></div>
+                <div class="wsa-cards">
+                  <div class="wsa-card">
+                    <a class="wsa-card-media" href="#"><img src="wsa-ph.svg" alt=""></a>
+                    <div class="wsa-card-info">
+                      <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K</a>
+                      <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                      <button class="wsa-card-btn" type="button">Add to cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <form class="wsa-form">
+                <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+                <button class="wsa-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg></button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage" style="inline-size:360px; min-height:330px;">
+          <div class="wsa-root is-open" data-position="right" style="--wsa-accent:#f5d547; --wsa-on-accent:#16181d; inline-size:100%;">
+            <div class="wsa-panel" role="dialog" aria-label="Shop assistant" style="inline-size:100%; block-size:290px;">
+              <div class="wsa-head">
+                <div class="wsa-head-text"><span class="wsa-title">Have a question?</span><span class="wsa-subtitle">Ask me anything</span></div>
+                <button class="wsa-close" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+              </div>
+              <div class="wsa-body" role="log">
+                <div class="wsa-msg is-user"><div class="wsa-msg-text">Pale yellow accent</div></div>
+                <div class="wsa-cards">
+                  <div class="wsa-card">
+                    <a class="wsa-card-media" href="#"><img src="wsa-ph.svg" alt=""></a>
+                    <div class="wsa-card-info">
+                      <a class="wsa-card-name" href="#">TP-Link Tapo C210 Pan/Tilt 2K</a>
+                      <div class="wsa-card-price"><span class="woocommerce-Price-amount">189.00₪</span></div>
+                      <button class="wsa-card-btn" type="button">Add to cart</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <form class="wsa-form">
+                <input class="wsa-input" type="text" placeholder="Ask about a product…" value="">
+                <button class="wsa-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M12.5 6.5L19 12l-6.5 5.5"></path></svg></button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div>Hot pink — <code>--wsa-accent:#e6157b</code></div>
+        <div>Near-black — <code>--wsa-accent:#16181d</code></div>
+        <div>Pale yellow — <code>--wsa-accent:#f5d547; --wsa-on-accent:#16181d</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1320,&quot;height&quot;:1000}}"></script>
+</body>
+</html>
