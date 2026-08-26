@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta charset="utf-8">
+<title>Shop Agent — admin UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#eef0f4;}
+  body{font-family:'Heebo',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;color:#141519;}
+  a{color:#0f62fe;text-decoration:none;}
+  a:hover{color:#141519;}
+  input,textarea,select{font-family:'Heebo';}
+  @keyframes softIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes dot{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  .fld:focus{border-color:#0f62fe !important;box-shadow:0 0 0 3px #0f62fe26 !important;}
+  @media (max-width:1040px){
+    .g2{grid-template-columns:minmax(0,1fr) !important;}
+    .g3{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+    .withprev{grid-template-columns:minmax(0,1fr) !important;}
+    .convrow{grid-template-columns:minmax(0,1.3fr) 96px 84px !important;}
+    .convrow > div:nth-child(4),.convrow > div:nth-child(5){display:none !important;}
+  }
+</style>
+</helmet>
+<div style="padding:30px; display:flex; flex-direction:column; gap:18px;">
+
+  <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <img src="logo.svg" alt="ibracodes" style="height:19px; display:block;">
+    <div style="font-size:12.5px; letter-spacing:.14em; color:#5a5f6b;">SHOP AGENT · WP-ADMIN UI</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-inline-start:auto;">
+      <sc-for list="{{ stateBtns }}" as="s" hint-placeholder-count="6">
+        <div onClick="{{ s.pick }}" style="font-size:12.5px; padding:7px 14px; border-radius:980px; cursor:pointer; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.border }};">{{ s.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #14151914; border-radius:16px; box-shadow:0 30px 80px -50px #14151940;">
+
+    <div style="height:32px; background:#1d2327; display:flex; align-items:center; padding:0 14px; gap:18px; color:#c3c4c7; font-size:12.5px; border-radius:15px 15px 0 0;">
+      <div style="width:14px; height:14px; border-radius:3px; background:#c3c4c7;"></div>
+      <div>Nesher Systems</div>
+      <div style="margin-inline-start:auto;">Howdy, Ibrahim</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:172px minmax(0,1fr);">
+
+      <div style="background:#1d2327; padding:12px 0; border-radius:0 0 0 15px;">
+        <sc-for list="{{ wpMenu }}" as="m" hint-placeholder-count="8">
+          <div style="display:flex; align-items:center; gap:9px; padding:9px 14px; font-size:13.5px; color:{{ m.color }}; background:{{ m.bg }};">
+            <div style="width:14px; height:14px; border-radius:3px; background:currentColor; opacity:.7; flex-shrink:0;"></div>{{ m.label }}
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="background:#f4f5f8; min-width:0; position:relative; border-radius:0 0 15px 0;">
+
+        <div style="background:linear-gradient(150deg,#e9edfb 0%,#f5f7fa 40%,#eaf4ee 100%); border-bottom:1px solid #14151914; padding:22px 28px 0;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="width:40px; height:40px; border-radius:11px; background:#fff; border:1px solid #ffffff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#141519" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>
+              </div>
+              <div>
+                <img src="logo.svg" alt="ibracodes" style="height:14px; display:block;">
+                <div style="font-size:25px; font-weight:600; letter-spacing:-.03em; line-height:1.1; margin-top:6px;">Shop Agent</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding-top:6px;">
+              <div style="display:flex; align-items:center; gap:8px; background:{{ liveBg }}; border:1px solid {{ liveBorder }}; border-radius:980px; font-size:12.5px; font-weight:500; color:{{ liveFg }}; padding:6px 14px;">
+                <span style="width:7px; height:7px; border-radius:50%; background:{{ liveDot }};"></span>{{ liveLabel }}
+              </div>
+              <div style="background:#ffffffcc; border:1px solid #ffffff; border-radius:980px; font-size:13px; padding:7px 16px; cursor:pointer;">Docs</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:24px; margin-top:20px; overflow-x:auto;">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+              <div onClick="{{ t.pick }}" style="font-size:14px; padding:0 0 12px; color:{{ t.color }}; border-bottom:2px solid {{ t.line }}; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px;">{{ t.label }}<sc-if value="{{ t.badge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:980px; background:{{ t.chipBg }}; color:{{ t.chipFg }};">{{ t.badge }}</span></sc-if></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ needsKey }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:16px 28px 0; background:#fdf6e3; border:1px solid #dba61733; border-radius:12px; padding:13px 16px; display:flex; align-items:center; gap:11px; flex-wrap:wrap;">
+            <div style="width:19px; height:19px; border-radius:50%; background:#dba617; color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">!</div>
+            <div style="font-size:13.5px; color:#7a5a00;">The agent is off because no API key is connected. Customers see nothing until you add one.</div>
+            <div onClick="{{ goConnect }}" style="margin-inline-start:auto; background:#141519; color:#fff; font-size:13px; padding:7px 16px; border-radius:980px; cursor:pointer;">Connect now</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ savedNotice }}" hint-placeholder-val="{{ false }}">
+          <div style="margin:16px 28px 0; background:#e7f4ec; border:1px solid #00a32a33; border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:11px; animation:softIn .3s both;">
+            <div style="width:19px; height:19px; border-radius:50%; background:#00a32a; color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✓</div>
+            <div style="font-size:13.5px; color:#1d4a2c;">Settings saved.</div>
+            <div onClick="{{ dismissNotice }}" style="margin-inline-start:auto; font-size:14px; color:#5a5f6b; cursor:pointer;">✕</div>
+          </div>
+        </sc-if>
+
+        <div style="padding:20px 28px 40px; min-width:0;">
+
+          <!-- ============ OVERVIEW ============ -->
+          <sc-if value="{{ onOverview }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; flex-direction:column; gap:12px; animation:softIn .35s both;">
+
+              <div class="g3" style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                  <div style="padding:18px 20px; border-inline-end:1px solid #14151912; min-width:0;">
+                    <div style="font-size:12.5px; color:#5a5f6b;">{{ k.k }}</div>
+                    <div style="font-size:29px; font-weight:600; letter-spacing:-.035em; margin-top:6px;">{{ k.v }}</div>
+                    <div style="font-size:12px; color:{{ k.trendColor }}; margin-top:4px;">{{ k.trend }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div class="g2" style="display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:12px;">
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden; min-width:0;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <div>
+                      <div style="font-size:15px; font-weight:600;">Questions the agent could not answer</div>
+                      <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Each one is a gap in your catalogue copy or a product you do not carry.</div>
+                    </div>
+                    <div style="font-size:13px; color:#0f62fe; cursor:pointer;">Export</div>
+                  </div>
+                  <sc-for list="{{ unanswered }}" as="u" hint-placeholder-count="5">
+                    <div style="display:grid; grid-template-columns:minmax(0,1fr) 52px 116px; gap:14px; align-items:center; padding:12px 20px; border-bottom:1px solid #14151910; min-width:0;">
+                      <div style="font-size:14px; min-width:0;">{{ u.q }}</div>
+                      <div style="font-size:14px; font-weight:600;">{{ u.n }}</div>
+                      <div><div style="display:inline-block; font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:980px; background:{{ u.bg }}; color:{{ u.fg }};">{{ u.tag }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:18px 20px;">
+                    <div style="font-size:15px; font-weight:600;">Monthly usage</div>
+                    <div style="display:flex; align-items:baseline; gap:8px; margin-top:10px;">
+                      <div style="font-size:29px; font-weight:600; letter-spacing:-.035em;">2,140</div>
+                      <div style="font-size:13.5px; color:#5a5f6b;">of 5,000 replies</div>
+                    </div>
+                    <div style="height:7px; background:#eef0f4; border-radius:980px; margin-top:12px; overflow:hidden;">
+                      <div style="width:43%; height:100%; background:#141519; border-radius:980px;"></div>
+                    </div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:9px;">Resets on 1 September. At this pace you will finish the month at about 3,400.</div>
+                  </div>
+                  <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:18px 20px;">
+                    <div style="font-size:15px; font-weight:600;">Top products shown</div>
+                    <sc-for list="{{ topProducts }}" as="p" hint-placeholder-count="4">
+                      <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #14151910;">
+                        <div style="width:34px; height:34px; border-radius:8px; background:#eef0f4; flex-shrink:0;"></div>
+                        <div style="min-width:0; flex:1;">
+                          <div style="font-size:13.5px; font-weight:500; line-height:1.35;">{{ p.name }}</div>
+                          <div style="font-size:12px; color:#5a5f6b; margin-top:1px;">{{ p.meta }}</div>
+                        </div>
+                        <div style="font-size:14px; font-weight:600; flex-shrink:0;">{{ p.n }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ============ APPEARANCE ============ -->
+          <sc-if value="{{ onAppearance }}" hint-placeholder-val="{{ false }}">
+            <div class="withprev" style="display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:12px; animation:softIn .35s both;">
+              <div style="display:flex; flex-direction:column; gap:12px; min-width:0;">
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                    <div style="font-size:15px; font-weight:600;">Launcher</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">How the closed widget appears on the storefront.</div>
+                  </div>
+
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151910;">
+                    <div style="font-size:14px; font-weight:500;">Corner</div>
+                    <div style="display:grid; grid-template-columns:repeat(2,minmax(0,150px)); gap:9px; margin-top:12px;">
+                      <sc-for list="{{ positions }}" as="p" hint-placeholder-count="2">
+                        <div onClick="{{ p.pick }}" style="border:1.5px solid {{ p.border }}; background:{{ p.bg }}; border-radius:12px; padding:11px; cursor:pointer;">
+                          <div style="height:56px; background:#f2f4f7; border-radius:7px; position:relative; overflow:hidden;">
+                            <div style="position:absolute; left:6px; right:6px; top:6px; height:5px; border-radius:980px; background:#dfe3ea;"></div>
+                            <div style="position:absolute; {{ p.box }} width:40px; height:14px; border-radius:980px; background:{{ p.fill }};"></div>
+                          </div>
+                          <div style="font-size:12.5px; text-align:center; margin-top:9px; color:{{ p.text }}; font-weight:{{ p.weight }};">{{ p.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <div onClick="{{ flipLabel }}" style="padding:16px 20px; border-bottom:1px solid #14151910; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; align-items:center; cursor:pointer;">
+                    <div style="min-width:0;">
+                      <div style="font-size:14px; font-weight:500;">Show a label next to the icon</div>
+                      <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">A labelled pill gets clicked far more than a bare bubble. Collapses to a circle on phones.</div>
+                    </div>
+                    <div style="width:42px; height:24px; border-radius:980px; background:{{ labelTrack }}; padding:2px; flex-shrink:0; display:flex; justify-content:{{ labelJustify }}; transition:background .22s;">
+                      <div style="width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #14151933;"></div>
+                    </div>
+                  </div>
+
+                  <div style="padding:16px 20px;">
+                    <div style="font-size:14px; font-weight:500;">Accent colour</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Used for the launcher, the customer's own messages and the add-to-cart button.</div>
+                    <div style="display:flex; gap:9px; margin-top:14px; flex-wrap:wrap;">
+                      <sc-for list="{{ swatches }}" as="s" hint-placeholder-count="5">
+                        <div onClick="{{ s.pick }}" style="width:34px; height:34px; border-radius:9px; background:{{ s.hex }}; cursor:pointer; box-shadow:{{ s.ring }};"></div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+                      <div style="width:34px; height:34px; border-radius:9px; background:{{ accent }}; border:1px solid #14151914; flex-shrink:0;"></div>
+                      <input class="fld" value="{{ accent }}" onChange="{{ onAccent }}" style="width:118px; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; transition:all .18s;">
+                      <div style="font-size:12.5px; color:{{ contrastColor }};">{{ contrastNote }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                    <div style="font-size:15px; font-weight:600;">Copy</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Shown before the customer types anything, so it does most of the persuading.</div>
+                  </div>
+                  <div style="padding:16px 20px;">
+                    <div class="g2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                      <sc-for list="{{ copyFields }}" as="c" hint-placeholder-count="4">
+                        <div>
+                          <div style="font-size:12.5px; color:#5a5f6b;">{{ c.label }}</div>
+                          <input class="fld" value="{{ c.value }}" onChange="{{ c.onChange }}" maxLength="{{ c.max }}" style="width:100%; box-sizing:border-box; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px; transition:all .18s;">
+                          <div style="font-size:11.5px; color:#8a8f9a; margin-top:4px;">{{ c.hint }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="margin-top:16px;">
+                      <div style="font-size:12.5px; color:#5a5f6b;">Opening message</div>
+                      <textarea class="fld" value="{{ welcome }}" onChange="{{ onWelcome }}" style="width:100%; box-sizing:border-box; min-height:62px; resize:vertical; font-size:14px; line-height:1.55; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px; transition:all .18s;"></textarea>
+                    </div>
+                    <div style="margin-top:16px;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <div style="font-size:12.5px; color:#5a5f6b;">Opening chips</div>
+                        <div style="font-size:12.5px; color:#8a8f9a;">{{ chipCount }} of 4 · up to 5 words each</div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; gap:7px; margin-top:7px;">
+                        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3">
+                          <div style="display:flex; align-items:center; gap:9px;">
+                            <div style="width:18px; height:18px; border-radius:5px; background:#eef0f4; color:#8a8f9a; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:grab;">⋮⋮</div>
+                            <input class="fld" value="{{ c.value }}" onChange="{{ c.onChange }}" style="flex:1; min-width:0; font-size:14px; padding:8px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; transition:all .18s;">
+                            <div onClick="{{ c.remove }}" style="width:30px; height:30px; border-radius:8px; border:1px solid #14151918; color:#5a5f6b; font-size:13px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">✕</div>
+                          </div>
+                        </sc-for>
+                        <sc-if value="{{ canAddChip }}" hint-placeholder-val="{{ true }}">
+                          <div onClick="{{ addChip }}" style="align-self:flex-start; font-size:13.5px; color:#0f62fe; cursor:pointer; margin-top:2px;">+ Add chip</div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div style="position:sticky; top:20px; display:flex; flex-direction:column; gap:10px;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="font-size:12.5px; letter-spacing:.1em; color:#5a5f6b;">LIVE PREVIEW</div>
+                    <div style="display:flex; gap:4px; background:#fff; border:1px solid #14151914; border-radius:9px; padding:3px;">
+                      <sc-for list="{{ prevModes }}" as="m" hint-placeholder-count="2">
+                        <div onClick="{{ m.pick }}" style="font-size:12px; font-weight:500; padding:5px 12px; border-radius:7px; cursor:pointer; background:{{ m.bg }}; color:{{ m.fg }};">{{ m.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div dir="{{ prevDir }}" style="background:#fff; border:1px solid #e4e6ec; border-radius:16px; overflow:hidden; box-shadow:0 18px 48px -20px #14151933; direction:{{ prevDir }};">
+                    <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #eef0f4;">
+                      <div style="width:34px; height:34px; border-radius:980px; background:{{ accent }}; box-shadow:inset 0 0 0 5px #ffffff57; flex-shrink:0;"></div>
+                      <div style="min-width:0; flex:1;">
+                        <div style="font-size:15px; font-weight:600; letter-spacing:-.01em;">{{ prevTitle }}</div>
+                        <div style="font-size:12.5px; color:#8a8f9a; margin-top:1px;">{{ prevSubtitle }}</div>
+                      </div>
+                      <div style="font-size:15px; color:#565b66;">✕</div>
+                    </div>
+                    <div style="background:#f4f5f8; padding:16px; display:flex; flex-direction:column; gap:14px;">
+                      <div style="align-self:flex-start; max-width:86%; background:#fff; border-radius:14px; border-start-start-radius:5px; padding:10px 13px; font-size:14.5px; line-height:1.5; box-shadow:0 1px 2px #1012180f;">{{ prevWelcome }}</div>
+                      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        <sc-for list="{{ prevChips }}" as="c" hint-placeholder-count="3">
+                          <div style="background:#fff; border:1px solid #e4e6ec; border-radius:980px; font-size:13.5px; padding:7px 13px;">{{ c }}</div>
+                        </sc-for>
+                      </div>
+                      <div style="align-self:flex-end; max-width:86%; background:{{ accent }}; color:{{ onAccentSafe }}; border-radius:14px; border-end-end-radius:5px; padding:10px 13px; font-size:14.5px; line-height:1.5;">{{ prevUser }}</div>
+                      <div style="background:#fff; border:1px solid #e4e6ec; border-radius:13px; display:flex; overflow:hidden;">
+                        <div style="width:78px; background:#eef0f4; flex-shrink:0;"></div>
+                        <div style="padding:11px 13px; min-width:0; display:flex; flex-direction:column; gap:4px;">
+                          <div style="font-size:13.5px; font-weight:600; line-height:1.35;">{{ prevProduct }}</div>
+                          <div style="font-size:15px; font-weight:700; letter-spacing:-.01em;">189.00₪</div>
+                          <div style="background:{{ accent }}; color:{{ onAccentSafe }}; border-radius:9px; font-size:13.5px; font-weight:600; padding:9px 14px; text-align:center; margin-top:4px;">{{ prevCta }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; padding:12px;">
+                      <div style="flex:1; min-width:0; background:#f4f5f8; border:1px solid #e4e6ec; border-radius:980px; font-size:14.5px; color:#8a8f9a; padding:11px 14px;">{{ prevPlaceholder }}</div>
+                      <div style="width:44px; height:44px; border-radius:980px; background:{{ accent }}; color:{{ onAccentSafe }}; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:17px;">{{ prevArrow }}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; justify-content:{{ launcherAlign }};">
+                    <div style="display:flex; align-items:center; gap:9px; background:{{ accent }}; color:{{ onAccentSafe }}; border-radius:980px; height:52px; padding:{{ launcherPad }}; box-shadow:0 14px 34px -18px #141519a6;">
+                      <div style="font-size:19px;">◍</div>
+                      <sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}">
+                        <div style="font-size:15px; font-weight:600; letter-spacing:-.012em;">{{ prevLauncher }}</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ============ AGENT ============ -->
+          <sc-if value="{{ onAgent }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:12px; animation:softIn .35s both;">
+
+              <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                  <div style="font-size:15px; font-weight:600;">Connection</div>
+                  <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Your key stays on this server and is never sent to the browser.</div>
+                </div>
+                <div style="padding:16px 20px;">
+                  <div class="g2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                      <div style="font-size:12.5px; color:#5a5f6b;">Provider</div>
+                      <select class="fld" value="{{ provider }}" onChange="{{ onProvider }}" style="width:100%; box-sizing:border-box; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px;">
+                        <option value="Anthropic Claude">Anthropic Claude</option>
+                        <option value="OpenAI">OpenAI</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style="font-size:12.5px; color:#5a5f6b;">Model</div>
+                      <select class="fld" value="{{ model }}" onChange="{{ onModel }}" style="width:100%; box-sizing:border-box; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px;">
+                        <option value="Fast — lower cost">Fast — lower cost</option>
+                        <option value="Balanced — recommended">Balanced — recommended</option>
+                        <option value="Deep — best answers">Deep — best answers</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="margin-top:16px;">
+                    <div style="font-size:12.5px; color:#5a5f6b;">API key</div>
+                    <div style="display:flex; gap:9px; margin-top:4px; flex-wrap:wrap;">
+                      <input class="fld" dir="ltr" value="{{ apiKey }}" onChange="{{ onKey }}" placeholder="sk-ant-…" style="flex:1; min-width:220px; font-family:'JetBrains Mono',monospace; font-size:13px; padding:10px 12px; border:1px solid {{ keyBorder }}; border-radius:9px; outline:none; background:#fff; color:#141519; direction:ltr; transition:all .18s;">
+                      <div onClick="{{ testKey }}" style="background:#141519; color:#fff; font-size:13.5px; padding:10px 20px; border-radius:9px; cursor:pointer; white-space:nowrap;">{{ testLabel }}</div>
+                    </div>
+                    <div style="font-size:12.5px; color:{{ keyNoteColor }}; margin-top:6px;">{{ keyNote }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="g2" style="display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:12px;">
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden; min-width:0;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div>
+                      <div style="font-size:15px; font-weight:600;">House rules</div>
+                      <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Plain sentences work better than a wall of instructions.</div>
+                    </div>
+                    <div style="font-size:12.5px; color:#0f62fe; cursor:pointer; white-space:nowrap;">Reset to default</div>
+                  </div>
+                  <div style="padding:16px 20px;">
+                    <textarea class="fld" value="{{ prompt }}" onChange="{{ onPrompt }}" style="width:100%; box-sizing:border-box; min-height:150px; resize:vertical; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7; padding:12px 14px; border:1px solid #14151918; border-radius:10px; outline:none; background:#f7f8fa; color:#141519; transition:all .18s;"></textarea>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px;">
+                      <div style="font-size:11.5px; color:#8a8f9a;">Never put pricing rules here. The agent reads live prices from the catalogue.</div>
+                      <div style="font-size:11.5px; color:#8a8f9a; white-space:nowrap;">412 / 2,000</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                    <div style="font-size:15px; font-weight:600;">Behaviour</div>
+                  </div>
+                  <sc-for list="{{ behaviour }}" as="b" hint-placeholder-count="4">
+                    <div onClick="{{ b.flip }}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px; align-items:center; padding:14px 20px; border-bottom:1px solid #14151910; cursor:pointer;">
+                      <div style="min-width:0;">
+                        <div style="font-size:14px; font-weight:500;">{{ b.label }}</div>
+                        <div style="font-size:12.5px; color:#5a5f6b; line-height:1.45; margin-top:3px;">{{ b.help }}</div>
+                      </div>
+                      <div style="width:42px; height:24px; border-radius:980px; background:{{ b.track }}; padding:2px; flex-shrink:0; display:flex; justify-content:{{ b.justify }}; transition:background .22s;">
+                        <div style="width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #14151933;"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="padding:14px 20px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                      <div style="font-size:14px; font-weight:500;">Products per reply</div>
+                      <div style="font-size:14px; font-weight:600;">{{ maxProducts }}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; margin-top:10px;">
+                      <sc-for list="{{ productCounts }}" as="p" hint-placeholder-count="4">
+                        <div onClick="{{ p.pick }}" style="flex:1; text-align:center; font-size:13.5px; padding:8px 0; border-radius:9px; cursor:pointer; background:{{ p.bg }}; color:{{ p.fg }}; border:1px solid {{ p.border }};">{{ p.n }}</div>
+                      </sc-for>
+                    </div>
+                    <div style="font-size:11.5px; color:#8a8f9a; margin-top:8px;">Three is the sweet spot. More than four and people stop choosing.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:16px 20px;">
+                <div style="font-size:15px; font-weight:600;">Handoff to a person</div>
+                <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Shown as the prominent chip whenever the agent fails or the customer asks for a human.</div>
+                <div class="g2" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+                  <div>
+                    <div style="font-size:12.5px; color:#5a5f6b;">Chip label</div>
+                    <input class="fld" value="{{ handoffLabel }}" onChange="{{ onHandoffLabel }}" style="width:100%; box-sizing:border-box; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px;">
+                  </div>
+                  <div>
+                    <div style="font-size:12.5px; color:#5a5f6b;">Destination</div>
+                    <input class="fld" dir="ltr" value="{{ handoffUrl }}" onChange="{{ onHandoffUrl }}" style="width:100%; box-sizing:border-box; font-size:14px; padding:9px 12px; border:1px solid #14151920; border-radius:9px; outline:none; background:#fff; color:#141519; margin-top:4px; direction:ltr;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ============ CATALOGUE ============ -->
+          <sc-if value="{{ onCatalogue }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:12px; animation:softIn .35s both;">
+
+              <sc-if value="{{ indexing }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:20px;">
+                  <div style="display:flex; align-items:center; gap:14px;">
+                    <div style="width:24px; height:24px; border-radius:50%; border:2.5px solid #eef0f4; border-top-color:#0f62fe; animation:spin .9s linear infinite; flex-shrink:0;"></div>
+                    <div>
+                      <div style="font-size:17px; font-weight:600; letter-spacing:-.02em;">Indexing 1,180 of 2,140 products</div>
+                      <div style="font-size:13px; color:#5a5f6b; margin-top:3px;">Runs in the background. The agent answers from the previous index until this finishes.</div>
+                    </div>
+                  </div>
+                  <div style="height:6px; background:#eef0f4; border-radius:980px; margin-top:16px; overflow:hidden;">
+                    <div style="width:55%; height:100%; background:#141519; border-radius:980px;"></div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ notIndexing }}" hint-placeholder-val="{{ true }}">
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                  <div>
+                    <div style="font-size:15px; font-weight:600;">Catalogue index</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">2,140 products indexed · last run 4 hours ago · rebuilds nightly</div>
+                  </div>
+                  <div onClick="{{ startIndex }}" style="background:#141519; color:#fff; font-size:13.5px; padding:10px 20px; border-radius:980px; cursor:pointer;">Rebuild now</div>
+                </div>
+              </sc-if>
+
+              <div class="g2" style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px;">
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                    <div style="font-size:15px; font-weight:600;">Which products the agent may recommend</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Exclude anything you do not want a bot selling unattended.</div>
+                  </div>
+                  <sc-for list="{{ categories }}" as="c" hint-placeholder-count="6">
+                    <div onClick="{{ c.flip }}" style="display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid #14151910; cursor:pointer;">
+                      <div style="width:18px; height:18px; border-radius:5px; border:1px solid {{ c.boxBorder }}; background:{{ c.boxBg }}; color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center;">{{ c.mark }}</div>
+                      <div style="font-size:14px; min-width:0;">{{ c.name }}</div>
+                      <div style="font-size:12.5px; color:#8a8f9a;">{{ c.n }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div style="padding:16px 20px; border-bottom:1px solid #14151912;">
+                    <div style="font-size:15px; font-weight:600;">Catalogue quality</div>
+                    <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Thin product copy is the single biggest cause of vague answers.</div>
+                  </div>
+                  <sc-for list="{{ quality }}" as="q" hint-placeholder-count="4">
+                    <div style="display:grid; grid-template-columns:minmax(0,1fr) 62px 92px; gap:12px; align-items:center; padding:13px 20px; border-bottom:1px solid #14151910;">
+                      <div style="min-width:0;">
+                        <div style="font-size:14px; font-weight:500;">{{ q.label }}</div>
+                        <div style="font-size:12px; color:#5a5f6b; margin-top:2px;">{{ q.help }}</div>
+                      </div>
+                      <div style="font-size:15px; font-weight:600; color:{{ q.color }};">{{ q.n }}</div>
+                      <div style="font-size:12.5px; color:#0f62fe; cursor:pointer;">Fix these</div>
+                    </div>
+                  </sc-for>
+                  <div style="padding:14px 20px; font-size:12.5px; color:#5a5f6b;">Store Health can fix all of these in bulk. <a href="#">Open Store Health</a></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ============ CONVERSATIONS ============ -->
+          <sc-if value="{{ onConversations }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; flex-direction:column; gap:12px; animation:softIn .35s both;">
+
+              <sc-if value="{{ convEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; padding:60px 20px; text-align:center;">
+                  <div style="width:44px; height:44px; border-radius:50%; background:#f2f4f7; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:19px; color:#8a8f9a;">◍</div>
+                  <div style="font-size:17px; font-weight:600; margin-top:14px;">No conversations yet</div>
+                  <div style="font-size:13.5px; color:#5a5f6b; line-height:1.55; margin-top:6px; max-width:420px; margin-inline:auto;">Once a customer opens the widget you will see every thread here, with the products it showed and whether anything reached the cart.</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ convFull }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+                  <sc-for list="{{ convFilters }}" as="f" hint-placeholder-count="3">
+                    <div style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #14151914; border-radius:9px; font-size:13.5px; padding:8px 13px; cursor:pointer;">{{ f }}<span style="color:#8a8f9a; font-size:10px;">▾</span></div>
+                  </sc-for>
+                  <div style="margin-inline-start:auto; font-size:12.5px; color:#5a5f6b;">Threads are kept 30 days, then deleted.</div>
+                </div>
+
+                <div style="background:#fff; border:1px solid #14151914; border-radius:16px; overflow:hidden;">
+                  <div class="convrow" style="display:grid; grid-template-columns:minmax(0,1.5fr) 104px 92px 118px 128px; gap:14px; align-items:center; padding:12px 20px; border-bottom:1px solid #14151912; font-size:11.5px; letter-spacing:.06em; color:#8a8f9a;">
+                    <div>FIRST QUESTION</div><div>WHEN</div><div>TURNS</div><div>PRODUCTS SHOWN</div><div>OUTCOME</div>
+                  </div>
+                  <sc-for list="{{ conversations }}" as="c" hint-placeholder-count="6">
+                    <div onClick="{{ c.open }}" class="convrow" style="display:grid; grid-template-columns:minmax(0,1.5fr) 104px 92px 118px 128px; gap:14px; align-items:center; padding:13px 20px; border-bottom:1px solid #14151910; cursor:pointer; background:{{ c.bg }};">
+                      <div style="min-width:0;">
+                        <div style="font-size:14px; font-weight:500; line-height:1.35;">{{ c.q }}</div>
+                        <div style="font-size:11.5px; color:#8a8f9a; margin-top:2px;">{{ c.lang }}</div>
+                      </div>
+                      <div style="font-size:13px; color:#5a5f6b;">{{ c.when }}</div>
+                      <div style="font-size:13px; color:#5a5f6b;">{{ c.turns }}</div>
+                      <div style="font-size:13px; color:#5a5f6b;">{{ c.products }}</div>
+                      <div><div style="display:inline-block; font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:980px; background:{{ c.outBg }}; color:{{ c.outFg }};">{{ c.outcome }}</div></div>
+                    </div>
+                  </sc-for>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; flex-wrap:wrap; gap:12px;">
+                    <div style="font-size:13px; color:#5a5f6b;">Showing 1–6 of 412</div>
+                    <div style="display:flex; gap:8px;">
+                      <div style="font-size:13.5px; padding:7px 15px; border-radius:9px; border:1px solid #14151914; color:#8a8f9a;">Previous</div>
+                      <div style="font-size:13.5px; padding:7px 15px; border-radius:9px; border:1px solid #14151926; cursor:pointer;">Next</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="position:sticky; bottom:0; z-index:6; background:#ffffffeb; backdrop-filter:blur(14px); border-top:1px solid #14151914; border-radius:0 0 15px 0; padding:13px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+          <div style="font-size:12.5px; color:{{ dirtyColor }};">{{ dirtyLabel }}</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div onClick="{{ discard }}" style="font-size:13.5px; color:#5a5f6b; padding:9px 16px; border-radius:980px; cursor:pointer;">Discard changes</div>
+            <div onClick="{{ save }}" style="background:#141519; color:#fff; font-size:14px; font-weight:500; padding:10px 26px; border-radius:980px; cursor:pointer; transition:background .22s;" style-hover="background:#0f62fe;">Save settings</div>
+          </div>
+        </div>
+
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; inset-inline-start:28px; bottom:76px; background:#141519; color:#f7f8fa; border-radius:12px; padding:12px 20px; display:flex; align-items:center; gap:11px; box-shadow:0 20px 50px -24px #14151999; animation:toastIn .3s both;">
+            <div style="width:18px; height:18px; border-radius:50%; background:#00a32a; color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;">✓</div>
+            <div style="font-size:13.5px;">Settings saved</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <!-- conversation drawer -->
+  <sc-if value="{{ threadOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeThread }}" style="position:fixed; inset:0; z-index:60; background:#14151966; backdrop-filter:blur(3px); display:flex; justify-content:flex-end;">
+      <div onClick="{{ stop }}" style="width:min(460px,100%); background:#f4f5f8; height:100%; overflow-y:auto; box-shadow:-30px 0 80px -30px #14151966; animation:softIn .3s both;">
+        <div style="background:#fff; border-bottom:1px solid #14151914; padding:18px 22px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; position:sticky; top:0;">
+          <div>
+            <div style="font-size:11.5px; letter-spacing:.1em; color:#8a8f9a;">CONVERSATION</div>
+            <div style="font-size:18px; font-weight:600; letter-spacing:-.02em; margin-top:4px;">Added to cart · 4 turns</div>
+            <div style="font-size:12.5px; color:#5a5f6b; margin-top:3px;">Today, 14:22 · Hebrew · mobile</div>
+          </div>
+          <div onClick="{{ closeThread }}" style="width:30px; height:30px; border-radius:50%; background:#f2f4f7; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; flex-shrink:0;">✕</div>
+        </div>
+        <div style="padding:18px 22px; display:flex; flex-direction:column; gap:14px;">
+          <sc-for list="{{ thread }}" as="m" hint-placeholder-count="5">
+            <div style="align-self:{{ m.align }}; max-width:88%; background:{{ m.bg }}; color:{{ m.fg }}; border:1px solid {{ m.border }}; border-radius:14px; padding:10px 13px; font-size:14px; line-height:1.5;">{{ m.text }}</div>
+          </sc-for>
+          <div style="background:#fff; border:1px solid #14151914; border-radius:12px; padding:14px 16px; margin-top:6px;">
+            <div style="font-size:12.5px; color:#8a8f9a;">SHOWN IN THIS THREAD</div>
+            <sc-for list="{{ threadProducts }}" as="p" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #14151910;">
+                <div style="width:36px; height:36px; border-radius:8px; background:#eef0f4; flex-shrink:0;"></div>
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:13.5px; font-weight:500; line-height:1.35;">{{ p.name }}</div>
+                  <div style="font-size:12px; color:#5a5f6b; margin-top:1px;">{{ p.price }}</div>
+                </div>
+                <div style="font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:980px; background:{{ p.bg }}; color:{{ p.fg }}; flex-shrink:0;">{{ p.tag }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12.5px; color:#5a5f6b; line-height:1.5;">No email, name or payment detail is stored with a thread. Only the messages and the product IDs it showed.</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  state = {
+    tab: 'overview', notice: false, toast: false, dirty: true,
+    hasKey: true, keyState: 'ok', indexing: false, convEmpty: false, threadOpen: false,
+    accent: '#0f62fe', pos: 'right', showLabel: true, prevMode: 'ltr',
+    title: 'Have a question?', subtitle: 'Ask me anything', launcherLabel: 'Ask us anything', cta: 'Add to cart',
+    welcome: 'Hi — can I help you find a product or answer a question?',
+    chips: ['Home security camera', 'What is the warranty?', 'More models?'],
+    provider: 'Anthropic Claude', model: 'Balanced — recommended',
+    apiKey: 'sk-ant-api03-••••••••••••••••••••7f2a',
+    prompt: 'You sell security cameras and low-voltage equipment.\nAsk one clarifying question before recommending, so you understand the space and the budget.\nRecommend from the catalogue only. If nothing fits, say so and offer the handoff.\nKeep replies to two or three sentences.\nAnswer in the language the customer wrote in.',
+    maxProducts: 3,
+    onlyInStock: true, askFirst: true, collectEmail: false, logThreads: true,
+    handoffLabel: 'Talk to a person', handoffUrl: '/contact/',
+    excluded: {},
+  };
+  set(k) { return e => this.setState({ [k]: e.target.value, dirty: true }); }
+  renderVals() {
+    const st = this.state;
+    const pale = ['#f5d547', '#8fd3ac'].includes(st.accent.toLowerCase());
+    const onAccent = pale ? '#16181d' : '#ffffff';
+    const rtl = st.prevMode === 'rtl';
+
+    const stateBtns = [
+      ['Overview', () => this.setState({ tab: 'overview', hasKey: true })],
+      ['Appearance', () => this.setState({ tab: 'appearance' })],
+      ['No API key', () => this.setState({ tab: 'agent', hasKey: false, keyState: 'empty', apiKey: '' })],
+      ['Indexing', () => this.setState({ tab: 'catalogue', indexing: true })],
+      ['No threads', () => this.setState({ tab: 'conversations', convEmpty: true })],
+      ['Saved', () => this.setState({ notice: true, toast: true, dirty: false })],
+    ].map(([label, pick]) => ({ label, pick, bg: '#fff', fg: '#141519', border: '#14151920' }));
+
+    const tabs = [
+      ['overview', 'Overview', ''],
+      ['appearance', 'Appearance', ''],
+      ['agent', 'Agent', st.hasKey ? '' : 'Setup'],
+      ['catalogue', 'Catalogue', '2,140'],
+      ['conversations', 'Conversations', '412'],
+    ].map(([k, label, badge]) => {
+      const on = st.tab === k;
+      return { label, badge, pick: () => this.setState({ tab: k }), color: on ? '#141519' : '#5a5f6b', line: on ? '#141519' : 'transparent', chipBg: on ? '#141519' : '#14151914', chipFg: on ? '#fff' : '#5a5f6b' };
+    });
+
+    const tog = (k, label, help) => {
+      const on = st[k];
+      return { label, help, track: on ? '#141519' : '#d5d9e0', justify: on ? 'flex-start' : 'flex-end', flip: () => this.setState({ [k]: !on, dirty: true }) };
+    };
+
+    const cats = [
+      ['Security cameras', 412], ['Recorders — NVR / DVR', 168], ['Cables & connectors', 604],
+      ['Alarms & sensors', 231], ['Intercom', 96], ['Clearance', 88],
+    ].map(([name, n]) => {
+      const off = !!st.excluded[name];
+      return {
+        name, n: n + ' products',
+        mark: off ? '' : '✓',
+        boxBg: off ? '#fff' : '#141519',
+        boxBorder: off ? '#14151933' : '#141519',
+        flip: () => this.setState(p => ({ excluded: { ...p.excluded, [name]: !off }, dirty: true })),
+      };
+    });
+
+    const outcome = o => o === 'Added to cart' ? { bg: '#e7f4ec', fg: '#00822a' } : o === 'Handoff' ? { bg: '#fdf6e3', fg: '#8a6300' } : o === 'No match' ? { bg: '#fdecec', fg: '#c1272d' } : { bg: '#f2f4f7', fg: '#5a5f6b' };
+    const conversations = [
+      ['אני מחפש מצלמת אבטחה לבית', 'Hebrew · mobile', '2 min ago', '4', '3', 'Added to cart'],
+      ['Does the Reolink kit include a hard drive?', 'English · desktop', '18 min ago', '3', '1', 'Added to cart'],
+      ['כמה עולה התקנה?', 'Hebrew · mobile', '41 min ago', '5', '0', 'Handoff'],
+      ['Do you have PoE switches with 16 ports?', 'English · mobile', '1 hr ago', '2', '0', 'No match'],
+      ['מצלמה שעובדת בלי חשמל', 'Hebrew · desktop', '2 hr ago', '6', '4', 'Browsed'],
+      ['Warranty on Ajax sensors?', 'English · mobile', '3 hr ago', '2', '1', 'Browsed'],
+    ].map((c, i) => ({
+      q: c[0], lang: c[1], when: c[2], turns: c[3], products: c[4], outcome: c[5],
+      outBg: outcome(c[5]).bg, outFg: outcome(c[5]).fg,
+      bg: i % 2 ? '#fafbfc' : 'transparent',
+      open: () => this.setState({ threadOpen: true }),
+    }));
+
+    return {
+      stateBtns, tabs,
+      wpMenu: [['Dashboard', 0], ['Posts', 0], ['Media', 0], ['Products', 0], ['WooCommerce', 0], ['Shop Agent', 1], ['Store Health', 0], ['Settings', 0]]
+        .map(([label, a]) => ({ label, color: a ? '#fff' : '#c3c4c7', bg: a ? '#0f62fe' : 'transparent' })),
+      liveLabel: st.hasKey ? 'Live on the storefront' : 'Not live',
+      liveBg: st.hasKey ? '#e7f4ec' : '#f2f4f7',
+      liveBorder: st.hasKey ? '#00a32a33' : '#14151918',
+      liveFg: st.hasKey ? '#1d4a2c' : '#5a5f6b',
+      liveDot: st.hasKey ? '#00a32a' : '#8a8f9a',
+      needsKey: !st.hasKey,
+      goConnect: () => this.setState({ tab: 'agent' }),
+      onOverview: st.tab === 'overview',
+      onAppearance: st.tab === 'appearance',
+      onAgent: st.tab === 'agent',
+      onCatalogue: st.tab === 'catalogue',
+      onConversations: st.tab === 'conversations',
+
+      kpis: [
+        { k: 'Conversations', v: '412', trend: '+18% vs last month', trendColor: '#00822a' },
+        { k: 'Reached a product', v: '61%', trend: '+4 pts', trendColor: '#00822a' },
+        { k: 'Added to cart', v: '9.4%', trend: '38 carts', trendColor: '#5a5f6b' },
+        { k: 'Asked for a person', v: '7%', trend: '−3 pts', trendColor: '#00822a' },
+      ],
+      unanswered: [
+        { q: 'Do you install in Haifa?', n: 31, tag: 'Add a page', bg: '#eef3fb', fg: '#1b5fa8' },
+        { q: 'PoE switch with 16 ports', n: 24, tag: 'Not stocked', bg: '#fdf6e3', fg: '#8a6300' },
+        { q: 'Works without electricity?', n: 19, tag: 'Thin copy', bg: '#fdf6e3', fg: '#8a6300' },
+        { q: 'Return policy after 14 days', n: 12, tag: 'Add a page', bg: '#eef3fb', fg: '#1b5fa8' },
+        { q: 'Bundle discount for 8 cameras', n: 9, tag: 'Pricing', bg: '#f2f4f7', fg: '#5a5f6b' },
+      ],
+      topProducts: [
+        { name: 'TP-Link Tapo C210 Pan/Tilt 2K', meta: 'Shown 148 times · 11 carts', n: '148' },
+        { name: 'Reolink NVS16 4-camera kit', meta: 'Shown 96 times · 8 carts', n: '96' },
+        { name: 'Ajax MotionProtect Plus', meta: 'Shown 71 times · 3 carts', n: '71' },
+        { name: 'CAT6 cable 305m box', meta: 'Shown 54 times · 6 carts', n: '54' },
+      ],
+
+      positions: [['right', 'Bottom right', 'right:6px; bottom:6px;'], ['left', 'Bottom left', 'left:6px; bottom:6px;']].map(p => {
+        const on = st.pos === p[0];
+        return { label: p[1], box: p[2], pick: () => this.setState({ pos: p[0], dirty: true }), border: on ? '#141519' : '#14151918', bg: on ? '#f7f8fa' : '#fff', fill: on ? '#141519' : '#c9cfd8', text: on ? '#141519' : '#5a5f6b', weight: on ? '600' : '400' };
+      }),
+      labelTrack: st.showLabel ? '#141519' : '#d5d9e0',
+      labelJustify: st.showLabel ? 'flex-start' : 'flex-end',
+      flipLabel: () => this.setState(p => ({ showLabel: !p.showLabel, dirty: true })),
+      accent: st.accent,
+      onAccent: this.set('accent'),
+      swatches: ['#0f62fe', '#141519', '#e6157b', '#1a8b4a', '#f5d547'].map(hex => ({
+        hex, pick: () => this.setState({ accent: hex, dirty: true }),
+        ring: st.accent.toLowerCase() === hex ? '0 0 0 2px #fff, 0 0 0 4px #141519' : 'inset 0 0 0 1px #14151914',
+      })),
+      contrastNote: pale ? 'Light accent — button text switches to near-black' : 'Contrast checked, button text stays white',
+      contrastColor: pale ? '#8a6300' : '#5a5f6b',
+      copyFields: [
+        { label: 'Panel title', value: st.title, onChange: this.set('title'), max: 40, hint: 'A question outperforms a name like "Assistant".' },
+        { label: 'Subtitle', value: st.subtitle, onChange: this.set('subtitle'), max: 40, hint: 'Optional. Leave empty to hide the line.' },
+        { label: 'Launcher label', value: st.launcherLabel, onChange: this.set('launcherLabel'), max: 24, hint: 'Three words maximum, or it wraps on small phones.' },
+        { label: 'Add-to-cart label', value: st.cta, onChange: this.set('cta'), max: 24, hint: 'Match the wording used elsewhere in your shop.' },
+      ],
+      welcome: st.welcome,
+      onWelcome: this.set('welcome'),
+      chips: st.chips.map((value, i) => ({
+        value,
+        onChange: e => this.setState(p => { const c = [...p.chips]; c[i] = e.target.value; return { chips: c, dirty: true }; }),
+        remove: () => this.setState(p => ({ chips: p.chips.filter((_, j) => j !== i), dirty: true })),
+      })),
+      chipCount: st.chips.length,
+      canAddChip: st.chips.length < 4,
+      addChip: () => this.setState(p => ({ chips: [...p.chips, ''], dirty: true })),
+
+      prevModes: ['LTR', 'RTL'].map(m => {
+        const on = st.prevMode === m.toLowerCase();
+        return { label: m, bg: on ? '#141519' : 'transparent', fg: on ? '#fff' : '#5a5f6b', pick: () => this.setState({ prevMode: m.toLowerCase() }) };
+      }),
+      prevDir: st.prevMode,
+      prevTitle: rtl ? 'עוזר חנות' : st.title,
+      prevSubtitle: rtl ? 'שאלו אותי הכל' : st.subtitle,
+      prevWelcome: rtl ? 'היי, אפשר לעזור למצוא מוצר או לענות על שאלה?' : st.welcome,
+      prevChips: rtl ? ['מצלמת אבטחה לבית', 'מה זמן האחריות?', 'עוד דגמים?'] : st.chips.filter(Boolean),
+      prevUser: rtl ? 'אני מחפש מצלמת אבטחה לבית' : "I'm looking for a home camera",
+      prevProduct: rtl ? 'מצלמת אבטחה ביתית TP-Link Tapo C210' : 'TP-Link Tapo C210 Pan/Tilt 2K',
+      prevCta: rtl ? 'הוספה לסל' : st.cta,
+      prevPlaceholder: rtl ? 'שאלו על מוצר…' : 'Ask about a product…',
+      prevArrow: rtl ? '←' : '→',
+      prevLauncher: rtl ? 'שאלו אותנו' : st.launcherLabel,
+      showLabel: st.showLabel,
+      launcherPad: st.showLabel ? '0 22px 0 19px' : '0',
+      launcherAlign: st.pos === 'right' ? 'flex-end' : 'flex-start',
+
+      provider: st.provider, onProvider: this.set('provider'),
+      model: st.model, onModel: this.set('model'),
+      apiKey: st.apiKey, onKey: this.set('apiKey'),
+      keyBorder: st.hasKey ? '#14151920' : '#dba61766',
+      keyNote: st.hasKey ? 'Verified 2 hours ago. Average reply cost this month: $0.004.' : 'Paste a key to switch the agent on. Nothing is shown to customers until this passes.',
+      keyNoteColor: st.hasKey ? '#5a5f6b' : '#7a5a00',
+      testLabel: st.hasKey ? 'Test again' : 'Test key',
+      testKey: () => this.setState({ hasKey: true, apiKey: st.apiKey || 'sk-ant-api03-••••••••••••••••••••7f2a', toast: true, notice: false }),
+      prompt: st.prompt, onPrompt: this.set('prompt'),
+      behaviour: [
+        tog('askFirst', 'Ask one question before recommending', 'A single clarifying question lifts the add-to-cart rate more than any prompt tweak.'),
+        tog('onlyInStock', 'Only recommend products in stock', 'Out-of-stock items still appear if the customer names them directly.'),
+        tog('logThreads', 'Keep conversation history for 30 days', 'Needed for the Conversations tab and the unanswered-questions list.'),
+        tog('collectEmail', 'Ask for an email before the first reply', 'Off by default. It lifts lead capture and lowers the number of people who ask anything.'),
+      ],
+      maxProducts: st.maxProducts,
+      productCounts: [1, 2, 3, 4].map(n => {
+        const on = st.maxProducts === n;
+        return { n, pick: () => this.setState({ maxProducts: n, dirty: true }), bg: on ? '#141519' : '#fff', fg: on ? '#fff' : '#141519', border: on ? '#141519' : '#14151918' };
+      }),
+      handoffLabel: st.handoffLabel, onHandoffLabel: this.set('handoffLabel'),
+      handoffUrl: st.handoffUrl, onHandoffUrl: this.set('handoffUrl'),
+
+      indexing: st.indexing,
+      notIndexing: !st.indexing,
+      startIndex: () => { this.setState({ indexing: true }); setTimeout(() => this.setState({ indexing: false }), 4000); },
+      categories: cats,
+      quality: [
+        { label: 'No description', help: 'The agent can only repeat the title.', n: 84, color: '#c1272d' },
+        { label: 'Description under 20 words', help: 'Answers come out vague.', n: 213, color: '#8a6300' },
+        { label: 'No category assigned', help: 'Cannot be matched to a need.', n: 41, color: '#8a6300' },
+        { label: 'No image', help: 'The card looks broken in the widget.', n: 12, color: '#c1272d' },
+      ],
+
+      convEmpty: st.convEmpty,
+      convFull: !st.convEmpty,
+      convFilters: ['All outcomes', 'All languages', 'Last 7 days'],
+      conversations,
+      threadOpen: st.threadOpen,
+      closeThread: () => this.setState({ threadOpen: false }),
+      stop: e => e.stopPropagation(),
+      thread: [
+        { text: 'אני מחפש מצלמת אבטחה לבית', align: 'flex-end', bg: '#0f62fe', fg: '#fff', border: 'transparent' },
+        { text: 'בשמחה. זה לחדר אחד או לקומה שלמה?', align: 'flex-start', bg: '#fff', fg: '#141519', border: '#14151914' },
+        { text: 'חדר אחד, פנימי', align: 'flex-end', bg: '#0f62fe', fg: '#fff', border: 'transparent' },
+        { text: 'מצאתי מצלמה עם סיבוב וראיית לילה שמתאימה לחדר אחד. אפשר להוסיף לסל ישירות מהכרטיס.', align: 'flex-start', bg: '#fff', fg: '#141519', border: '#14151914' },
+      ],
+      threadProducts: [
+        { name: 'TP-Link Tapo C210 Pan/Tilt 2K', price: '189.00₪', tag: 'Added', bg: '#e7f4ec', fg: '#00822a' },
+        { name: 'Reolink E1 Pro 4MP', price: '229.00₪', tag: 'Shown', bg: '#f2f4f7', fg: '#5a5f6b' },
+      ],
+
+      savedNotice: st.notice,
+      dismissNotice: () => this.setState({ notice: false }),
+      toast: st.toast,
+      dirtyLabel: st.dirty ? 'You have unsaved changes' : 'All changes saved',
+      dirtyColor: st.dirty ? '#8a6300' : '#5a5f6b',
+      save: () => { this.setState({ notice: true, toast: true, dirty: false }); setTimeout(() => this.setState({ toast: false }), 2600); },
+      discard: () => this.setState({ dirty: false }),
+      onAccentSafe: onAccent,
+    };
+  }
+}
+</script>
+</body>
+</html>

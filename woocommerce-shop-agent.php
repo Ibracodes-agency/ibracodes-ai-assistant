@@ -71,6 +71,15 @@ register_activation_hook(__FILE__, function (): void {
             ['back_link' => true],
         );
     }
+    require_once WSA_PATH . 'includes/class-wsa-settings.php';
+    require_once WSA_PATH . 'includes/class-wsa-db.php';
+    DB::install();
+    DB::schedule_purge();
+});
+
+register_deactivation_hook(__FILE__, function (): void {
+    require_once WSA_PATH . 'includes/class-wsa-db.php';
+    wp_clear_scheduled_hook(DB::PURGE_HOOK);
 });
 
 add_action('plugins_loaded', function (): void {
@@ -87,6 +96,8 @@ add_action('plugins_loaded', function (): void {
     load_plugin_textdomain('woocommerce-shop-agent', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
     require_once WSA_PATH . 'includes/class-wsa-settings.php';
+    require_once WSA_PATH . 'includes/class-wsa-db.php';
+    require_once WSA_PATH . 'includes/class-wsa-threads.php';
     require_once WSA_PATH . 'includes/class-wsa-guards.php';
     require_once WSA_PATH . 'includes/class-wsa-catalog.php';
     require_once WSA_PATH . 'includes/class-wsa-tools.php';
@@ -97,6 +108,10 @@ add_action('plugins_loaded', function (): void {
     require_once WSA_PATH . 'includes/class-wsa-rest.php';
     require_once WSA_PATH . 'includes/class-wsa-widget.php';
     require_once WSA_PATH . 'includes/class-wsa-admin.php';
+
+    DB::maybe_upgrade();
+    DB::schedule_purge();
+    add_action(DB::PURGE_HOOK, [DB::class, 'purge']);
 
     Rest::boot();
     Widget::boot();

@@ -11,7 +11,11 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 
 global $wpdb;
 
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_messages');
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_threads');
+
 delete_option('wsa_settings');
+delete_option('wsa_db_version');
 delete_option('wsa_openai_key');
 delete_option('wsa_last_failure');
 

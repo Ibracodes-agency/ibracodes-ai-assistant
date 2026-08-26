@@ -20,6 +20,7 @@
 
 	var t = cfg.i18n;
 	var history = [];
+	var thread = '';
 	var busy = false;
 	var opened = false;
 	var SEEN_KEY = 'wsa-seen';
@@ -256,7 +257,11 @@
 		fetch( cfg.endpoint, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify( { messages: history.slice( -10 ) } ),
+			body: JSON.stringify( {
+				messages: history.slice( -10 ),
+				thread: thread,
+				device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
+			} ),
 		} )
 			.then( function ( res ) {
 				return res.json().then( function ( data ) {
@@ -273,6 +278,9 @@
 					return;
 				}
 				var data = result.data;
+				if ( data.thread ) {
+					thread = data.thread;
+				}
 				addMessage( 'assistant', data.reply );
 				history.push( { role: 'assistant', text: data.reply } );
 				addProducts( data.products );
@@ -326,8 +334,33 @@
 		}
 	} );
 
+	/**
+	 * WooCommerce fires added_to_cart on its own jQuery bus after a successful
+	 * ajax add. Listening beats wiring our own click handler: it only fires when
+	 * the item really landed in the cart, and it is silent when jQuery or the
+	 * WooCommerce script is absent.
+	 */
+	function watchCart() {
+		if ( ! window.jQuery || ! cfg.cartEndpoint ) {
+			return;
+		}
+		window.jQuery( document.body ).on( 'added_to_cart', function ( e, fragments, hash, button ) {
+			// only count adds that came from a card inside this widget
+			if ( ! thread || ! button || ! button.closest || ! button.closest( '.wsa-card' ) ) {
+				return;
+			}
+			fetch( cfg.cartEndpoint, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				keepalive: true,
+				body: JSON.stringify( { thread: thread } ),
+			} ).catch( function () {} );
+		} );
+	}
+
 	function mount() {
 		document.body.appendChild( root );
+		watchCart();
 	}
 
 	if ( document.readyState === 'loading' ) {

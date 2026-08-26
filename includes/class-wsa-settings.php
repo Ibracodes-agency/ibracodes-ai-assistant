@@ -39,6 +39,7 @@ class Settings
             'handoff_url' => '',
 
             // widget presentation
+            'show_launcher_label' => true,
             'launcher_label' => __('Ask us anything', 'woocommerce-shop-agent'),
             'title' => __('Have a question?', 'woocommerce-shop-agent'),
             'subtitle' => __('Ask me anything', 'woocommerce-shop-agent'),
@@ -46,6 +47,16 @@ class Settings
             'chips' => '',
             'accent' => '#111827',
             'position' => 'right',
+
+            // behaviour
+            'max_products' => 3,
+            'only_in_stock' => true,
+            'ask_first' => false,
+            'excluded_cats' => [],
+
+            // conversations
+            'log_threads' => true,
+            'retention_days' => 30,
 
             // guards
             'price_policy' => 'cards_only',
@@ -98,7 +109,10 @@ class Settings
             $value = $input[$key];
 
             $clean[$key] = match ($key) {
-                'enabled' => (bool) $value,
+                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label' => (bool) $value,
+                'max_products' => max(1, min(4, absint($value))),
+                'retention_days' => max(1, min(365, absint($value))),
+                'excluded_cats' => array_values(array_unique(array_filter(array_map('absint', (array) $value)))),
                 'model' => array_key_exists($value, self::models()) ? $value : $default,
                 'position' => $value === 'left' ? 'left' : 'right',
                 'price_policy' => $value === 'allow' ? 'allow' : 'cards_only',

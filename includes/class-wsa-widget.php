@@ -48,10 +48,11 @@ class Widget
     {
         return [
             'endpoint' => esc_url_raw(rest_url('wsa/v1/chat')),
+            'cartEndpoint' => Settings::get('log_threads') ? esc_url_raw(rest_url('wsa/v1/cart-event')) : '',
             'accent' => (string) Settings::get('accent'),
             'position' => (string) Settings::get('position'),
             'isRtl' => is_rtl(),
-            'launcherLabel' => (string) Settings::get('launcher_label'),
+            'launcherLabel' => Settings::get('show_launcher_label') ? (string) Settings::get('launcher_label') : '',
             'title' => (string) Settings::get('title'),
             'subtitle' => (string) Settings::get('subtitle'),
             'welcome' => (string) Settings::get('welcome'),

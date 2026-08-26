@@ -19,6 +19,7 @@ class Agent
 {
     private const MAX_TURNS = 4;
 
+    /** Hard ceiling; the owner's "products per reply" setting cuts below it. */
     private const MAX_CARDS = 4;
 
     public static function answer(array $history): array|WP_Error
@@ -32,6 +33,7 @@ class Agent
         $tools = Tools::definitions();
         $cards = [];
         $reply = '';
+        $no_match = false;
 
         for ($turn = 0; $turn < self::MAX_TURNS; $turn++) {
             $message = Provider::complete($messages, $tools);
@@ -48,11 +50,17 @@ class Agent
                 $messages[] = $message;
                 foreach ($message['tool_calls'] as $call) {
                     $arguments = json_decode((string) ($call['function']['arguments'] ?? '{}'), true);
+                    $name = (string) ($call['function']['name'] ?? '');
                     $result = Tools::run(
-                        (string) ($call['function']['name'] ?? ''),
+                        $name,
                         is_array($arguments) ? $arguments : [],
                         $cards,
                     );
+                    // a search that found nothing is the signal behind the
+                    // "questions the agent could not answer" report
+                    if ($name === 'search_products' && empty($result['results'])) {
+                        $no_match = true;
+                    }
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $call['id'],
@@ -79,10 +87,16 @@ class Agent
                 : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'woocommerce-shop-agent');
         }
 
+        $max = min(self::MAX_CARDS, max(1, (int) Settings::get('max_products')));
+        $products = array_slice(array_values($cards), 0, $max);
+
         return [
             'reply' => trim($reply),
-            'products' => array_slice(array_values($cards), 0, self::MAX_CARDS),
+            'products' => $products,
             'chips' => array_values($chips),
+            // the caller records the turn; a search that found nothing counts
+            // as unanswered only when nothing was shown in the end
+            'no_match' => $no_match && ! $products,
         ];
     }
 }

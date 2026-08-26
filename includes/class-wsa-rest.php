@@ -41,6 +41,16 @@ class Rest
             ],
         ]);
 
+        // The single conversion signal: the customer actually added something the
+        // agent recommended. Public because the shopper is not logged in; it can
+        // only ever set one boolean on a thread whose token the caller already
+        // holds, so there is nothing to gain by forging it.
+        register_rest_route(self::NS, '/cart-event', [
+            'methods' => 'POST',
+            'permission_callback' => '__return_true',
+            'callback' => [self::class, 'cart_event'],
+        ]);
+
         // admin-only: verifies a key before it is trusted with customer traffic
         register_rest_route(self::NS, '/test-key', [
             'methods' => 'POST',
@@ -61,10 +71,20 @@ class Rest
         }
 
         try {
-            $answer = Agent::answer((array) $request['messages']);
+            $messages = (array) $request['messages'];
+            $answer = Agent::answer($messages);
             if ($answer instanceof WP_Error) {
                 return $answer;
             }
+
+            $last = end($messages);
+            $answer['thread'] = Threads::record(
+                sanitize_text_field((string) $request->get_param('thread')),
+                (string) ($last['text'] ?? ''),
+                $answer,
+                sanitize_key((string) $request->get_param('device')),
+            );
+            unset($answer['no_match']); // server-side signal, not the customer's business
 
             return rest_ensure_response($answer);
         } finally {
@@ -72,6 +92,18 @@ class Rest
             // concurrency slot for the length of its TTL
             Guards::release();
         }
+    }
+
+    public static function cart_event(WP_REST_Request $request): WP_REST_Response
+    {
+        if (Settings::get('log_threads')) {
+            $thread_id = Threads::id_from_token(sanitize_text_field((string) $request->get_param('thread')));
+            if ($thread_id > 0) {
+                DB::mark_added_to_cart($thread_id);
+            }
+        }
+
+        return rest_ensure_response(['ok' => true]);
     }
 
     public static function test_key(WP_REST_Request $request): WP_REST_Response

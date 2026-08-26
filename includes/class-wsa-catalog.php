@@ -26,10 +26,11 @@ class Catalog
 {
     private const MAX_LIMIT = 10;
 
-    public static function search(string $query, string $category = '', int $limit = 6, bool $on_sale = false): array
+    public static function search(string $query, string $category = '', ?int $limit = null, bool $on_sale = false): array
     {
         $query = trim($query);
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
+        // the owner caps how many products one reply may show
+        $limit = max(1, min(self::MAX_LIMIT, $limit ?? (int) Settings::get('max_products')));
         if (mb_strlen($query) < 2) {
             return ['results' => [], 'total' => 0];
         }
@@ -118,8 +119,20 @@ class Catalog
             ],
         ];
 
-        // respect the store's own "hide out of stock items" setting
-        if (get_option('woocommerce_hide_out_of_stock_items') === 'yes') {
+        // Categories the owner does not want a bot selling unattended.
+        $excluded = (array) Settings::get('excluded_cats');
+        if ($excluded) {
+            $tax_query[] = [
+                'taxonomy' => 'product_cat',
+                'field' => 'term_id',
+                'terms' => array_map('absint', $excluded),
+                'operator' => 'NOT IN',
+                'include_children' => true,
+            ];
+        }
+
+        // respect the owner's setting, and the store's own "hide out of stock items"
+        if (Settings::get('only_in_stock') || get_option('woocommerce_hide_out_of_stock_items') === 'yes') {
             $tax_query[] = [
                 'taxonomy' => 'product_visibility',
                 'field' => 'name',

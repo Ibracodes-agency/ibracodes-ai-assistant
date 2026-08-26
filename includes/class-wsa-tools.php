@@ -82,7 +82,7 @@ class Tools
         $found = Catalog::search(
             (string) ($input['query'] ?? ''),
             (string) ($input['category'] ?? ''),
-            6,
+            null,
             ! empty($input['on_sale']),
         );
 

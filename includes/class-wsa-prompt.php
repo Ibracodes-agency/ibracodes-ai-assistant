@@ -44,6 +44,10 @@ class Prompt
             'You cannot place orders, fill forms, take payment, apply discounts or reserve stock. The customer adds items with the button on the card and finishes at checkout. Offer that instead.',
         ];
 
+        if (Settings::get('ask_first')) {
+            $parts[] = 'Before recommending anything on a broad or vague request, ask one short clarifying question, so you understand what the customer actually needs. One question only, then recommend. If the request is already specific, skip the question and answer.';
+        }
+
         if (Settings::get('price_policy') === 'cards_only') {
             $parts[] = 'Never write a price, a sum of money or a discount amount, in digits or in words. Prices are shown on the product card only, and the card is the single trustworthy source. If asked about price, point to the card below your answer. The only monetary figures you may state are ones written explicitly in the store facts below.';
         }

@@ -1,0 +1,530 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Shop Agent for WooCommerce\n"
+"Language: he_IL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Shop Agent for WooCommerce"
+msgstr "Shop Agent for WooCommerce"
+
+msgid "https://ibracodes.com"
+msgstr "https://ibracodes.com"
+
+msgid "An AI shop assistant for the storefront. It searches the real catalog, recommends products the customer can add to cart, and answers store questions from facts you write. Uses your own OpenAI key."
+msgstr "עוזר חנות חכם לאתר. מחפש מוצרים אמיתיים בקטלוג, ממליץ על מוצרים שהלקוח יכול להוסיף לסל, ועונה על שאלות מתוך עובדות שאתם כותבים. עובד עם מפתח OpenAI שלכם."
+
+msgid "Ibracodes"
+msgstr "Ibracodes"
+
+msgid "Shop Agent"
+msgstr "עוזר חנות"
+
+msgid "Settings"
+msgstr "הגדרות"
+
+msgid "Testing…"
+msgstr "בודק…"
+
+msgid "Test connection"
+msgstr "בדיקת חיבור"
+
+msgid "You are not allowed to do that."
+msgstr "אין לכם הרשאה לפעולה הזו."
+
+msgid "Live on the storefront"
+msgstr "פעיל באתר"
+
+msgid "Not live"
+msgstr "לא פעיל"
+
+msgid "Overview"
+msgstr "סקירה"
+
+msgid "Appearance"
+msgstr "מראה"
+
+msgid "Agent"
+msgstr "הסוכן"
+
+msgid "Setup"
+msgstr "הגדרה"
+
+msgid "Catalogue"
+msgstr "קטלוג"
+
+msgid "Conversations"
+msgstr "שיחות"
+
+msgid "Settings saved."
+msgstr "ההגדרות נשמרו."
+
+msgid "The agent is off because no API key is connected. Customers see nothing until you add one."
+msgstr "הסוכן כבוי כי לא חובר מפתח API. הלקוחות לא רואים כלום עד שתוסיפו מפתח."
+
+msgid "The agent is switched off. Customers see nothing until you turn it on."
+msgstr "הסוכן כבוי. הלקוחות לא רואים כלום עד שתדליקו אותו."
+
+msgid "Connect now"
+msgstr "חברו עכשיו"
+
+msgid "The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)"
+msgstr "הבקשה האחרונה ל-OpenAI נכשלה עם שגיאה %1$d. %2$s (%3$s)"
+
+msgid "Save settings"
+msgstr "שמירת הגדרות"
+
+msgid "last 30 days"
+msgstr "ב-30 הימים האחרונים"
+
+msgid "Replies sent"
+msgstr "תשובות שנשלחו"
+
+msgid "Products shown"
+msgstr "מוצרים שהוצגו"
+
+msgid "recommendations made"
+msgstr "המלצות שניתנו"
+
+msgid "Added to cart"
+msgstr "נוסף לסל"
+
+msgid "chats that led to a cart"
+msgstr "שיחות שהובילו לסל"
+
+msgid "Questions the agent could not answer"
+msgstr "שאלות שהסוכן לא ידע לענות עליהן"
+
+msgid "The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use."
+msgstr "החיפוש בקטלוג חזר ריק. כל שורה כאן היא מוצר שאין לכם, או מילה שלא מופיעה בשמות המוצרים שלכם."
+
+msgid "Nothing yet. Unanswered questions show up here as customers ask them."
+msgstr "עדיין אין. שאלות ללא מענה יופיעו כאן כשלקוחות ישאלו אותן."
+
+msgid "Monthly usage"
+msgstr "שימוש חודשי"
+
+msgid "of %s API calls"
+msgstr "מתוך %s קריאות API"
+
+msgid "%1$s today of %2$s. At this pace the month ends near %3$s calls."
+msgstr "%1$s היום מתוך %2$s. בקצב הזה החודש ייגמר סביב %3$s קריאות."
+
+msgid "Top products shown"
+msgstr "המוצרים שהוצגו הכי הרבה"
+
+msgid "No recommendations yet."
+msgstr "עדיין אין המלצות."
+
+msgid "%s ago"
+msgstr "לפני %s"
+
+msgid "Launcher"
+msgstr "כפתור הצ׳אט"
+
+msgid "How the closed widget appears on the storefront."
+msgstr "איך נראה הצ׳אט הסגור באתר."
+
+msgid "Corner"
+msgstr "פינה"
+
+msgid "Bottom right"
+msgstr "ימין למטה"
+
+msgid "Bottom left"
+msgstr "שמאל למטה"
+
+msgid "side of the screen"
+msgstr "צד המסך"
+
+msgid "Show a label next to the icon"
+msgstr "הצגת טקסט ליד האייקון"
+
+msgid "A labelled pill gets noticed more than a bare bubble. It collapses to a circle on phones either way."
+msgstr "כפתור עם טקסט מושך יותר תשומת לב מבועה ריקה. בנייד הוא מתכווץ לעיגול בכל מקרה."
+
+msgid "Label"
+msgstr "טקסט"
+
+msgid "Accent colour"
+msgstr "צבע ראשי"
+
+msgid "Used for the launcher, the customer's own messages and the add-to-cart button."
+msgstr "משמש לכפתור הצ׳אט, להודעות הלקוח ולכפתור ההוספה לסל."
+
+msgid "Copy"
+msgstr "טקסטים"
+
+msgid "Write these in your store's language. The agent replies in it automatically."
+msgstr "כתבו אותם בשפת החנות. הסוכן עונה בה אוטומטית."
+
+msgid "Header title"
+msgstr "כותרת"
+
+msgid "Header subtitle"
+msgstr "כותרת משנה"
+
+msgid "Opening message"
+msgstr "הודעת פתיחה"
+
+msgid "Opening chips"
+msgstr "שאלות מוצעות"
+
+msgid "One per line, up to four. Shown as buttons under the opening message."
+msgstr "אחת בכל שורה, עד ארבע. מוצגות ככפתורים מתחת להודעת הפתיחה."
+
+msgid "Changes go live on the storefront as soon as you save."
+msgstr "השינויים עולים לאתר ברגע השמירה."
+
+msgid "Connection"
+msgstr "חיבור"
+
+msgid "The store uses its own OpenAI account and pays OpenAI directly for what the chat uses."
+msgstr "החנות משתמשת בחשבון OpenAI שלה ומשלמת ל-OpenAI ישירות על השימוש בצ׳אט."
+
+msgid "Show the chat to customers"
+msgstr "הצגת הצ׳אט ללקוחות"
+
+msgid "It only appears once a working key is saved."
+msgstr "מופיע רק אחרי שנשמר מפתח תקין."
+
+msgid "OpenAI API key"
+msgstr "מפתח API של OpenAI"
+
+msgid "Set in wp-config.php"
+msgstr "מוגדר ב-wp-config.php"
+
+msgid "WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden."
+msgstr "הקבוע WSA_OPENAI_KEY מוגדר, ולכן הוא גובר והשדה הזה מוסתר."
+
+msgid "Stored in this site's database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead."
+msgstr "נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת WSA_OPENAI_KEY ב-wp-config.php."
+
+msgid "Model"
+msgstr "מודל"
+
+msgid "Shop questions rarely need the expensive model. Start cheap and move up only if answers disappoint."
+msgstr "שאלות של לקוחות כמעט אף פעם לא צריכות את המודל היקר. התחילו בזול ועלו רק אם התשובות מאכזבות."
+
+msgid "House rules"
+msgstr "כללי הבית"
+
+msgid "Plain sentences work better than a wall of instructions. Sent with every conversation."
+msgstr "משפטים פשוטים עובדים טוב יותר מקיר של הוראות. נשלחים בכל שיחה."
+
+msgid "Store facts"
+msgstr "עובדות על החנות"
+
+msgid "Free shipping over 50. Returns within 14 days. One year warranty."
+msgstr "משלוח חינם מעל 399 ש\"ח. החזרות תוך 14 יום. אחריות שנה."
+
+msgid "The only non-product information the agent may state as fact. Anything not written here, it will say it does not know."
+msgstr "המידע היחיד שאינו על מוצרים שהסוכן רשאי למסור כעובדה. כל מה שלא כתוב כאן, הוא יגיד שאינו יודע."
+
+msgid "Behaviour"
+msgstr "התנהגות"
+
+msgid "Products per reply"
+msgstr "מוצרים בכל תשובה"
+
+msgid "Three or fewer keeps a reply readable on a phone."
+msgstr "שלושה או פחות שומרים על תשובה קריאה בנייד."
+
+msgid "Ask one question before recommending"
+msgstr "שאלה אחת לפני המלצה"
+
+msgid "On a vague request the agent asks a single clarifying question first. Better matches, one extra exchange."
+msgstr "בבקשה כללית הסוכן ישאל קודם שאלת הבהרה אחת. התאמה טובה יותר, במחיר עוד סבב."
+
+msgid "Prices in the reply text"
+msgstr "מחירים בטקסט התשובה"
+
+msgid "Card only"
+msgstr "רק בכרטיס"
+
+msgid "recommended"
+msgstr "מומלץ"
+
+msgid "Allow in text"
+msgstr "מותר בטקסט"
+
+msgid "may go stale"
+msgstr "עלול להתיישן"
+
+msgid "The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed."
+msgstr "המחיר בכרטיס נלקח מווקומרס והוא תמיד נכון. מחיר שנכתב בתוך משפט עלול לחזור בהמשך השיחה אחרי שהשתנה."
+
+msgid "Handoff to a person"
+msgstr "מעבר לנציג אנושי"
+
+msgid "Offered as a button when the agent cannot help."
+msgstr "מוצע ככפתור כשהסוכן לא מצליח לעזור."
+
+msgid "Chip label"
+msgstr "טקסט הכפתור"
+
+msgid "Destination"
+msgstr "יעד"
+
+msgid "Your contact page, or a wa.me link for WhatsApp."
+msgstr "עמוד יצירת הקשר שלכם, או קישור wa.me לוואטסאפ."
+
+msgid "Spending limits"
+msgstr "מגבלות הוצאה"
+
+msgid "Every conversation costs you money at OpenAI. These caps are what stands between a bored bot and a large invoice. One reply can use two or three calls."
+msgstr "כל שיחה עולה לכם כסף ב-OpenAI. המגבלות האלה הן מה שעומד בין בוט משועמם לחשבונית גדולה. תשובה אחת יכולה לצרוך שתיים-שלוש קריאות."
+
+msgid "Messages per visitor, per 10 minutes"
+msgstr "הודעות לכל מבקר, ב-10 דקות"
+
+msgid "Messages per visitor, per day"
+msgstr "הודעות לכל מבקר, ביום"
+
+msgid "Stops one person using up the store's budget."
+msgstr "מונע ממשתמש אחד לשרוף את התקציב של החנות."
+
+msgid "API calls for the whole store, per day"
+msgstr "קריאות API לכל החנות, ביום"
+
+msgid "The hard daily cost bound."
+msgstr "תקרת העלות היומית הקשיחה."
+
+msgid "API calls for the whole store, per month"
+msgstr "קריאות API לכל החנות, בחודש"
+
+msgid "Requests at the same time"
+msgstr "בקשות במקביל"
+
+msgid "Protects your server rather than your wallet."
+msgstr "מגן על השרת שלכם, לא על הארנק."
+
+msgid "Which products the agent may recommend"
+msgstr "על אילו מוצרים הסוכן רשאי להמליץ"
+
+msgid "Exclude anything you do not want a bot selling unattended. Excluded categories are invisible to the agent: it cannot find them, mention them or link to them."
+msgstr "החריגו כל מה שאתם לא רוצים שבוט ימכור בלי השגחה. קטגוריות שהוחרגו אינן נראות לסוכן: הוא לא ימצא אותן, לא יזכיר אותן ולא יקשר אליהן."
+
+msgid "Only recommend products in stock"
+msgstr "המלצה רק על מוצרים במלאי"
+
+msgid "Off means the agent may show out-of-stock products, marked as such on the card."
+msgstr "כשכבוי, הסוכן עשוי להציג מוצרים שאזלו, עם סימון בכרטיס."
+
+msgid "Excluded categories"
+msgstr "קטגוריות מוחרגות"
+
+msgid "This store has no product categories yet."
+msgstr "אין עדיין קטגוריות מוצרים בחנות."
+
+msgid "Child categories are excluded along with their parent."
+msgstr "קטגוריות משנה מוחרגות יחד עם קטגוריית האב."
+
+msgid "How the agent searches"
+msgstr "איך הסוכן מחפש"
+
+msgid "It searches your live catalogue on every question: product titles, descriptions and SKUs. There is no index to build and nothing to keep in sync, so a product you publish is findable immediately, and one you unpublish disappears the same second."
+msgstr "הוא מחפש בקטלוג החי שלכם בכל שאלה: שמות מוצרים, תיאורים ומק\"טים. אין אינדקס לבנות ואין מה לסנכרן, כך שמוצר שתפרסמו יימצא מיד, ומוצר שתורידו ייעלם באותו רגע."
+
+msgid "Threads are kept %s days, then deleted. No email, name or payment detail is stored: only the messages and the product ids the agent showed."
+msgstr "שיחות נשמרות %s ימים ואז נמחקות. לא נשמרים אימייל, שם או פרטי תשלום: רק ההודעות ומזהי המוצרים שהוצגו."
+
+msgid "No conversations yet."
+msgstr "עדיין אין שיחות."
+
+msgid "First question"
+msgstr "שאלה ראשונה"
+
+msgid "When"
+msgstr "מתי"
+
+msgid "Turns"
+msgstr "סבבים"
+
+msgid "Shown"
+msgstr "הוצגו"
+
+msgid "Outcome"
+msgstr "תוצאה"
+
+msgid "(no question recorded)"
+msgstr "(לא נרשמה שאלה)"
+
+msgid "No match"
+msgstr "אין התאמה"
+
+msgid "Recommended"
+msgstr "ניתנה המלצה"
+
+msgid "Answered"
+msgstr "נענתה"
+
+msgid "Previous"
+msgstr "הקודם"
+
+msgid "Page %1$s of %2$s"
+msgstr "עמוד %1$s מתוך %2$s"
+
+msgid "Next"
+msgstr "הבא"
+
+msgid "Recording"
+msgstr "תיעוד"
+
+msgid "Keep a record of conversations"
+msgstr "שמירת תיעוד של שיחות"
+
+msgid "Off means nothing is written at all. You lose the reports on the overview."
+msgstr "כשכבוי, לא נשמר כלום. תאבדו את הדוחות בעמוד הסקירה."
+
+msgid "Keep for (days)"
+msgstr "לשמור למשך (ימים)"
+
+msgid "Older threads are deleted automatically once a day."
+msgstr "שיחות ישנות נמחקות אוטומטית פעם ביום."
+
+msgid "Delete every stored conversation when I save"
+msgstr "מחקו את כל השיחות השמורות בשמירה"
+
+msgid "All conversations"
+msgstr "כל השיחות"
+
+msgid "That conversation is gone. It may have passed the retention window."
+msgstr "השיחה הזו כבר לא קיימת. ייתכן שעברה את תקופת השמירה."
+
+msgid "Conversation"
+msgstr "שיחה"
+
+msgid "%1$s · %2$s turns"
+msgstr "%1$s · %2$s סבבים"
+
+msgid "(deleted product)"
+msgstr "(מוצר שנמחק)"
+
+msgid "No message received."
+msgstr "לא התקבלה הודעה."
+
+msgid "Here is what I found that might suit you:"
+msgstr "הנה מה שמצאתי שיכול להתאים:"
+
+msgid "I could not answer that one. Try rephrasing, or get in touch and a person will help."
+msgstr "לא הצלחתי לענות על זה. נסו לנסח מחדש, או פנו אלינו ונציג יעזור."
+
+msgid "That is a lot of messages at once. Try again in a few minutes."
+msgstr "זה הרבה הודעות בבת אחת. נסו שוב בעוד כמה דקות."
+
+msgid "You have reached today's chat limit. Try again tomorrow, or use the contact page."
+msgstr "הגעתם למכסת ההודעות היומית. נסו שוב מחר, או פנו אלינו דרך עמוד יצירת הקשר."
+
+msgid "The chat is busy right now. Please try again later."
+msgstr "הצ׳אט עמוס כרגע. נסו שוב מאוחר יותר."
+
+msgid "The chat is unavailable right now. Please use the contact page."
+msgstr "הצ׳אט לא זמין כרגע. פנו אלינו דרך עמוד יצירת הקשר."
+
+msgid "The chat is busy right now. Try again in a moment."
+msgstr "הצ׳אט עמוס כרגע. נסו שוב בעוד רגע."
+
+msgid "the contact option"
+msgstr "עמוד יצירת הקשר"
+
+msgid "The chat is not configured."
+msgstr "הצ׳אט לא מוגדר."
+
+msgid "OpenAI rejected that key."
+msgstr "OpenAI דחה את המפתח הזה."
+
+msgid "The key works, but the account is out of quota or rate limited."
+msgstr "המפתח תקין, אבל לחשבון נגמרה המכסה או שהוא מוגבל בקצב."
+
+msgid "The key works, but this account cannot use the selected model."
+msgstr "המפתח תקין, אבל החשבון הזה לא יכול להשתמש במודל שנבחר."
+
+msgid "OpenAI returned an error (HTTP %d)."
+msgstr "OpenAI החזיר שגיאה (HTTP %d)."
+
+msgid "The chat is unavailable right now. Please try again."
+msgstr "הצ׳אט לא זמין כרגע. נסו שוב."
+
+msgid "The chat is not available right now."
+msgstr "הצ׳אט לא זמין כרגע."
+
+msgid "Add a key first."
+msgstr "הוסיפו קודם מפתח."
+
+msgid "Connected. The key works and the model is available."
+msgstr "מחובר. המפתח עובד והמודל זמין."
+
+msgid "(price is on the card below)"
+msgstr "(המחיר בכרטיס למטה)"
+
+msgid "Ask us anything"
+msgstr "שאלו אותנו הכל"
+
+msgid "Have a question?"
+msgstr "יש לכם שאלה?"
+
+msgid "Ask me anything"
+msgstr "אפשר לשאול אותי הכל"
+
+msgid "Hi, can I help you find a product or answer a question?"
+msgstr "היי, אפשר לעזור למצוא מוצר או לענות על שאלה?"
+
+msgid "gpt-5-mini (recommended, cheapest)"
+msgstr "gpt-5-mini (מומלץ, הזול ביותר)"
+
+msgid "gpt-5 (best answers, costs more)"
+msgstr "gpt-5 (התשובות הטובות ביותר, יקר יותר)"
+
+msgid "gpt-4.1-mini"
+msgstr "gpt-4.1-mini"
+
+msgid "Contact us"
+msgstr "דברו איתנו"
+
+msgid "Open chat"
+msgstr "פתיחת הצ׳אט"
+
+msgid "Close chat"
+msgstr "סגירת הצ׳אט"
+
+msgid "Type your question"
+msgstr "כתבו את השאלה"
+
+msgid "Send"
+msgstr "שליחה"
+
+msgid "Typing"
+msgstr "מקליד"
+
+msgid "Add to cart"
+msgstr "הוספה לסל"
+
+msgid "View product"
+msgstr "לצפייה במוצר"
+
+msgid "Out of stock"
+msgstr "אזל מהמלאי"
+
+msgid "Sale"
+msgstr "מבצע"
+
+msgid "Something went wrong. Please try again."
+msgstr "משהו השתבש. נסו שוב."
+
+msgid "Chat conversation"
+msgstr "שיחת צ׳אט"
+
+msgid "Shop Agent requires WooCommerce 8.0 or later to be installed and active. The plugin has been deactivated."
+msgstr "עוזר חנות דורש ווקומרס 8.0 ומעלה מותקן ופעיל. התוסף כובה."
+
+msgid "Shop Agent requires PHP 8.1 or later."
+msgstr "עוזר חנות דורש PHP 8.1 ומעלה."
+
+msgid "Plugin activation error"
+msgstr "שגיאה בהפעלת התוסף"
+
+msgid "Shop Agent requires WooCommerce 8.0 or later. Install and activate WooCommerce first, then reactivate this plugin."
+msgstr "עוזר חנות דורש ווקומרס 8.0 ומעלה. התקינו והפעילו קודם ווקומרס, ואז הפעילו מחדש את התוסף."
