@@ -1,0 +1,278 @@
+/**
+ * Shop Agent widget.
+ *
+ * Every rule is scoped under .wsa-root and every property it needs is set
+ * explicitly rather than inherited, because the host theme is unknown and
+ * usually opinionated. Logical properties (inline-start/end) throughout, so
+ * RTL works without a second stylesheet.
+ *
+ * Deliberately light-only: a storefront's palette is its own, and guessing a
+ * dark scheme from the visitor's OS clashes far more often than it helps.
+ */
+
+.wsa-root {
+	--wsa-accent: #111827;
+	--wsa-ink: #17181c;
+	--wsa-muted: #6b7280;
+	--wsa-surface: #ffffff;
+	--wsa-tint: #f4f5f7;
+	--wsa-line: #e5e7eb;
+	--wsa-radius: 14px;
+
+	position: fixed;
+	inset-block-end: 20px;
+	z-index: 99999;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+	font-size: 15px;
+	line-height: 1.5;
+	color: var(--wsa-ink);
+}
+.wsa-root[data-position="right"] { inset-inline-end: 20px; }
+.wsa-root[data-position="left"] { inset-inline-start: 20px; }
+
+.wsa-root button,
+.wsa-root input,
+.wsa-root a { font: inherit; color: inherit; box-sizing: border-box; }
+.wsa-root *, .wsa-root *::before, .wsa-root *::after { box-sizing: border-box; }
+
+/* ------------------------------------------------------------------ launcher */
+.wsa-launcher {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	border: 0;
+	padding: 0;
+	background: var(--wsa-accent);
+	color: #fff;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+	box-shadow: 0 6px 20px rgba(15, 18, 25, .22);
+	transition: transform .15s ease;
+}
+.wsa-launcher:hover { transform: translateY(-2px); }
+.wsa-launcher svg { width: 26px; height: 26px; }
+.wsa-root.is-open .wsa-launcher { display: none; }
+
+/* --------------------------------------------------------------------- panel */
+.wsa-panel {
+	width: min(380px, calc(100vw - 32px));
+	height: min(560px, calc(100vh - 110px));
+	background: var(--wsa-surface);
+	border: 1px solid var(--wsa-line);
+	border-radius: var(--wsa-radius);
+	box-shadow: 0 18px 50px rgba(15, 18, 25, .18);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+.wsa-panel[hidden] { display: none; }
+
+.wsa-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px;
+	background: var(--wsa-accent);
+	color: #fff;
+}
+.wsa-head-text { display: flex; flex-direction: column; min-width: 0; }
+.wsa-title { font-weight: 600; }
+.wsa-subtitle { font-size: 13px; opacity: .8; }
+.wsa-close {
+	background: transparent;
+	border: 0;
+	padding: 6px;
+	cursor: pointer;
+	color: #fff;
+	opacity: .85;
+	border-radius: 6px;
+	line-height: 0;
+}
+.wsa-close:hover { opacity: 1; }
+.wsa-close svg { width: 16px; height: 16px; }
+
+/* ---------------------------------------------------------------------- body */
+.wsa-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	background: var(--wsa-tint);
+}
+
+.wsa-msg { display: flex; }
+.wsa-msg.is-user { justify-content: flex-end; }
+.wsa-msg-text {
+	max-width: 85%;
+	padding: 10px 13px;
+	border-radius: 13px;
+	background: var(--wsa-surface);
+	border: 1px solid var(--wsa-line);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.wsa-msg.is-user .wsa-msg-text {
+	background: var(--wsa-accent);
+	border-color: var(--wsa-accent);
+	color: #fff;
+}
+
+/* typing indicator */
+.wsa-typing .wsa-msg-text { display: flex; gap: 4px; padding: 13px; }
+.wsa-typing span {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--wsa-muted);
+	animation: wsa-bounce 1.2s infinite;
+}
+.wsa-typing span:nth-child(2) { animation-delay: .15s; }
+.wsa-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes wsa-bounce {
+	0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+	30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* --------------------------------------------------------------------- chips */
+.wsa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.wsa-chip {
+	background: var(--wsa-surface);
+	border: 1px solid var(--wsa-line);
+	border-radius: 100px;
+	padding: 6px 12px;
+	font-size: 13px;
+	cursor: pointer;
+	color: var(--wsa-ink);
+	text-decoration: none;
+}
+.wsa-chip:hover { border-color: var(--wsa-accent); }
+.wsa-chip.is-handoff { background: var(--wsa-accent); border-color: var(--wsa-accent); color: #fff; }
+
+/* --------------------------------------------------------------------- cards */
+.wsa-cards { display: flex; flex-direction: column; gap: 8px; }
+.wsa-card {
+	display: flex;
+	gap: 12px;
+	padding: 10px;
+	background: var(--wsa-surface);
+	border: 1px solid var(--wsa-line);
+	border-radius: 11px;
+}
+.wsa-card-media { position: relative; flex: 0 0 66px; line-height: 0; }
+.wsa-card-media img {
+	width: 66px;
+	height: 66px;
+	object-fit: cover;
+	border-radius: 8px;
+	display: block;
+}
+.wsa-badge {
+	position: absolute;
+	inset-block-start: 3px;
+	inset-inline-start: 3px;
+	background: #b42318;
+	color: #fff;
+	font-size: 10px;
+	padding: 1px 5px;
+	border-radius: 4px;
+	line-height: 1.6;
+}
+.wsa-card-info {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	min-width: 0;
+	flex: 1;
+}
+.wsa-card-name {
+	font-size: 14px;
+	font-weight: 500;
+	text-decoration: none;
+	color: var(--wsa-ink);
+	overflow-wrap: anywhere;
+}
+.wsa-card-name:hover { text-decoration: underline; }
+.wsa-card-price { font-size: 14px; color: var(--wsa-ink); }
+.wsa-card-price del { opacity: .55; margin-inline-end: 4px; }
+.wsa-card-price ins { text-decoration: none; font-weight: 600; }
+.wsa-card-stock { font-size: 12px; color: #b42318; }
+/* the button sits at the bottom of the card whatever the title length, so a
+   row of cards never shows buttons at three different heights */
+.wsa-card-btn {
+	margin-block-start: auto;
+	background: var(--wsa-accent);
+	color: #fff;
+	border: 1px solid var(--wsa-accent);
+	border-radius: 7px;
+	padding: 6px 12px;
+	font-size: 13px;
+	cursor: pointer;
+	text-decoration: none;
+	display: inline-block;
+}
+.wsa-card-btn.is-ghost { background: transparent; color: var(--wsa-ink); border-color: var(--wsa-line); }
+.wsa-card-btn.loading { opacity: .6; pointer-events: none; }
+.wsa-card-btn.added { display: inline-block; }
+/* WooCommerce injects a "View cart" link after a successful ajax add */
+.wsa-card-info .added_to_cart {
+	font-size: 12px;
+	color: var(--wsa-muted);
+	text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------- form */
+.wsa-form {
+	display: flex;
+	gap: 8px;
+	padding: 12px;
+	border-block-start: 1px solid var(--wsa-line);
+	background: var(--wsa-surface);
+}
+.wsa-input {
+	flex: 1;
+	min-width: 0;
+	padding: 10px 12px;
+	border: 1px solid var(--wsa-line);
+	border-radius: 9px;
+	background: var(--wsa-surface);
+	outline: none;
+}
+.wsa-input:focus { border-color: var(--wsa-accent); }
+.wsa-send {
+	flex: 0 0 auto;
+	width: 40px;
+	border: 0;
+	border-radius: 9px;
+	background: var(--wsa-accent);
+	color: #fff;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+}
+.wsa-send:disabled { opacity: .5; cursor: default; }
+.wsa-send svg { width: 17px; height: 17px; }
+/* the arrow points at the send direction, which flips with the writing mode */
+[dir="rtl"] .wsa-send svg { transform: scaleX(-1); }
+
+.wsa-root :focus-visible { outline: 2px solid var(--wsa-accent); outline-offset: 2px; }
+.wsa-launcher:focus-visible, .wsa-close:focus-visible { outline-color: #fff; }
+
+@media (max-width: 480px) {
+	.wsa-root { inset-block-end: 12px; }
+	.wsa-root[data-position="right"] { inset-inline-end: 12px; }
+	.wsa-root[data-position="left"] { inset-inline-start: 12px; }
+	.wsa-panel { height: min(70vh, calc(100vh - 90px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wsa-root *, .wsa-root *::before, .wsa-root *::after {
+		animation-duration: .001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: .001ms !important;
+	}
+}
