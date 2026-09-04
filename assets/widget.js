@@ -1,7 +1,7 @@
 /**
- * Shop Agent chat widget.
+ * IbraCodes AI Assistant chat widget.
  *
- * The markup here mirrors the design file (docs: Shop Agent Widget.dc.html)
+ * The markup here mirrors the design file (docs/widget-design.dc.html)
  * element for element, because the stylesheet is lifted from it verbatim. If a
  * class or nesting level changes here, it has to change there too.
  *

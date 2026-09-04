@@ -1,7 +1,7 @@
 /**
- * Shop Agent widget styles.
+ * IbraCodes AI Assistant widget styles.
  *
- * Lifted verbatim from the design file (Shop Agent Widget.dc.html), which is
+ * Lifted verbatim from the design file (docs/widget-design.dc.html), which is
  * the source of truth for this widget's appearance. Do not restyle here: change
  * the design, then re-lift. Only the accent is dynamic, set as --wsa-accent on
  * the root from the shop owner's setting.

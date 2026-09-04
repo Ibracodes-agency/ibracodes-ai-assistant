@@ -1,6 +1,6 @@
 <?php
 /**
- * The admin screen: five tabs, following the design file
+ * The admin screen: the admin tabs, following the design file
  * (docs/admin-design.dc.html).
  *
  * Plain PHP rather than a JavaScript app. This is a settings form, a couple of
@@ -56,7 +56,7 @@ class Admin
 
     public static function assets(string $hook): void
     {
-        if ($hook !== self::$hook) {
+        if (self::$hook === '' || $hook !== self::$hook) {
             return;
         }
         // Heebo covers Latin and Hebrew from one family, which this admin needs
@@ -89,14 +89,16 @@ class Admin
         return self::valid_tab(isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview');
     }
 
-    /** A tab this site can show; Catalogue only exists on a shop. Anything else falls back to Overview. */
+    /** The tabs this site shows: Catalogue only exists on a shop. */
+    private static function tabs(): array
+    {
+        return Capabilities::has_commerce() ? self::TABS : array_values(array_diff(self::TABS, ['catalogue']));
+    }
+
+    /** A tab from tabs(); anything else falls back to Overview. */
     private static function valid_tab(string $tab): string
     {
-        if ($tab === 'catalogue' && ! Capabilities::has_commerce()) {
-            return 'overview';
-        }
-
-        return in_array($tab, self::TABS, true) ? $tab : 'overview';
+        return in_array($tab, self::tabs(), true) ? $tab : 'overview';
     }
 
     // -----------------------------------------------------------------------
@@ -212,9 +214,7 @@ class Admin
                     'catalogue' => [__('Catalogue', 'woocommerce-shop-agent'), number_format_i18n($catalogue)],
                     'conversations' => [__('Conversations', 'woocommerce-shop-agent'), $threads['threads'] ? number_format_i18n($threads['threads']) : ''],
                 ];
-                if (! Capabilities::has_commerce()) {
-                    unset($labels['catalogue']);
-                }
+                $labels = array_intersect_key($labels, array_flip(self::tabs()));
                 foreach ($labels as $key => [$label, $badge]) : ?>
                     <a class="wsa-tab <?php echo $tab === $key ? 'is-on' : ''; ?>" href="<?php echo esc_url(self::url($key)); ?>">
                         <?php echo esc_html($label); ?>

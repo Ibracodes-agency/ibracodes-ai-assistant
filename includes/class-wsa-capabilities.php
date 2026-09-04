@@ -1,7 +1,8 @@
 <?php
 /**
- * What this site can do. Decided once per request, filterable so tests and
- * unusual hosts can force either mode.
+ * What this site can do. Recomputed on every call, which is cheap and lets
+ * tests flip the filter mid-request; the filter also lets unusual hosts force
+ * either mode.
  */
 
 namespace WSA;

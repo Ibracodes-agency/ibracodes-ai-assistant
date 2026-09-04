@@ -96,13 +96,12 @@ class Scrubber
      * Currency tokens to look for. WooCommerce knows the symbol and the code,
      * but shoppers write the word: an Israeli store prices in ILS, displays
      * a shekel sign, and everyone types ש"ח. The table covers the currencies
-     * this is most likely to meet and the filter covers the rest.
+     * this is most likely to meet and the filter covers the rest. Without
+     * WooCommerce there is no currency to start from, so nothing is masked
+     * unless the filter names the tokens.
      */
     private static function currency_tokens(): array
     {
-        $code = get_woocommerce_currency();
-        $symbol = html_entity_decode(get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8');
-
         $spoken = [
             'ILS' => ['ש"ח', 'ש״ח', 'שקלים', 'שקל', 'NIS'],
             'USD' => ['dollars', 'dollar', 'USD'],
@@ -116,7 +115,13 @@ class Scrubber
             'ZAR' => ['rand', 'ZAR'],
         ];
 
-        $tokens = array_merge([$symbol, $code], $spoken[$code] ?? []);
+        $code = '';
+        $tokens = [];
+        if (Capabilities::has_commerce()) {
+            $code = get_woocommerce_currency();
+            $symbol = html_entity_decode(get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8');
+            $tokens = array_merge([$symbol, $code], $spoken[$code] ?? []);
+        }
 
         /** Add or replace the words that count as money on this store. */
         return array_values(array_unique(array_filter(
