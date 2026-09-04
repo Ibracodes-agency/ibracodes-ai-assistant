@@ -58,6 +58,21 @@ class Settings
             'log_threads' => true,
             'retention_days' => 30,
 
+            // site content
+            'content_post_types' => ['page', 'post'],
+            'content_scope' => 'all',        // all | selected
+            'content_pages' => [],           // ids, used when scope is selected
+            'retrieval' => 'search',         // search | embeddings
+
+            // leads
+            'leads_enabled' => false,
+            'leads_when' => '',
+            'leads_email' => get_option('admin_email'),
+            'leads_retention_days' => 180,
+
+            // widget footnote under the input
+            'privacy_note' => '',
+
             // guards
             'price_policy' => 'cards_only',
             'limit_ip_burst' => 15,
@@ -109,10 +124,17 @@ class Settings
             $value = $input[$key];
 
             $clean[$key] = match ($key) {
-                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label' => (bool) $value,
+                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'leads_enabled' => (bool) $value,
                 'max_products' => max(1, min(4, absint($value))),
                 'retention_days' => max(1, min(365, absint($value))),
                 'excluded_cats' => array_values(array_unique(array_filter(array_map('absint', (array) $value)))),
+                'content_post_types' => array_values(array_intersect(array_map('sanitize_key', (array) $value), self::indexable_post_types())),
+                'content_scope' => $value === 'selected' ? 'selected' : 'all',
+                'content_pages' => array_values(array_unique(array_filter(array_map('absint', (array) $value)))),
+                'retrieval' => $value === 'embeddings' ? 'embeddings' : 'search',
+                'leads_email' => is_email((string) $value) ? sanitize_email((string) $value) : (string) get_option('admin_email'),
+                'leads_retention_days' => max(1, min(365, absint($value))),
+                'leads_when', 'privacy_note' => sanitize_text_field((string) $value),
                 'model' => array_key_exists($value, self::models()) ? $value : $default,
                 'position' => $value === 'left' ? 'left' : 'right',
                 'price_policy' => $value === 'allow' ? 'allow' : 'cards_only',
@@ -129,6 +151,15 @@ class Settings
         self::$cache = null;
 
         return self::all();
+    }
+
+    /** Public post types a site could reasonably let the assistant read; attachments never. */
+    public static function indexable_post_types(): array
+    {
+        $types = get_post_types(['public' => true], 'names');
+        unset($types['attachment'], $types['product'], $types['product_variation']);
+
+        return array_values($types);
     }
 
     /** Allowed models. Filterable so a store can pin one this plugin has not heard of. */
