@@ -31,14 +31,13 @@ class Admin
 
     public static function menu(): void
     {
-        add_submenu_page(
-            'woocommerce',
-            __('Shop Agent', 'woocommerce-shop-agent'),
-            __('Shop Agent', 'woocommerce-shop-agent'),
-            'manage_woocommerce',
-            self::SLUG,
-            [self::class, 'render'],
-        );
+        $label = __('AI Assistant', 'woocommerce-shop-agent');
+        if (Capabilities::has_commerce()) {
+            add_submenu_page('woocommerce', $label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render']);
+
+            return;
+        }
+        add_menu_page($label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render'], 'dashicons-format-chat', 58);
     }
 
     public static function action_links(array $links): array
@@ -85,6 +84,9 @@ class Admin
     private static function current_tab(): string
     {
         $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview';
+        if ($tab === 'catalogue' && ! Capabilities::has_commerce()) {
+            return 'overview';
+        }
 
         return in_array($tab, self::TABS, true) ? $tab : 'overview';
     }
@@ -94,7 +96,7 @@ class Admin
     // -----------------------------------------------------------------------
     public static function save(): void
     {
-        if (! current_user_can('manage_woocommerce')) {
+        if (! current_user_can(Capabilities::admin_cap())) {
             wp_die(esc_html__('You are not allowed to do that.', 'woocommerce-shop-agent'));
         }
         check_admin_referer('wsa_save');
@@ -171,8 +173,7 @@ class Admin
     {
         $ready = Settings::ready();
         $threads = DB::stats(30);
-        $counts = wp_count_posts('product');
-        $catalogue = (int) ($counts->publish ?? 0);
+        $catalogue = Capabilities::has_commerce() ? (int) (wp_count_posts('product')->publish ?? 0) : 0;
         ?>
         <div class="wsa-band">
             <div class="wsa-band-top">
@@ -185,7 +186,7 @@ class Admin
                     </div>
                     <div>
                         <div class="wsa-eyebrow">Ibracodes</div>
-                        <h1 class="wsa-h1"><?php esc_html_e('Shop Agent', 'woocommerce-shop-agent'); ?></h1>
+                        <h1 class="wsa-h1"><?php esc_html_e('AI Assistant', 'woocommerce-shop-agent'); ?></h1>
                     </div>
                 </div>
                 <div class="wsa-band-actions">
@@ -204,6 +205,9 @@ class Admin
                     'catalogue' => [__('Catalogue', 'woocommerce-shop-agent'), number_format_i18n($catalogue)],
                     'conversations' => [__('Conversations', 'woocommerce-shop-agent'), $threads['threads'] ? number_format_i18n($threads['threads']) : ''],
                 ];
+                if (! Capabilities::has_commerce()) {
+                    unset($labels['catalogue']);
+                }
                 foreach ($labels as $key => [$label, $badge]) : ?>
                     <a class="wsa-tab <?php echo $tab === $key ? 'is-on' : ''; ?>" href="<?php echo esc_url(self::url($key)); ?>">
                         <?php echo esc_html($label); ?>

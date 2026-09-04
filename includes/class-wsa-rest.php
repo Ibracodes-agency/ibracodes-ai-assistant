@@ -54,7 +54,7 @@ class Rest
         // admin-only: verifies a key before it is trusted with customer traffic
         register_rest_route(self::NS, '/test-key', [
             'methods' => 'POST',
-            'permission_callback' => static fn () => current_user_can('manage_woocommerce'),
+            'permission_callback' => static fn () => current_user_can(Capabilities::admin_cap()),
             'callback' => [self::class, 'test_key'],
         ]);
     }

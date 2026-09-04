@@ -28,6 +28,10 @@ class Catalog
 
     public static function search(string $query, string $category = '', ?int $limit = null, bool $on_sale = false): array
     {
+        // without WooCommerce there is no catalog to search, and no wc_* function to call
+        if (! Capabilities::has_commerce()) {
+            return ['results' => [], 'total' => 0];
+        }
         $query = trim($query);
         // the owner caps how many products one reply may show
         $limit = max(1, min(self::MAX_LIMIT, $limit ?? (int) Settings::get('max_products')));
@@ -214,6 +218,9 @@ class Catalog
     /** Top-level product categories, for orientation when a search comes up empty. */
     public static function categories(): array
     {
+        if (! Capabilities::has_commerce()) {
+            return [];
+        }
         $terms = get_terms([
             'taxonomy' => 'product_cat',
             'hide_empty' => true,
@@ -234,6 +241,9 @@ class Catalog
 
     public static function product_details(int $id): ?array
     {
+        if (! Capabilities::has_commerce()) {
+            return null;
+        }
         $product = wc_get_product($id);
         if (! $product instanceof WC_Product || $product->get_status() !== 'publish') {
             return null;
