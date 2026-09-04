@@ -22,6 +22,8 @@ class Content
 
     public const CHUNK_OVERLAP = 40;
 
+    public const MAX_HITS = 5;
+
     /** Plain text of one post: blocks and shortcodes rendered, markup and scripts stripped. */
     public static function text_for(int $post_id): string
     {
@@ -98,5 +100,73 @@ class Content
         }
 
         return $args;
+    }
+
+    /**
+     * One entry point for the model's search_content tool. The backend is the
+     * owner's choice; the shape of the result never changes.
+     */
+    public static function search(string $query, int $limit = self::MAX_HITS): array
+    {
+        $query = trim($query);
+        if (mb_strlen($query) < 2) {
+            return [];
+        }
+        if (Settings::get('retrieval') === 'embeddings' && class_exists(Index::class) && Index::ready()) {
+            return Index::search($query, $limit);
+        }
+
+        return self::keyword_search($query, $limit);
+    }
+
+    private static function keyword_search(string $query, int $limit): array
+    {
+        $ids = get_posts(array_merge(self::scope_args(), [
+            's' => $query,
+            'posts_per_page' => $limit,
+            'fields' => 'ids',
+            'orderby' => 'relevance',
+        ]));
+
+        $hits = [];
+        foreach ($ids as $id) {
+            $hits[] = self::hit((int) $id, self::passage(self::text_for((int) $id), $query));
+        }
+
+        return $hits;
+    }
+
+    /** The chunk holding the most query terms; the first chunk when none does. */
+    public static function passage(string $text, string $query): string
+    {
+        $chunks = self::chunk($text);
+        if (! $chunks) {
+            return '';
+        }
+        $terms = array_filter(preg_split('/[\s,]+/u', mb_strtolower($query)) ?: [], static fn ($t) => mb_strlen($t) > 1);
+        $best = 0;
+        $best_score = -1;
+        foreach ($chunks as $i => $chunk) {
+            $hay = mb_strtolower($chunk);
+            $score = 0;
+            foreach ($terms as $term) {
+                $score += substr_count($hay, $term);
+            }
+            if ($score > $best_score) {
+                [$best, $best_score] = [$i, $score];
+            }
+        }
+
+        return $chunks[$best];
+    }
+
+    public static function hit(int $id, string $passage): array
+    {
+        return [
+            'id' => $id,
+            'title' => wp_specialchars_decode(get_the_title($id), ENT_QUOTES),
+            'url' => get_permalink($id),
+            'passage' => $passage,
+        ];
     }
 }
