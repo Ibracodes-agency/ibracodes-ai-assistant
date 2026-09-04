@@ -2,7 +2,8 @@
 /**
  * The OpenAI call. Isolated behind one method so the rest of the plugin never
  * touches HTTP, and so a second provider later is a new class rather than a
- * rewrite of the agent.
+ * rewrite of the agent. The embeddings call for the content index lives here
+ * too, behind the same key and the same spend guards.
  */
 
 namespace WSA;
@@ -20,6 +21,12 @@ class Provider
     private const TIMEOUT = 25;
 
     private const MAX_TOKENS = 700;
+
+    private const EMBED_ENDPOINT = 'https://api.openai.com/v1/embeddings';
+
+    private const EMBED_MODEL = 'text-embedding-3-small';
+
+    public const EMBED_DIMS = 512;
 
     /**
      * One completion. Returns the raw assistant message (which may be a tool
@@ -81,6 +88,76 @@ class Provider
         self::clear_failure();
 
         return (array) $data['choices'][0]['message'];
+    }
+
+    /**
+     * Embeds up to a batch of texts. One upstream call per batch, charged
+     * against the same guards as a chat completion so a huge site cannot
+     * blow the monthly cap building its index.
+     *
+     * @return array<int, array<int, float>>|WP_Error
+     */
+    public static function embed(array $texts): array|WP_Error
+    {
+        $texts = array_values(array_filter(array_map('strval', $texts), static fn ($t) => trim($t) !== ''));
+        if (! $texts) {
+            return [];
+        }
+        // tests and the index tests hand vectors back here, so nothing touches the network
+        $pre = apply_filters('wsa_pre_embed', null, $texts);
+        if (is_array($pre)) {
+            return $pre;
+        }
+
+        $key = Settings::api_key();
+        if ($key === '') {
+            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'woocommerce-shop-agent'), ['status' => 503]);
+        }
+
+        $charged = Guards::charge_upstream_call();
+        if ($charged instanceof WP_Error) {
+            return $charged;
+        }
+
+        $response = wp_remote_post(self::EMBED_ENDPOINT, [
+            'timeout' => self::TIMEOUT,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $key,
+                'Content-Type' => 'application/json',
+            ],
+            'body' => wp_json_encode([
+                'model' => self::EMBED_MODEL,
+                'input' => $texts,
+                'dimensions' => self::EMBED_DIMS,
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+
+        if (is_wp_error($response)) {
+            self::log('embed transport: ' . $response->get_error_message());
+
+            return self::unavailable();
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($code !== 200 || empty($data['data']) || ! is_array($data['data'])) {
+            self::log(sprintf('embed http %d: %s', $code, substr((string) wp_remote_retrieve_body($response), 0, 300)));
+            self::remember_failure($code, $data);
+
+            return self::unavailable();
+        }
+
+        self::clear_failure();
+
+        // the API may return rows out of order; index says which input each belongs to
+        $vectors = [];
+        foreach ($data['data'] as $row) {
+            $vectors[(int) $row['index']] = array_map('floatval', (array) $row['embedding']);
+        }
+        ksort($vectors);
+
+        return array_values($vectors);
     }
 
     /**
