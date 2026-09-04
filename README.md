@@ -93,6 +93,10 @@ address, email, name, user id, or anything about payment.
 One boolean is recorded per thread: whether the customer added a recommended product to the
 cart. That comes from WooCommerce's own `added_to_cart` event, so it only counts real adds.
 
+In the browser, the conversation lives in the tab's session storage so it survives moving between
+pages and following a product card. It ends with the tab; nothing is kept in the browser after
+that beyond a flag that the launcher has been opened once.
+
 ## Notes
 
 Prices are shown on the product card only, rendered from WooCommerce, and the agent is stopped

@@ -24,6 +24,8 @@
 	var busy = false;
 	var opened = false;
 	var SEEN_KEY = 'wsa-seen';
+	var STORE_KEY = 'wsa-chat';
+	var KEEP = 16;
 
 	var ICON = {
 		chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>',
@@ -58,6 +60,28 @@
 		} catch ( e ) {
 			return true;
 		}
+	}
+
+	/**
+	 * The conversation belongs to the tab, not the page: following a product
+	 * card or the site menu must not reset it, and the server thread token has
+	 * to travel with it so transcripts stay one thread. sessionStorage ends
+	 * with the tab, which is as long as a visitor expects a chat to last.
+	 */
+	function restore() {
+		try {
+			var saved = JSON.parse( window.sessionStorage.getItem( STORE_KEY ) || 'null' );
+			if ( saved && Array.isArray( saved.messages ) ) {
+				history = saved.messages;
+				thread = typeof saved.thread === 'string' ? saved.thread : '';
+			}
+		} catch ( e ) {}
+	}
+
+	function persist() {
+		try {
+			window.sessionStorage.setItem( STORE_KEY, JSON.stringify( { thread: thread, messages: history.slice( -KEEP ) } ) );
+		} catch ( e ) {}
 	}
 
 	// ------------------------------------------------------------------- DOM
@@ -251,6 +275,7 @@
 		input.value = '';
 		addMessage( 'user', text );
 		history.push( { role: 'user', text: text } );
+		persist();
 
 		var typing = addTyping();
 
@@ -258,7 +283,9 @@
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify( {
-				messages: history.slice( -10 ),
+				messages: history.slice( -10 ).map( function ( m ) {
+					return { role: m.role, text: m.text };
+				} ),
 				thread: thread,
 				device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
 			} ),
@@ -282,7 +309,8 @@
 					thread = data.thread;
 				}
 				addMessage( 'assistant', data.reply );
-				history.push( { role: 'assistant', text: data.reply } );
+				history.push( { role: 'assistant', text: data.reply, products: data.products || [], chips: data.chips || [] } );
+				persist();
 				addProducts( data.products );
 				addChips( data.chips, ask );
 			} )
@@ -298,6 +326,19 @@
 	}
 
 	// ------------------------------------------------------------------ open
+	/** Rebuilds a restored conversation; only the last answer's chips are still open offers. */
+	function replay() {
+		history.forEach( function ( m, i ) {
+			addMessage( m.role, m.text );
+			if ( m.role === 'assistant' ) {
+				addProducts( m.products );
+				if ( i === history.length - 1 ) {
+					addChips( m.chips, ask );
+				}
+			}
+		} );
+	}
+
 	function open() {
 		panel.hidden = false;
 		root.classList.add( 'is-open' );
@@ -311,7 +352,11 @@
 			if ( cfg.welcome ) {
 				addMessage( 'assistant', cfg.welcome );
 			}
-			addChips( cfg.chips, ask );
+			if ( history.length ) {
+				replay();
+			} else {
+				addChips( cfg.chips, ask );
+			}
 		}
 		input.focus();
 	}
@@ -363,6 +408,7 @@
 		watchCart();
 	}
 
+	restore();
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', mount );
 	} else {
