@@ -16,8 +16,8 @@
 - Repo: `/Users/ibra/Documents/Projects/woocommerce-shop-agent`, branch `main`. The plugin is symlinked into `/Users/ibra/Documents/Projects/xswitch/web/app/plugins/woocommerce-shop-agent` and active on `http://shop.test`, so PHP changes are live at once. Blade caches are irrelevant here (this is a plugin), but object caches are not used locally.
 - PHP lint on every changed file with the real 8.1 binary: `/opt/homebrew/opt/php@8.1/bin/php -l <file>`. Never use `true` as a standalone return type (8.2 only).
 - PHP tests are scripts under `tests/`, run from the xswitch root:
-  `WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/<file>.php 2>&1 | grep -v Deprecated`
-  Each script ends by printing `PASS <file>` or exits non-zero on the first failed assertion.
+  `set -o pipefail; WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/<file>.php 2>&1 | grep -v Deprecated`
+  Each script ends by printing `PASS <file>` or exits non-zero on the first failed assertion. `pipefail` keeps the script's exit code visible through the grep.
 - Widget tests use `tests/harness/run.mjs` (Task 1) with the Playwright core package from the npx cache:
   `node tests/harness/run.mjs "$(ls -d ~/.npm/_npx/*/node_modules/playwright-core | head -1)" assets`
 - Commit after every task with author `Ibracodes <22155702+ibrahimchahine@users.noreply.github.com>` (pass `-c user.name=Ibracodes -c user.email=...` to git) and this trailer:
@@ -65,7 +65,7 @@ function wsa_assert_same(mixed $expected, mixed $actual, string $what): void
     wsa_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
 }
 
-/** Creates a published post the test owns; returns the id. Always pair with wsa_cleanup(). */
+/** Creates a post the test owns (published by default); returns the id. */
 function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish'): int
 {
     $id = wp_insert_post([
@@ -78,6 +78,7 @@ function wsa_make_post(string $title, string $content, string $type = 'page', st
         fwrite(STDERR, 'could not create post: ' . $id->get_error_message() . "\n");
         exit(1);
     }
+    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for wsa_cleanup() to see it.
     $GLOBALS['wsa_test_posts'][] = (int) $id;
 
     return (int) $id;
@@ -96,11 +97,13 @@ function wsa_done(string $file): void
     wsa_cleanup();
     echo 'PASS ' . basename($file) . "\n";
 }
+
+register_shutdown_function('wsa_cleanup');
 ```
 
 **Step 2: Move the widget harness into the repo**
 
-Copy `/private/tmp/claude-501/-Users-ibra-Documents-Projects-xswitch/8fa5329c-6de7-4833-bafd-1b80d41b31c6/scratchpad/wsa-harness/page.html` and `run.mjs` to `tests/harness/`. In `run.mjs` keep the stub server and the existing checks (conversation survives navigation, handoff chip). The page and later checks are extended in Tasks 10 and 14.
+Copy `/private/tmp/claude-501/-Users-ibra-Documents-Projects-xswitch/8fa5329c-6de7-4833-bafd-1b80d41b31c6/scratchpad/wsa-harness/page.html` and `run.mjs` to `tests/harness/`. In `run.mjs` keep the stub server and the existing checks (conversation survives navigation, handoff chip). `run.mjs` sets `process.exitCode` from `ok` so a `FAIL:` run exits 1, and resolves its own directory with `fileURLToPath(import.meta.url)`. The page and later checks are extended in Tasks 10 and 14.
 
 **Step 3: Write tests/README.md**
 
@@ -110,13 +113,14 @@ Copy `/private/tmp/claude-501/-Users-ibra-Documents-Projects-xswitch/8fa5329c-6d
 PHP scripts run inside the local xswitch WordPress where the plugin is active:
 
     cd /Users/ibra/Documents/Projects/xswitch
-    WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/test-capabilities.php
+    WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/test-capabilities.php 2>&1 | grep -v Deprecated
 
 Each script prints `PASS <file>` or exits 1 at the first failed assertion. They create
 their own posts and delete them at the end.
 
 The widget harness serves `assets/` and a stub chat endpoint, then drives Chrome:
 
+    cd /Users/ibra/Documents/Projects/woocommerce-shop-agent
     node tests/harness/run.mjs "$(ls -d ~/.npm/_npx/*/node_modules/playwright-core | head -1)" assets
 ```
 

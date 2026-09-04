@@ -1,11 +1,12 @@
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 const require = createRequire(process.argv[2] + '/package.json');
 const { chromium } = require(process.argv[2]);
 const assets = process.argv[3];
-const here = path.dirname(new URL(import.meta.url).pathname);
+const here = path.dirname(fileURLToPath(import.meta.url));
 const posted = [];
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/chat') {
@@ -50,4 +51,5 @@ const last = posted[posted.length - 1];
 console.log('page 2 second ask  : thread=' + JSON.stringify(last.thread) + ' messages sent=' + last.messages.length);
 const ok = after.user === 1 && after.assistant === 2 && after.cards === 1 && after.chips >= 1 && last.thread === '7.abcdefabcdefabcdefab' && last.messages.length === 3 && handoffHref === 'https://wa.me/972500000000' && replayed === 1;
 console.log(ok ? 'PASS: conversation survives navigation' : 'FAIL: conversation lost on navigation');
+process.exitCode = ok ? 0 : 1;
 await browser.close(); server.close();

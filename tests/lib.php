@@ -19,7 +19,7 @@ function wsa_assert_same(mixed $expected, mixed $actual, string $what): void
     wsa_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
 }
 
-/** Creates a published post the test owns; returns the id. Always pair with wsa_cleanup(). */
+/** Creates a post the test owns (published by default); returns the id. */
 function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish'): int
 {
     $id = wp_insert_post([
@@ -32,6 +32,7 @@ function wsa_make_post(string $title, string $content, string $type = 'page', st
         fwrite(STDERR, 'could not create post: ' . $id->get_error_message() . "\n");
         exit(1);
     }
+    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for wsa_cleanup() to see it.
     $GLOBALS['wsa_test_posts'][] = (int) $id;
 
     return (int) $id;
@@ -50,3 +51,5 @@ function wsa_done(string $file): void
     wsa_cleanup();
     echo 'PASS ' . basename($file) . "\n";
 }
+
+register_shutdown_function('wsa_cleanup');
