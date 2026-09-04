@@ -59,6 +59,7 @@ add_action('plugins_loaded', function (): void {
     require_once WSA_PATH . 'includes/class-wsa-threads.php';
     require_once WSA_PATH . 'includes/class-wsa-guards.php';
     require_once WSA_PATH . 'includes/class-wsa-catalog.php';
+    require_once WSA_PATH . 'includes/class-wsa-content.php';
     require_once WSA_PATH . 'includes/class-wsa-tools.php';
     require_once WSA_PATH . 'includes/class-wsa-prompt.php';
     require_once WSA_PATH . 'includes/class-wsa-scrubber.php';
