@@ -8,7 +8,7 @@
 require_once __DIR__ . '/lib.php';
 
 $root = dirname(__DIR__);
-$files = array_merge([$root . '/woocommerce-shop-agent.php'], glob($root . '/includes/*.php'));
+$files = array_merge([$root . '/woocommerce-shop-agent.php', $root . '/uninstall.php'], glob($root . '/includes/*.php'));
 $call = '/\b(?:wc_[a-z_]+|get_woocommerce_[a-z_]+)\(|\bWC\(\)/';
 $guard = '/Capabilities::has_commerce\(\)|\$commerce\b/';
 $window = 12; // lines above a call in which its commerce check must appear
@@ -30,6 +30,7 @@ $method_span = static function (array $lines, string $name): array {
 $offending = [];
 $catalog_calls = 0;
 $admin_calls = 0;
+$scrubber_calls = 0;
 foreach ($files as $file) {
     $rel = substr($file, strlen($root) + 1);
     $lines = file($file, FILE_IGNORE_NEW_LINES);
@@ -52,6 +53,8 @@ foreach ($files as $file) {
                 continue;
             }
         } elseif ($rel === 'includes/class-wsa-scrubber.php' && $guarded && $i >= $tokens_from && $i <= $tokens_to) {
+            $scrubber_calls++;
+
             continue;
         }
         $offending[] = $rel . ':' . ($i + 1) . '  ' . trim($line);
@@ -64,5 +67,6 @@ foreach ($offending as $where) {
 wsa_assert($catalog_calls > 0, 'the scan recognises the WooCommerce calls the Catalog makes');
 wsa_assert($offending === [], 'no WooCommerce call outside the Catalog and the guarded sites');
 wsa_assert_same(2, $admin_calls, 'the admin has exactly two guarded wc_get_product() calls');
+wsa_assert_same(2, $scrubber_calls, 'the scrubber has exactly two guarded currency calls');
 
 wsa_done(__FILE__);
