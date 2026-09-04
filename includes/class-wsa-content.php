@@ -22,9 +22,13 @@ class Content
 
     public const CHUNK_OVERLAP = 40;
 
+    /** Pages one search returns; five passages is what fits a reply without drowning the model. */
     public const MAX_HITS = 5;
 
-    /** Plain text of one post: blocks and shortcodes rendered, markup and scripts stripped. */
+    /**
+     * Plain text of one post: blocks and shortcodes rendered, markup and
+     * scripts stripped. Does not gate access; callers must check is_allowed().
+     */
     public static function text_for(int $post_id): string
     {
         $post = get_post($post_id);
@@ -32,15 +36,37 @@ class Content
             return '';
         }
         // the_content filters from other plugins may echo or enqueue; render
-        // only what WordPress core does for blocks and shortcodes
-        $html = do_shortcode(do_blocks((string) $post->post_content));
+        // only what WordPress core does for blocks and shortcodes, inside a
+        // buffer so a shortcode that echoes cannot corrupt the REST JSON
+        ob_start();
+        try {
+            $html = do_shortcode(do_blocks((string) $post->post_content));
+        } finally {
+            ob_end_clean();
+        }
+        $text = self::plain($html);
+        // a hand-written excerpt is often the clearest summary the page has
+        $excerpt = self::plain((string) $post->post_excerpt);
+        if ($excerpt !== '') {
+            $text = $excerpt . "\n" . $text;
+        }
+        // page builders and ACF sites store content outside post_content and
+        // can supply text here
+        $text = (string) apply_filters('wsa_content_text', $text, $post);
+
+        return mb_substr(trim($text), 0, self::MAX_CHARS);
+    }
+
+    /** Markup and script bodies stripped, entities decoded, whitespace collapsed to single spaces and newlines. */
+    private static function plain(string $html): string
+    {
         $html = preg_replace('#<(script|style|noscript|template)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
         $html = preg_replace('#<(br|/p|/div|/li|/h[1-6]|/tr)\b[^>]*>#i', "\n", $html) ?? $html;
         $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $text = preg_replace('/[ \t]+/u', ' ', $text) ?? $text;
         $text = preg_replace('/\s*\n\s*/u', "\n", $text) ?? $text;
 
-        return mb_substr(trim($text), 0, self::MAX_CHARS);
+        return trim($text);
     }
 
     /** Word-window chunks with overlap, so an answer spanning a boundary is still found. */
@@ -68,7 +94,16 @@ class Content
         return array_values(array_intersect((array) Settings::get('content_post_types'), Settings::indexable_post_types()));
     }
 
-    /** Published, public, unprotected, and inside the owner's scope. */
+    /**
+     * Ids kept out of the assistant whatever the scope says: WooCommerce adds
+     * its cart, checkout and account pages, a site can add its own.
+     */
+    public static function excluded_ids(): array
+    {
+        return array_values(array_unique(array_map('intval', (array) apply_filters('wsa_content_excluded_ids', []))));
+    }
+
+    /** Published, public, unprotected, not excluded, and inside the owner's scope. */
     public static function is_allowed(int $post_id): bool
     {
         $post = get_post($post_id);
@@ -76,6 +111,9 @@ class Content
             return false;
         }
         if (! in_array($post->post_type, self::allowed_types(), true)) {
+            return false;
+        }
+        if (in_array($post_id, self::excluded_ids(), true)) {
             return false;
         }
         if (Settings::get('content_scope') === 'selected') {
@@ -88,15 +126,24 @@ class Content
     /** WP_Query arguments that express the scope; shared by search and the indexer. */
     public static function scope_args(): array
     {
+        $types = self::allowed_types();
+        $excluded = self::excluded_ids();
         $args = [
-            'post_type' => self::allowed_types(),
+            'post_type' => $types,
             'post_status' => 'publish',
             'has_password' => false,
             'ignore_sticky_posts' => true,
             'no_found_rows' => true,
         ];
-        if (Settings::get('content_scope') === 'selected') {
-            $args['post__in'] = array_map('intval', (array) Settings::get('content_pages')) ?: [0];
+        if (! $types) {
+            // an empty post_type makes WP_Query fall back to posts; close the scope instead
+            $args['post__in'] = [0];
+        } elseif (Settings::get('content_scope') === 'selected') {
+            // WP_Query ignores post__not_in once post__in is set, so subtract here
+            $pages = array_map('intval', (array) Settings::get('content_pages'));
+            $args['post__in'] = array_values(array_diff($pages, $excluded)) ?: [0];
+        } elseif ($excluded) {
+            $args['post__not_in'] = $excluded;
         }
 
         return $args;
@@ -121,12 +168,16 @@ class Content
 
     private static function keyword_search(string $query, int $limit): array
     {
-        $ids = get_posts(array_merge(self::scope_args(), [
+        // get_posts() suppresses the posts_* SQL filters, so search plugins and
+        // language filters are bypassed on purpose: results stay predictable on
+        // any site. A site that wants them can opt in through wsa_search_args.
+        $args = apply_filters('wsa_search_args', array_merge(self::scope_args(), [
             's' => $query,
             'posts_per_page' => $limit,
             'fields' => 'ids',
             'orderby' => 'relevance',
-        ]));
+        ]), $query);
+        $ids = get_posts($args);
 
         $hits = [];
         foreach ($ids as $id) {
@@ -143,7 +194,8 @@ class Content
         if (! $chunks) {
             return '';
         }
-        $terms = array_filter(preg_split('/[\s,]+/u', mb_strtolower($query)) ?: [], static fn ($t) => mb_strlen($t) > 1);
+        // split on anything that is not a letter or digit, so "shipping?" still matches "shipping"
+        $terms = array_filter(preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($query)) ?: [], static fn ($t) => mb_strlen($t) > 1);
         $best = 0;
         $best_score = -1;
         foreach ($chunks as $i => $chunk) {
@@ -160,6 +212,7 @@ class Content
         return $chunks[$best];
     }
 
+    /** One search result; public because the embeddings index builds the same shape. */
     public static function hit(int $id, string $passage): array
     {
         return [

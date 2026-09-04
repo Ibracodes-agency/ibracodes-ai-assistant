@@ -26,6 +26,28 @@ class Catalog
 {
     private const MAX_LIMIT = 10;
 
+    /** Hooks the catalog into the content features; the callback checks for commerce itself, at call time. */
+    public static function boot(): void
+    {
+        add_filter('wsa_content_excluded_ids', [self::class, 'exclude_commerce_pages']);
+    }
+
+    /** The cart, checkout and account pages are UI, not content: keep them out of the assistant's reading. */
+    public static function exclude_commerce_pages(array $ids): array
+    {
+        if (! Capabilities::has_commerce()) {
+            return $ids;
+        }
+        foreach (['cart', 'checkout', 'myaccount'] as $page) {
+            $id = (int) wc_get_page_id($page);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
+    }
+
     public static function search(string $query, string $category = '', ?int $limit = null, bool $on_sale = false): array
     {
         // without WooCommerce there is no catalog to search, and no wc_* function to call

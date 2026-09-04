@@ -73,6 +73,7 @@ add_action('plugins_loaded', function (): void {
     DB::schedule_purge();
     add_action(DB::PURGE_HOOK, [DB::class, 'purge']);
 
+    Catalog::boot();
     Rest::boot();
     Widget::boot();
     Admin::boot();

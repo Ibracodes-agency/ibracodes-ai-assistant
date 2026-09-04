@@ -3,6 +3,8 @@ require_once __DIR__ . '/lib.php';
 
 use WSA\Settings;
 
+$snapshot = Settings::all();
+
 $d = Settings::defaults();
 wsa_assert_same(['page', 'post'], $d['content_post_types'], 'content types default to pages and posts');
 wsa_assert_same('all', $d['content_scope'], 'scope defaults to all published');
@@ -31,7 +33,5 @@ wsa_assert_same(365, $saved['leads_retention_days'], 'lead retention capped at 3
 wsa_assert_same('when someone wants a quote', $saved['leads_when'], 'leads_when stripped of tags');
 wsa_assert_same('Your details go to the owner', $saved['privacy_note'], 'privacy note stripped of tags');
 
-// restore what the site had (update() merges defaults, so blanking is explicit)
-Settings::update(['content_scope' => 'all', 'content_pages' => [], 'retrieval' => 'search', 'leads_enabled' => false, 'leads_when' => '', 'privacy_note' => '', 'leads_retention_days' => 180, 'content_post_types' => ['page', 'post']]);
-
+Settings::update($snapshot);
 wsa_done(__FILE__);
