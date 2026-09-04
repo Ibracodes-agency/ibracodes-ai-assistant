@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Turn Shop Agent for WooCommerce into IbraCodes AI Assistant, one plugin that answers from any WordPress site's content, knows the page the visitor is on, captures leads, and keeps its WooCommerce product tools when WooCommerce is present.
+**Goal:** Turn Shop Agent for WooCommerce into IbraCodes AI Assistant, one plugin that answers from any WordPress site's content, knows the page the visitor is on, captures leads, hands a visitor to a human manager in a live chat inside the WordPress admin, and keeps its WooCommerce product tools when WooCommerce is present.
 
 **Architecture:** A `Capabilities` class decides at boot whether commerce tools exist; content retrieval is a new `Content` class with two backends behind one tool (WordPress search by default, an embeddings index the owner opts into); leads are a new table plus a `capture_lead` tool; the prompt and tool list are assembled from the capabilities present. Nothing about the widget's look changes except a branding footer line and an optional privacy note.
 
@@ -26,9 +26,9 @@
   Claude-Session: https://claude.ai/code/session_01FBRFTqtCLLNudnaVs6hAes
   ```
 - No em-dashes anywhere (code comments, strings, docs, commit messages). Use commas or a plain hyphen.
-- Every user-facing string goes through `__()` with the `woocommerce-shop-agent` domain and gets a Hebrew entry in `languages/build-he.php` (Task 12 rebuilds the catalogue; add entries as you go so nothing is forgotten).
+- Every user-facing string goes through `__()` with the `woocommerce-shop-agent` domain and gets a Hebrew entry in `languages/build-he.php` (Task 18 rebuilds the catalogue; add entries as you go so nothing is forgotten).
 - Escape all output in admin markup (`esc_html`, `esc_attr`, `esc_url`, `esc_textarea`).
-- Do not push until Task 14.
+- Do not push until Task 19.
 
 ---
 
@@ -1584,7 +1584,341 @@ Leads card: toggle `leads_enabled`, text `leads_when` (help: "One line: when sho
 
 ---
 
-### Task 13: Translations, uninstall, README, version
+
+### Task 13: Live chat data, settings and the Live class
+
+**Files:**
+- Modify: `includes/class-wsa-db.php` (`DB_VERSION = '1.3.0'`, thread and message columns, helpers)
+- Modify: `includes/class-wsa-settings.php` (defaults and sanitiser)
+- Create: `includes/class-wsa-live.php`
+- Modify: `woocommerce-shop-agent.php` (require)
+- Test: `tests/test-live.php`
+
+**Step 1: Write the failing test**
+
+```php
+<?php
+require_once __DIR__ . '/lib.php';
+
+use WSA\DB;
+use WSA\Live;
+use WSA\Settings;
+use WSA\Threads;
+
+Settings::update(['log_threads' => true, 'live_enabled' => true, 'live_wait_minutes' => 3, 'live_email' => 'desk@example.com']);
+global $wpdb;
+$cols = array_column($wpdb->get_results('SHOW COLUMNS FROM ' . DB::threads_table(), ARRAY_A), 'Field');
+foreach (['status', 'requested_at', 'claimed_at', 'closed_at', 'manager_id', 'last_visitor_at', 'last_manager_at'] as $c) {
+    wsa_assert(in_array($c, $cols, true), "threads column {$c}");
+}
+$mcols = array_column($wpdb->get_results('SHOW COLUMNS FROM ' . DB::messages_table(), ARRAY_A), 'Field');
+wsa_assert(in_array('is_read', $mcols, true), 'messages column is_read');
+
+$sent = [];
+add_filter('pre_wp_mail', static function ($pre, array $atts) use (&$sent) { $sent[] = $atts; return true; }, 10, 2);
+
+$thread = DB::start_thread('Can I talk to someone?', 'desktop');
+DB::log_turn($thread, 'Can I talk to someone?', 'Sure, one moment.', [], false);
+$token = Threads::token($thread);
+
+$state = Live::request($thread, 12);
+wsa_assert_same('waiting', $state['status'], 'request marks the thread waiting');
+wsa_assert_same(1, count($sent), 'manager emailed once');
+wsa_assert_same('desk@example.com', $sent[0]['to'], 'to the live-chat address');
+wsa_assert(str_contains($sent[0]['message'], 'thread=' . $thread), 'email links to the conversation');
+wsa_assert_same('waiting', Live::request($thread, 12)['status'], 'a second request is idempotent');
+wsa_assert_same(1, count($sent), 'and does not email again');
+
+$id = Live::visitor_message($thread, 'Hello? Anyone there?');
+wsa_assert($id > 0, 'visitor message stored while waiting');
+$poll = Live::poll_visitor($thread, 0);
+wsa_assert_same('waiting', $poll['status'], 'visitor poll reports waiting');
+wsa_assert_same(0, count($poll['messages']), 'no manager messages yet');
+
+$admin = (int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0];
+$list = Live::open_threads();
+wsa_assert_same($thread, (int) $list[0]['id'], 'waiting thread listed first');
+wsa_assert_same(1, (int) $list[0]['unread'], 'one unread visitor message');
+
+wsa_assert_same('live', Live::claim($thread, $admin)['status'], 'claim makes it live');
+$mid = Live::manager_reply($thread, $admin, 'Hi, this is Dana. How can I help?');
+wsa_assert($mid > 0, 'manager reply stored');
+$poll = Live::poll_visitor($thread, 0);
+wsa_assert_same('live', $poll['status'], 'visitor sees live');
+wsa_assert_same('manager', $poll['messages'][0]['role'], 'manager message delivered');
+wsa_assert_same(get_userdata($admin)->display_name, $poll['manager'], 'manager name carried');
+$poll2 = Live::poll_visitor($thread, $mid);
+wsa_assert_same(0, count($poll2['messages']), 'since-id excludes delivered messages');
+
+$mp = Live::poll_manager($thread, 0);
+wsa_assert(count($mp['messages']) >= 3, 'manager poll returns the whole thread');
+wsa_assert_same(0, (int) Live::open_threads()[0]['unread'], 'polling as manager marks visitor messages read');
+
+wsa_assert_same('closed', Live::close($thread, $admin)['status'], 'close');
+wsa_assert_same('ai', Live::poll_visitor($thread, 0)['status'], 'closed threads report ai to the widget');
+
+// missed: a waiting request older than the wait window
+$t2 = DB::start_thread('Person please', 'mobile');
+Live::request($t2, 0);
+$wpdb->update(DB::threads_table(), ['requested_at' => gmdate('Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS)], ['id' => $t2]);
+wsa_assert_same('missed', Live::poll_visitor($t2, 0)['status'], 'a stale wait becomes missed');
+wsa_assert_same('missed', Live::state($t2), 'and is persisted');
+wsa_assert_same('live', Live::claim($t2, $admin)['status'], 'a late claim revives a missed thread');
+
+foreach ([$thread, $t2] as $t) { $wpdb->delete(DB::messages_table(), ['thread_id' => $t]); $wpdb->delete(DB::threads_table(), ['id' => $t]); }
+Settings::update(['live_enabled' => false]);
+wsa_done(__FILE__);
+```
+
+**Step 2: Run, expect FAIL** (columns missing).
+
+**Step 3: Implement**
+
+DB: `DB_VERSION = '1.3.0'`. Threads table gains `status VARCHAR(10) NOT NULL DEFAULT 'ai'`, `requested_at DATETIME NULL`, `claimed_at DATETIME NULL`, `closed_at DATETIME NULL`, `manager_id BIGINT UNSIGNED NOT NULL DEFAULT 0`, `last_visitor_at DATETIME NULL`, `last_manager_at DATETIME NULL`, and `KEY status (status, requested_at)`. Messages table gains `is_read TINYINT(1) NOT NULL DEFAULT 1` (visitor messages during live are inserted with 0). `dbDelta` adds columns to existing tables. Add `DB::add_message(int $thread_id, string $role, string $content, bool $is_read = true): int` used by Live (and reuse it inside `log_turn` if that is a clean extraction; otherwise leave `log_turn` alone).
+
+Settings defaults:
+```php
+            // live chat
+            'live_enabled' => false,
+            'live_email' => '',
+            'live_wait_minutes' => 3,
+            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'woocommerce-shop-agent'),
+            'live_text_joined' => __('%s joined the chat.', 'woocommerce-shop-agent'),
+            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'woocommerce-shop-agent'),
+            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'woocommerce-shop-agent'),
+```
+Sanitiser: `live_enabled` bool (and when it is true force `log_threads` true); `live_email` like `leads_email` but falling back to `leads_email` then admin email; `live_wait_minutes` 1 to 60; the four texts `sanitize_text_field`. Add `Settings::live_ready(): bool` = `live_enabled && log_threads`.
+
+Live class (`includes/class-wsa-live.php`), all static, all timestamps `current_time('mysql')`:
+- `request(int $thread_id, int $page_id): array` sets status `waiting` and `requested_at` when status is `ai`, `missed` or `closed`; sends the email once (only on the transition into `waiting`) with the thread's first question, the page permalink, and `admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)`; returns `['status' => ...]`.
+- `visitor_message(int $thread_id, string $text): int` allowed in `waiting` and `live`; inserts role `user`, `is_read` 0, updates `last_visitor_at`.
+- `poll_visitor(int $thread_id, int $since_id): array` first applies the timeout (`waiting` older than `live_wait_minutes` becomes `missed`), then returns `['status' => status mapped for the widget (closed reads as ai), 'manager' => display name or '', 'messages' => manager and system messages with id > since_id as [id, role, text, at], 'texts' => the four texts with %s filled]`.
+- `state(int $thread_id): string`.
+- `open_threads(): array` rows for waiting, live, missed ordered waiting first by `requested_at`, then live by `last_visitor_at` desc, then missed; each with `unread` = count of `is_read` 0 messages, `first_question`, `waiting_seconds`.
+- `claim(int $thread_id, int $user_id): array` from waiting or missed to live, sets `claimed_at`, `manager_id`; inserts a `system` message "%s joined" so both sides show it.
+- `manager_reply(int $thread_id, int $user_id, string $text): int` requires live; inserts role `manager`; updates `last_manager_at`.
+- `poll_manager(int $thread_id, int $since_id): array` returns all messages with id > since_id (all roles) and marks visitor messages read.
+- `close(int $thread_id, int $user_id): array` sets `closed`, `closed_at`, inserts a `system` closed line.
+Every write uses `$wpdb->update`/`insert` with formats; every read `$wpdb->prepare`.
+
+**Step 4: Lint, run, PASS. Commit** `Live chat: thread states, settings and the Live class`
+
+---
+
+### Task 14: Live chat REST endpoints
+
+**Files:**
+- Modify: `includes/class-wsa-rest.php`
+- Modify: `includes/class-wsa-guards.php` (a cheap per-IP poll limit)
+- Test: `tests/test-live-rest.php`
+
+**Step 1: Write the failing test** (uses `rest_do_request` so no HTTP is needed)
+
+```php
+<?php
+require_once __DIR__ . '/lib.php';
+
+use WSA\DB;
+use WSA\Settings;
+use WSA\Threads;
+
+Settings::update(['log_threads' => true, 'live_enabled' => true]);
+add_filter('pre_wp_mail', '__return_true');
+$thread = DB::start_thread('Person please', 'desktop');
+$token = Threads::token($thread);
+$call = static function (string $method, string $route, array $params = [], bool $as_admin = false) {
+    if ($as_admin) { wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]); } else { wp_set_current_user(0); }
+    $req = new WP_REST_Request($method, '/wsa/v1' . $route);
+    foreach ($params as $k => $v) { $req->set_param($k, $v); }
+    $res = rest_do_request($req);
+    return [$res->get_status(), $res->get_data()];
+};
+
+[$code, $data] = $call('GET', '/live/thread', ['thread' => 'forged.token', 'since' => 0]);
+wsa_assert_same(403, $code, 'forged token rejected');
+[$code, $data] = $call('GET', '/live/thread', ['thread' => $token, 'since' => 0]);
+wsa_assert_same(200, $code, 'valid token polls');
+wsa_assert_same('ai', $data['status'], 'no request yet');
+
+[$code] = $call('POST', '/live/thread/message', ['thread' => $token, 'text' => 'hello']);
+wsa_assert_same(409, $code, 'visitor messages refused while the AI owns the thread');
+
+\WSA\Live::request($thread, 0);
+[$code, $data] = $call('POST', '/live/thread/message', ['thread' => $token, 'text' => str_repeat('a', 3000)]);
+wsa_assert_same(200, $code, 'visitor message accepted while waiting');
+$messages = \WSA\DB::thread($thread)['messages'];
+wsa_assert_same(1200, mb_strlen(end($messages)['content']), 'visitor message bounded to 1200 chars');
+
+[$code] = $call('GET', '/live/open');
+wsa_assert_same(401, $code, 'manager list needs a login');
+[$code, $data] = $call('GET', '/live/open', [], true);
+wsa_assert_same(200, $code, 'admin lists');
+wsa_assert_same($thread, (int) $data['threads'][0]['id'], 'waiting thread listed');
+[$code, $data] = $call('POST', '/live/claim', ['id' => $thread], true);
+wsa_assert_same('live', $data['status'], 'claimed');
+[$code, $data] = $call('POST', '/live/reply', ['id' => $thread, 'text' => 'Hi there'], true);
+wsa_assert_same(200, $code, 'reply');
+[$code, $data] = $call('GET', '/live/thread', ['thread' => $token, 'since' => 0]);
+$texts = array_column($data['messages'], 'text');
+wsa_assert(in_array('Hi there', $texts, true), 'visitor receives the reply');
+[$code, $data] = $call('POST', '/live/close', ['id' => $thread], true);
+wsa_assert_same('closed', $data['status'], 'closed');
+
+global $wpdb;
+$wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
+Settings::update(['live_enabled' => false]);
+wsa_done(__FILE__);
+```
+
+**Step 2: Run, expect FAIL** (404 routes).
+
+**Step 3: Implement** in `Rest::register_routes()`:
+- `GET /live/thread` and `POST /live/thread/message`: `permission_callback => '__return_true'`; inside, `Settings::live_ready()` else 503; `Threads::id_from_token()` else 403; `Guards::poll_allowed()` else 429 (a transient counter per IP, 40 per minute, separate from the chat limits so polling never eats the chat budget). The message route trims to 1200 chars with `wp_strip_all_tags` and returns 409 unless the state is waiting or live.
+- `GET /live/open`, `GET /live/poll` (`id`, `since`), `POST /live/claim`, `POST /live/reply`, `POST /live/close`: `permission_callback => static fn () => current_user_can(Capabilities::admin_cap())` (cookie auth with the REST nonce the admin JS already sends). Reply text bounded to 2000 chars, `sanitize_textarea_field`.
+- Every response is `rest_ensure_response(array)`; errors are `WP_Error` with `status`.
+- Note: for anonymous visitors WordPress REST cookie auth is not involved, so no nonce; the token is the credential, as with `cart-event` today.
+
+**Step 4: Lint, run, PASS. Commit** `Live chat: visitor and manager endpoints`
+
+---
+
+### Task 15: Hand-off becomes a live request; missed and closed states reach the agent
+
+**Files:**
+- Modify: `includes/class-wsa-tools.php` (`hand_off` description and run)
+- Modify: `includes/class-wsa-agent.php` (carry `live` state in the answer; missed instruction)
+- Modify: `includes/class-wsa-prompt.php` (live paragraphs)
+- Modify: `includes/class-wsa-rest.php` (`chat` refuses while a human owns the thread: 409 with the state, so the widget routes the message to the live endpoint instead)
+- Test: `tests/test-live-agent.php`
+
+**Step 1: Write the failing test**
+
+```php
+<?php
+require_once __DIR__ . '/lib.php';
+
+use WSA\DB;
+use WSA\Live;
+use WSA\Prompt;
+use WSA\Settings;
+use WSA\Tools;
+
+Settings::update(['log_threads' => true, 'live_enabled' => true, 'handoff_url' => 'https://wa.me/972500000000', 'handoff_label' => 'WhatsApp']);
+add_filter('pre_wp_mail', '__return_true');
+
+$defs = array_column(array_column(Tools::definitions(), 'function'), 'description', 'name');
+wsa_assert(str_contains($defs['hand_off'], 'person will join'), 'hand_off describes a live handoff when live chat is on');
+
+$thread = DB::start_thread('Person please', 'desktop');
+$cards = [];
+$out = Tools::run('hand_off', [], $cards, ['thread_id' => $thread, 'page_id' => 0]);
+wsa_assert_same('waiting', $out['live'], 'hand_off requests a person');
+wsa_assert_same('waiting', Live::state($thread), 'thread is waiting');
+
+$prompt = Prompt::system_message(['thread_id' => $thread, 'live' => 'missed'])['content'];
+wsa_assert(str_contains($prompt, 'did not join'), 'missed instruction present');
+
+Settings::update(['live_enabled' => false]);
+$defs = array_column(array_column(Tools::definitions(), 'function'), 'description', 'name');
+wsa_assert(! str_contains($defs['hand_off'], 'person will join'), 'without live chat hand_off is the contact button again');
+
+global $wpdb;
+$wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
+Settings::update(['handoff_url' => '', 'handoff_label' => '']);
+wsa_done(__FILE__);
+```
+
+**Step 2: Run, expect FAIL.**
+
+**Step 3: Implement**
+- `Tools::definitions()`: when `Settings::live_ready()`, the `hand_off` tool is offered even without a handoff URL, with description: `Hand the conversation to a person. Call it when the visitor asks to talk to someone, or when you cannot help. A person will join this chat shortly; tell the visitor that in one short sentence and stop answering. Do not mention a button.` Otherwise the existing button description.
+- `Tools::run('hand_off')`: when live is ready and `$context['thread_id'] > 0`, call `Live::request(thread, page)` and return `['live' => 'waiting']`; when live is ready but there is no thread yet (first turn, logging created none), return `['live' => 'pending']` and let the agent set `handoff => true` as today, plus the REST layer creates the thread after the answer (it already does through `Threads::record`) and then calls `Live::request` on it when the answer carries `live => pending`. Otherwise the existing button behaviour.
+- `Agent::answer()`: track `$live` from the tool result; include `'live' => $live` in the return. When `$context['live'] === 'missed'`, `Prompt` adds: `A person was requested but did not join. Apologise once, offer to take the visitor's details so the owner calls back (call capture_lead when they agree, if it is available), and offer the contact option. Do not offer a person again in this conversation.`
+- Prompt, when live is ready: replace the button handoff line with `When the visitor asks to talk to a person, or you cannot help, call the hand_off tool. A person will join this chat; say so in one short sentence and stop.`
+- `Rest::chat()`: before answering, if the thread token resolves and `Live::state()` is `waiting` or `live`, return 409 with `['status' => state]` so the widget knows to use the live endpoint. After `Threads::record`, if the answer has `live => pending`, call `Live::request` on the new thread and set `live => waiting`. Return `live` in the response.
+
+**Step 4: Lint, run this test plus `tests/test-tools-prompt.php`, PASS. Commit** `Live chat: hand-off requests a person, missed state instructs the agent`
+
+---
+
+### Task 16: Widget live mode
+
+**Files:**
+- Modify: `assets/widget.js`, `assets/widget.css`
+- Modify: `includes/class-wsa-widget.php` (config: `liveEndpoint`, `liveMessageEndpoint`, `livePoll` 4000)
+- Modify: `tests/harness/page.html`, `tests/harness/run.mjs`
+
+**Step 1: Extend the harness (failing).** The stub gains an in-memory thread state: `POST /chat` with a message containing "נציג" returns `live: 'waiting'` and the reply text; `GET /live/thread?since=` returns `{status, manager, messages, texts}` from the stub's state; `POST /live/thread/message` stores the visitor line; a test hook `POST /__stub/manager` lets the test simulate the manager: claim (returns joined system line), reply, close. Checks: after asking for a person the widget shows the waiting text as a muted system line and starts polling (the stub counts polls); a visitor message typed now hits `/live/thread/message`, not `/chat`; after the stub claims and replies, a `.wsa-msg.is-manager` bubble with the manager's name appears within 5 seconds; the placeholder reads "Write to Dana"; after close, the closed system line appears and the next message goes to `/chat` again; reload the page mid-live and the polling resumes with the manager bubble replayed. Fold into `ok`.
+
+**Step 2: Implement**
+- Config: `liveEndpoint` = `rest_url('wsa/v1/live/thread')`, `liveMessageEndpoint` = `.../live/thread/message`, `livePoll` = 4000, only when `Settings::live_ready()`.
+- State: `live = { status: 'ai', manager: '', since: 0 }` persisted with the conversation. `ask()` routes to `liveMessageEndpoint` when status is waiting or live (no typing indicator, no history slice); a 409 from `/chat` switches into live mode with the returned status.
+- On a reply with `live: 'waiting'`: add the waiting text as `.wsa-system`, set status, start polling.
+- Poll loop: `setTimeout` chain, paused on `document.hidden`, resumed on `visibilitychange`; each poll passes `since`; new messages are appended (`manager` as `.wsa-msg.is-manager` with a `.wsa-msg-name` line, `system` as `.wsa-system`), `since` advances, status transitions handled: `live` sets placeholder `t.writeTo.replace('%s', manager)`; `missed` shows the missed text, the contact chip when configured, stops polling and returns to AI mode with `live.status = 'missed'` sent as context on the next `/chat` call; `ai` (closed) shows the closed text and stops polling.
+- Replay after navigation re-renders manager and system messages from history and restarts polling when status is waiting or live.
+- CSS: `.wsa-msg.is-manager .wsa-msg-text` uses the surface colour with a 1px accent-tinted border (distinct from the AI bubble), `.wsa-msg-name` 11px muted above it, `.wsa-system` centred 12px muted text with 8px margins. Nothing else changes.
+- Strings: add `writeTo` (`Write to %s`) to the i18n config.
+
+**Step 3: Harness PASS at 390 and 1440. Commit** `Widget: live mode with polling, manager bubbles and system lines`
+
+---
+
+### Task 17: Admin Live chats tab
+
+**Files:**
+- Modify: `includes/class-wsa-admin.php` (`TABS`, band label with waiting count, `tab_live()`, live settings group on the Agent tab)
+- Create: `assets/live.js` and styles appended to `assets/admin.css`
+- Test: `tests/test-live-admin.php`
+
+**Step 1: Write the failing test**
+
+```php
+<?php
+require_once __DIR__ . '/lib.php';
+
+use WSA\Admin;
+use WSA\DB;
+use WSA\Settings;
+
+Settings::update(['log_threads' => true, 'live_enabled' => true]);
+add_filter('pre_wp_mail', '__return_true');
+wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]);
+$thread = DB::start_thread('Person please', 'desktop');
+\WSA\Live::request($thread, 0);
+
+$_GET['tab'] = 'live';
+ob_start(); Admin::render(); $html = (string) ob_get_clean();
+wsa_assert(str_contains($html, 'id="wsa-live"'), 'live tab renders its root');
+wsa_assert(str_contains($html, 'data-thread="' . $thread . '"'), 'waiting thread is in the initial list');
+
+Settings::update(['live_enabled' => false]);
+ob_start(); Admin::render(); $html = (string) ob_get_clean();
+wsa_assert(! str_contains($html, 'id="wsa-live"'), 'with live chat off the tab does not render the console');
+wsa_assert(str_contains($html, 'tab=agent'), 'and points to the Agent tab to enable it');
+
+$_GET['tab'] = 'agent';
+ob_start(); Admin::render(); $html = (string) ob_get_clean();
+wsa_assert(str_contains($html, 'name="live_enabled"') && str_contains($html, 'name="live_wait_minutes"'), 'live settings on the Agent tab');
+
+global $wpdb;
+$wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
+wsa_done(__FILE__);
+```
+
+**Step 2: Run, expect FAIL.**
+
+**Step 3: Implement**
+- `TABS` gains `live`; the band label `Live chats` carries the waiting count as its badge.
+- Agent tab: a Live chat card with the toggle, the notification address, the wait minutes, and the four texts, with the note that enabling it turns conversation logging on. `save()` toggles map: `'agent' => ['enabled', 'ask_first', 'leads_enabled', 'live_enabled']`.
+- `tab_live()`: when `! Settings::live_ready()`, a card explaining that live chat is off with a link to the Agent tab. When ready: `<div id="wsa-live" class="wsa-live">` with the list rendered server-side from `Live::open_threads()` (each `<button class="wsa-live-item" data-thread="ID">` with first question, state pill, waiting time, unread badge) and an empty pane; enqueue `assets/live.js` on this tab only and `wp_localize_script('wsa-live', 'wsaLive', [endpoints, nonce, poll: 3000, strings, currentUser display name])`.
+- `assets/live.js`: polls `/live/open` every 3 seconds (paused when hidden) to refresh the list and set `document.title` to `(N) ...` when N waiting; clicking an item loads `/live/poll` with `since` 0, then polls that thread every 3 seconds appending messages; Claim button (hidden once live), reply form posting to `/live/reply`, Close button. All rendering through `textContent`; the manager sees visitor, assistant, manager and system messages in distinct styles.
+- Styles: a two-column grid (list 320px, pane), reusing the admin's existing card, pill and row classes where they fit; manager bubbles accent-tinted; visitor bubbles plain.
+
+**Step 4: Lint, run this test plus `tests/test-admin-render.php`, PASS. Drive one chat end to end against the harness stub or, with a key on shop.test, against the real widget: request a person in the widget, see the email (or the `pre_wp_mail` log), claim and reply in the admin, see the bubble in the widget, close. Commit** `Admin: Live chats tab with polling, claim, reply and close`
+
+---
+
+### Task 18: Translations, uninstall, README, version
 
 **Files:**
 - Modify: `languages/build-he.php` (every new msgid), regenerate `.pot`, `.po`, `.mo`
@@ -1608,17 +1942,17 @@ Expected: `MISSING TRANSLATIONS (N)` with the list.
 
 ---
 
-### Task 14: Full verification and push
+### Task 19: Full verification and push
 
 **Step 1: Run every PHP test**
 
 ```bash
 cd /Users/ibra/Documents/Projects/xswitch
-for t in capabilities bootstrap settings content-text content-search embed index tools-prompt leads admin-render; do
+for t in capabilities bootstrap settings content-text content-search embed index tools-prompt leads admin-render live live-rest live-agent live-admin; do
   WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/test-$t.php 2>&1 | grep -v Deprecated | tail -1
 done
 ```
-Expected: ten `PASS` lines.
+Expected: fourteen `PASS` lines.
 
 **Step 2: Lint every PHP file with 8.1**
 
@@ -1640,4 +1974,4 @@ Expected: only `lint-done`.
 git push origin main && git log --oneline -14
 ```
 
-**Step 7: Report** to the owner: what shipped, how to switch the test site to 0.2.0, what to configure (content scope, retrieval, leads, privacy note), and that the branding line is always on.
+**Step 7: Report** to the owner: what shipped, how to switch the test site to 0.2.0, what to configure (content scope, retrieval, leads, privacy note, live chat address and wait time), and that the branding line is always on.

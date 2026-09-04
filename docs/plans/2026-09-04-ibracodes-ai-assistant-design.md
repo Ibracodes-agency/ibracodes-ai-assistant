@@ -128,3 +128,78 @@ and embeddings modes each answer with the right page; a lead is captured
 and a bad phone rejected; the current page is answered without a search;
 WooCommerce tools are absent when it is off; injection text hidden in a
 page is ignored.
+
+## 5. Live chat (added 2026-09-04, validated with the owner)
+
+Decision taken with the owner: when a visitor asks for a person the AI
+pauses; if no manager joins within a set time the widget falls back to
+the contact button and lead capture, and the manager can still answer
+later from the admin.
+
+Everything runs inside WordPress. Real time means short polling over the
+REST API: the widget every 4 seconds while a human session is open, the
+admin screen every 3 seconds, both paused while the browser tab is hidden.
+
+### Flow
+
+1. The visitor asks for a person, or the AI cannot help. The model calls
+   `hand_off`. With live chat on, the server marks the thread `waiting`,
+   records the time, emails the live-chat address with the first question,
+   the page and a direct link to the conversation, and tells the model to
+   say a person will join shortly. The reply carries `live: waiting` and
+   the widget switches mode: AI off, polling on, input still open, and
+   visitor messages are stored on the thread without an AI answer.
+2. A manager opens Live chats in the admin, sees the waiting thread at the
+   top with how long the visitor has waited, claims it and replies. The
+   widget shows "X joined" and the manager's bubbles with their display
+   name. Every visitor message from then on reaches the manager's pane.
+3. If nobody joins within the wait time (default 3 minutes, editable), the
+   thread becomes `missed`. The widget shows the missed text, the contact
+   button, and the AI resumes with one instruction: offer to take the
+   visitor's details (lead capture, when enabled). The thread stays in the
+   admin list under Missed so a manager can still answer later; a late
+   answer moves it back to live and the widget picks it up on its next
+   poll or page load.
+4. The manager closes the chat. The widget shows the closed text and the
+   AI takes over again for anything further.
+
+### Data
+
+- Threads gain `status` (ai, waiting, live, missed, closed), `requested_at`,
+  `claimed_at`, `closed_at`, `manager_id`, `last_visitor_at`,
+  `last_manager_at`. Messages gain the role `manager` and a `read` flag for
+  unread counts. Retention is unchanged: live messages are deleted with
+  the thread.
+- Live chat requires conversation logging, since it lives on the thread
+  table. The admin says so and turns logging on when live chat is enabled.
+- The visitor is identified by the signed thread token the widget already
+  holds. No account, no cookie, no personal data unless typed.
+
+### Endpoints
+
+Visitor, public, token-verified and rate-limited per IP:
+`GET wsa/v1/live/thread` (state and new messages since an id),
+`POST wsa/v1/live/thread/message` (a visitor message during waiting or live).
+Manager, admin capability and nonce: list open threads with unread counts,
+poll one thread, claim, reply, close.
+
+### Settings
+
+`live_enabled`, `live_email` (defaults to the leads address, then the admin
+email), `live_wait_minutes` (3), and four visitor-facing texts with
+translated defaults: waiting, joined, missed, closed.
+
+### Admin
+
+A Live chats tab: a list on the start side (waiting first with a timer,
+then live, then missed, each with an unread badge) and the conversation on
+the other side with a reply box. New chats appear without a reload, the
+browser tab title shows the waiting count, and a small sound is not
+included. Closing returns the thread to the AI.
+
+### Widget
+
+Live mode is part of the persisted conversation, so navigation keeps the
+session. Manager messages get their own bubble style with the manager's
+name. System lines (joined, missed, closed) are muted single lines. The
+input placeholder changes to "Write to X" while a manager is present.
