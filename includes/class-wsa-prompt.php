@@ -76,17 +76,27 @@ class Prompt
         return ['role' => 'system', 'content' => implode("\n\n", $parts)];
     }
 
-    private static function handoff_line(): string
+    /** What the handoff button is called, or '' when the owner set no destination. */
+    public static function handoff_label(): string
     {
-        $url = trim((string) Settings::get('handoff_url'));
-        if ($url === '') {
+        if (trim((string) Settings::get('handoff_url')) === '') {
             return '';
         }
         $label = trim((string) Settings::get('handoff_label'));
 
+        return $label !== '' ? $label : __('the contact option', 'woocommerce-shop-agent');
+    }
+
+    private static function handoff_line(): string
+    {
+        $label = self::handoff_label();
+        if ($label === '') {
+            return 'There is no contact button in this chat. When the customer asks for a person or you cannot help, say so plainly and suggest the shop\'s contact page in words. Never tell the customer to click, press or tap anything: nothing is shown for it.';
+        }
+
         return sprintf(
-            'When you cannot help, point the customer to %s. Describe it in words, do not paste the address: a button is shown for it.',
-            $label !== '' ? $label : __('the contact option', 'woocommerce-shop-agent'),
+            'When the customer asks to talk to a person, or you cannot help, call the hand_off tool: it shows a button that opens %s below your answer. Point to that button in words, never paste the address, and never mention a button unless you called the tool in this reply.',
+            $label,
         );
     }
 

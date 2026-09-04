@@ -25,7 +25,7 @@ class Tools
     {
         $language = Prompt::store_language();
 
-        return [
+        $tools = [
             ['type' => 'function', 'function' => [
                 'name' => 'search_products',
                 'description' => sprintf(
@@ -57,6 +57,22 @@ class Tools
                 ],
             ]],
         ];
+
+        // The button the model may point to only exists when the owner set a
+        // destination; without one, the prompt says there is nothing to click
+        // and the tool is not offered at all.
+        if (Prompt::handoff_label() !== '') {
+            $tools[] = ['type' => 'function', 'function' => [
+                'name' => 'hand_off',
+                'description' => sprintf(
+                    'Show the customer a button that opens "%s". Call it when the customer asks to talk to a person, or when you cannot help with the tools you have. After calling it, tell the customer in one short sentence to use that button below your answer. Never mention a button without calling this.',
+                    Prompt::handoff_label(),
+                ),
+                'parameters' => ['type' => 'object', 'properties' => new \stdClass()],
+            ]];
+        }
+
+        return $tools;
     }
 
     /**
@@ -70,6 +86,7 @@ class Tools
     {
         return match ($name) {
             'search_products' => self::search($input, $cards),
+            'hand_off' => ['shown' => true, 'label' => Prompt::handoff_label()],
             'get_categories' => ['categories' => Catalog::categories()],
             'get_product_details' => Catalog::product_details((int) ($input['id'] ?? 0))
                 ?? ['error' => 'not_found'],

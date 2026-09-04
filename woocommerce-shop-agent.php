@@ -3,7 +3,7 @@
  * Plugin Name:       Shop Agent for WooCommerce
  * Plugin URI:        https://ibracodes.com
  * Description:       An AI shop assistant for the storefront. It searches the real catalog, recommends products the customer can add to cart, and answers store questions from facts you write. Uses your own OpenAI key.
- * Version:           0.1.1
+ * Version:           0.1.2
  * Requires at least: 6.0
  * Requires PHP:      8.1
  * WC requires at least: 8.0
@@ -26,7 +26,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('WSA_VERSION', '0.1.1');
+define('WSA_VERSION', '0.1.2');
 define('WSA_FILE', __FILE__);
 define('WSA_PATH', plugin_dir_path(__FILE__));
 define('WSA_URL', plugin_dir_url(__FILE__));

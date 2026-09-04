@@ -309,9 +309,12 @@
 					thread = data.thread;
 				}
 				addMessage( 'assistant', data.reply );
-				history.push( { role: 'assistant', text: data.reply, products: data.products || [], chips: data.chips || [] } );
+				history.push( { role: 'assistant', text: data.reply, products: data.products || [], chips: data.chips || [], handoff: !! data.handoff } );
 				persist();
 				addProducts( data.products );
+				if ( data.handoff ) {
+					addHandoff();
+				}
 				addChips( data.chips, ask );
 			} )
 			.catch( function () {
@@ -332,6 +335,9 @@
 			addMessage( m.role, m.text );
 			if ( m.role === 'assistant' ) {
 				addProducts( m.products );
+				if ( m.handoff ) {
+					addHandoff();
+				}
 				if ( i === history.length - 1 ) {
 					addChips( m.chips, ask );
 				}

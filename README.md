@@ -12,7 +12,7 @@ Built by [Ibracodes](https://ibracodes.com).
   so the agent cannot invent a product, a price or stock that does not exist.
 - **Answers store questions** from the Store facts field, and says it does not know when the
   answer is not in there.
-- **Hands off to a human** with a contact or WhatsApp link when it is stuck.
+- **Hands off to a human** with a contact or WhatsApp button under the reply, when the customer asks for a person or it is stuck. With no destination set, it says so in words instead of pointing at a button.
 - **Speaks the store's language** automatically, from the site locale. RTL supported, and the
   admin plus the widget ship translated in Hebrew.
 - **Reports what customers actually asked**, including the questions the catalogue had no answer

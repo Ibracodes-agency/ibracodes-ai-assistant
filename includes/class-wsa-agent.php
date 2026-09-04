@@ -34,6 +34,7 @@ class Agent
         $cards = [];
         $reply = '';
         $no_match = false;
+        $handoff = false;
 
         for ($turn = 0; $turn < self::MAX_TURNS; $turn++) {
             $message = Provider::complete($messages, $tools);
@@ -61,6 +62,9 @@ class Agent
                     if ($name === 'search_products' && empty($result['results'])) {
                         $no_match = true;
                     }
+                    if ($name === 'hand_off') {
+                        $handoff = true;
+                    }
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $call['id'],
@@ -85,6 +89,7 @@ class Agent
             $reply = $cards
                 ? __('Here is what I found that might suit you:', 'woocommerce-shop-agent')
                 : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'woocommerce-shop-agent');
+            $handoff = $handoff || ! $cards;
         }
 
         $max = min(self::MAX_CARDS, max(1, (int) Settings::get('max_products')));
@@ -94,6 +99,9 @@ class Agent
             'reply' => trim($reply),
             'products' => $products,
             'chips' => array_values($chips),
+            // true only when the model asked for the contact button (or the
+            // fallback above suggested a person); the widget draws it then
+            'handoff' => $handoff && Prompt::handoff_label() !== '',
             // the caller records the turn; a search that found nothing counts
             // as unanswered only when nothing was shown in the end
             'no_match' => $no_match && ! $products,
