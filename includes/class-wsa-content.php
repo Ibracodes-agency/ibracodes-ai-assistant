@@ -163,10 +163,11 @@ class Content
             return Index::search($query, $limit);
         }
 
-        return self::keyword_search($query, $limit);
+        return self::search_keyword_fallback($query, $limit);
     }
 
-    private static function keyword_search(string $query, int $limit): array
+    /** WordPress search; public because the index falls back here when the embeddings call fails. */
+    public static function search_keyword_fallback(string $query, int $limit): array
     {
         // get_posts() suppresses the posts_* SQL filters, so search plugins and
         // language filters are bypassed on purpose: results stay predictable on

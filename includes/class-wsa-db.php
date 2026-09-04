@@ -21,7 +21,7 @@ class DB
 {
     public const PURGE_HOOK = 'wsa_purge_threads';
 
-    private const DB_VERSION = '1.0.1';
+    private const DB_VERSION = '1.1.0';
 
     public static function threads_table(): string
     {
@@ -37,6 +37,13 @@ class DB
         return $wpdb->prefix . 'wsa_messages';
     }
 
+    public static function chunks_table(): string
+    {
+        global $wpdb;
+
+        return $wpdb->prefix . 'wsa_chunks';
+    }
+
     public static function install(): void
     {
         global $wpdb;
@@ -45,6 +52,7 @@ class DB
         $charset = $wpdb->get_charset_collate();
         $threads = self::threads_table();
         $messages = self::messages_table();
+        $chunks = self::chunks_table();
 
         dbDelta("CREATE TABLE {$threads} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -73,6 +81,17 @@ class DB
             PRIMARY KEY  (id),
             KEY thread_id (thread_id, id),
             KEY no_match (no_match, created_at)
+        ) {$charset};
+
+        CREATE TABLE {$chunks} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            post_id BIGINT UNSIGNED NOT NULL,
+            ord SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+            content TEXT NOT NULL,
+            embedding BLOB NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY post_id (post_id, ord)
         ) {$charset};");
 
         update_option('wsa_db_version', self::DB_VERSION, false);

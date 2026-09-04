@@ -60,6 +60,7 @@ add_action('plugins_loaded', function (): void {
     require_once WSA_PATH . 'includes/class-wsa-guards.php';
     require_once WSA_PATH . 'includes/class-wsa-catalog.php';
     require_once WSA_PATH . 'includes/class-wsa-content.php';
+    require_once WSA_PATH . 'includes/class-wsa-index.php';
     require_once WSA_PATH . 'includes/class-wsa-tools.php';
     require_once WSA_PATH . 'includes/class-wsa-prompt.php';
     require_once WSA_PATH . 'includes/class-wsa-scrubber.php';
@@ -74,6 +75,7 @@ add_action('plugins_loaded', function (): void {
     add_action(DB::PURGE_HOOK, [DB::class, 'purge']);
 
     Catalog::boot();
+    Index::boot();
     Rest::boot();
     Widget::boot();
     Admin::boot();

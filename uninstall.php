@@ -13,11 +13,14 @@ global $wpdb;
 
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_messages');
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_threads');
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_chunks');
 
 delete_option('wsa_settings');
 delete_option('wsa_db_version');
 delete_option('wsa_openai_key');
 delete_option('wsa_last_failure');
+delete_option('wsa_index_queue');
+wp_unschedule_hook('wsa_index_batch');
 
 // monthly call counters are options (they must survive a cache flush)
 $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wsa\\_calls\\_month\\_%'");

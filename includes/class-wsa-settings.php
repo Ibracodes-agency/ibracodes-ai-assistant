@@ -147,8 +147,9 @@ class Settings
             };
         }
 
-        update_option(self::OPTION, $clean);
+        // the update_option_wsa_settings hook runs inside update_option(), and readers there must see the new values
         self::$cache = null;
+        update_option(self::OPTION, $clean);
 
         return self::all();
     }
