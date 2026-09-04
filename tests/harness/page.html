@@ -1,0 +1,10 @@
+<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>harness</title><link rel="stylesheet" href="/widget.css"></head>
+<body><h1 id="which"></h1><a id="next" href="/page.html?n=2">next page</a>
+<script>
+document.getElementById('which').textContent = location.search || 'page 1';
+window.wsaConfig = { endpoint: '/chat', cartEndpoint: '', accent: '#1f2937', position: 'right', isRtl: true, launcherLabel: '',
+  title: 'יש לכם שאלה?', subtitle: 'אפשר לשאול אותי הכל', welcome: 'שלום! במה אפשר לעזור?', chips: ['מסך או שמע?', 'אינטרקום אלחוטי או חוטי?'],
+  handoff: { url: 'https://wa.me/972500000000', label: 'וואטסאפ' },
+  i18n: { open: 'open', close: 'close', placeholder: 'כתבו את השאלה', send: 'send', thinking: 'typing', addToCart: 'הוספה לסל', viewProduct: 'view', outOfStock: 'out', onSale: 'sale', error: 'error', conversation: 'chat' } };
+</script>
+<script src="/widget.js"></script></body></html>
