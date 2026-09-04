@@ -21,6 +21,9 @@ class Admin
 
     private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations'];
 
+    /** Hook suffix of our page, wherever the menu put it, so assets() recognises the screen. */
+    private static string $hook = '';
+
     public static function boot(): void
     {
         add_action('admin_menu', [self::class, 'menu']);
@@ -33,11 +36,11 @@ class Admin
     {
         $label = __('AI Assistant', 'woocommerce-shop-agent');
         if (Capabilities::has_commerce()) {
-            add_submenu_page('woocommerce', $label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render']);
+            self::$hook = (string) add_submenu_page('woocommerce', $label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render']);
 
             return;
         }
-        add_menu_page($label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render'], 'dashicons-format-chat', 58);
+        self::$hook = (string) add_menu_page($label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render'], 'dashicons-format-chat', 58);
     }
 
     public static function action_links(array $links): array
@@ -53,7 +56,7 @@ class Admin
 
     public static function assets(string $hook): void
     {
-        if ($hook !== 'woocommerce_page_' . self::SLUG) {
+        if ($hook !== self::$hook) {
             return;
         }
         // Heebo covers Latin and Hebrew from one family, which this admin needs
@@ -812,6 +815,7 @@ class Admin
     private static function render_thread(int $id): void
     {
         $thread = DB::thread($id);
+        $commerce = Capabilities::has_commerce();
         ?>
         <div class="wsa-stack">
             <p><a href="<?php echo esc_url(self::url('conversations')); ?>">&larr; <?php esc_html_e('All conversations', 'woocommerce-shop-agent'); ?></a></p>
@@ -846,7 +850,8 @@ class Admin
                                 ?>
                                 <div style="padding-inline-start:6px;">
                                     <?php foreach ($ids as $product_id) :
-                                        $product = wc_get_product($product_id);
+                                        // without WooCommerce the id is all we can show
+                                        $product = $commerce ? wc_get_product($product_id) : null;
                                         ?>
                                         <div class="wsa-mini">
                                             <?php
@@ -860,8 +865,10 @@ class Admin
                                             <span class="wsa-mini-n wsa-truncate">
                                                 <?php if ($product) : ?>
                                                     <a href="<?php echo esc_url(get_edit_post_link($product_id)); ?>"><?php echo esc_html($product->get_name()); ?></a>
-                                                <?php else : ?>
+                                                <?php elseif ($commerce) : ?>
                                                     <?php esc_html_e('(deleted product)', 'woocommerce-shop-agent'); ?>
+                                                <?php else : ?>
+                                                    #<?php echo esc_html((string) $product_id); ?>
                                                 <?php endif; ?>
                                             </span>
                                         </div>
