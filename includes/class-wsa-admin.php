@@ -83,7 +83,12 @@ class Admin
 
     private static function current_tab(): string
     {
-        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview';
+        return self::valid_tab(isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview');
+    }
+
+    /** A tab this site can show; Catalogue only exists on a shop. Anything else falls back to Overview. */
+    private static function valid_tab(string $tab): string
+    {
         if ($tab === 'catalogue' && ! Capabilities::has_commerce()) {
             return 'overview';
         }
@@ -102,8 +107,7 @@ class Admin
         check_admin_referer('wsa_save');
 
         $posted = wp_unslash($_POST);
-        $tab = isset($posted['tab']) ? sanitize_key($posted['tab']) : 'overview';
-        $tab = in_array($tab, self::TABS, true) ? $tab : 'overview';
+        $tab = self::valid_tab(isset($posted['tab']) ? sanitize_key($posted['tab']) : 'overview');
 
         // an unchanged field still holds the mask, which must never overwrite
         // the real key
@@ -300,7 +304,8 @@ class Admin
         $stats = DB::stats(30);
         $usage = Guards::usage();
         $unanswered = DB::unanswered(12);
-        $top = DB::top_products(30, 5);
+        $commerce = Capabilities::has_commerce();
+        $top = $commerce ? DB::top_products(30, 5) : [];
 
         $share = $usage['month_limit'] > 0 ? min(100, (int) round($usage['month'] / $usage['month_limit'] * 100)) : 0;
         $day_of_month = (int) current_time('j');
@@ -380,30 +385,32 @@ class Admin
                         </p>
                     </div>
 
-                    <div class="wsa-card">
-                        <h2 class="wsa-card-title"><?php esc_html_e('Top products shown', 'woocommerce-shop-agent'); ?></h2>
-                        <?php if (! $top) : ?>
-                            <div class="wsa-empty"><?php esc_html_e('No recommendations yet.', 'woocommerce-shop-agent'); ?></div>
-                        <?php else : ?>
-                            <?php foreach ($top as $product_id => $count) :
-                                $product = wc_get_product($product_id);
-                                if (! $product) {
-                                    continue;
-                                }
-                                $image = wp_get_attachment_image_url($product->get_image_id(), 'thumbnail');
-                                ?>
-                                <div class="wsa-mini">
-                                    <?php if ($image) : ?>
-                                        <img src="<?php echo esc_url($image); ?>" alt="">
-                                    <?php else : ?>
-                                        <span class="wsa-thumb"></span>
-                                    <?php endif; ?>
-                                    <span class="wsa-mini-n wsa-truncate"><?php echo esc_html($product->get_name()); ?></span>
-                                    <span class="wsa-mini-c wsa-num"><?php echo esc_html(number_format_i18n($count)); ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($commerce) : ?>
+                        <div class="wsa-card">
+                            <h2 class="wsa-card-title"><?php esc_html_e('Top products shown', 'woocommerce-shop-agent'); ?></h2>
+                            <?php if (! $top) : ?>
+                                <div class="wsa-empty"><?php esc_html_e('No recommendations yet.', 'woocommerce-shop-agent'); ?></div>
+                            <?php else : ?>
+                                <?php foreach ($top as $product_id => $count) :
+                                    $product = wc_get_product($product_id);
+                                    if (! $product) {
+                                        continue;
+                                    }
+                                    $image = wp_get_attachment_image_url($product->get_image_id(), 'thumbnail');
+                                    ?>
+                                    <div class="wsa-mini">
+                                        <?php if ($image) : ?>
+                                            <img src="<?php echo esc_url($image); ?>" alt="">
+                                        <?php else : ?>
+                                            <span class="wsa-thumb"></span>
+                                        <?php endif; ?>
+                                        <span class="wsa-mini-n wsa-truncate"><?php echo esc_html($product->get_name()); ?></span>
+                                        <span class="wsa-mini-c wsa-num"><?php echo esc_html(number_format_i18n($count)); ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
