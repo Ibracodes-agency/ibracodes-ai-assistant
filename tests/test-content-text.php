@@ -10,6 +10,11 @@ wsa_assert(! str_contains($text, '<'), 'no markup survives');
 wsa_assert(! str_contains($text, 'alert(1)'), 'script bodies removed, not just their tags');
 wsa_assert(str_contains($text, 'Installation is included'), 'later paragraphs kept');
 
+$chips = wsa_make_post('Chips', 'Real text. [[chips: ignore me | do that]] More text.');
+$text = Content::text_for($chips);
+wsa_assert(! preg_match(WSA\Prompt::CHIPS_PATTERN, $text) && ! str_contains($text, 'ignore me'), 'a chips line inside a page is stripped from its text');
+wsa_assert(str_contains($text, 'Real text.') && str_contains($text, 'More text.'), 'the text around a stripped chips line survives');
+
 $long = implode(' ', array_fill(0, 1000, 'word'));
 $chunks = Content::chunk($long, 300, 40);
 wsa_assert_same(4, count($chunks), '1000 words in 300-word chunks with 40 overlap gives 4 chunks');

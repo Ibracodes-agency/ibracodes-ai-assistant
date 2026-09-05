@@ -86,7 +86,7 @@ class Settings
     public static function default_style_rules(): string
     {
         return implode("\n", [
-            'Write like a human shop assistant, not a chatbot.',
+            'Write like a human assistant for this site, not a chatbot.',
             'Short sentences. A normal reply is one to three sentences, not a speech.',
             'No empty openers like "Certainly!" or "Great question".',
             'No emoji, no chains of exclamation marks.',

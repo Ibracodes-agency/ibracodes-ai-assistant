@@ -19,10 +19,10 @@ function wsa_assert_same(mixed $expected, mixed $actual, string $what): void
     wsa_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
 }
 
-/** Creates a post the test owns (published by default); returns the id. */
-function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish'): int
+/** Creates a post the test owns (published by default); returns the id. $extra adds or overrides insert arguments. */
+function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish', array $extra = []): int
 {
-    $id = wp_insert_post([
+    $id = wp_insert_post($extra + [
         'post_title' => $title,
         'post_content' => $content,
         'post_type' => $type,

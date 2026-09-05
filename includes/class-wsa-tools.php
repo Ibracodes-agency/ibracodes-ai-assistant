@@ -114,7 +114,11 @@ class Tools
     public static function run(string $name, array $input, array &$cards, array $context = []): array
     {
         return match ($name) {
-            'search_content' => ['results' => Content::search((string) ($input['query'] ?? ''))],
+            // page text reaches the model fenced, the way the prompt says data arrives
+            'search_content' => ['results' => array_map(
+                static fn (array $hit) => array_merge($hit, ['passage' => Prompt::delimit($hit['passage'])]),
+                Content::search((string) ($input['query'] ?? '')),
+            )],
             'get_page' => self::page((int) ($input['id'] ?? 0)),
             // the setting is checked again here: a tool the model was not offered must stay uncallable
             'capture_lead' => Settings::get('leads_enabled')
@@ -136,7 +140,12 @@ class Tools
             return ['error' => 'not_found'];
         }
 
-        return ['id' => $id, 'title' => get_the_title($id), 'url' => get_permalink($id), 'text' => mb_substr(Content::text_for($id), 0, 6000)];
+        return [
+            'id' => $id,
+            'title' => wp_specialchars_decode(get_the_title($id), ENT_QUOTES),
+            'url' => get_permalink($id),
+            'text' => Prompt::delimit(mb_substr(Content::text_for($id), 0, 6000)),
+        ];
     }
 
     private static function search(array $input, array &$cards): array

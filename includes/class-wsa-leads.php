@@ -17,7 +17,7 @@ class Leads
     public static function capture(array $input, int $thread_id, int $page_id): array
     {
         $name = trim(sanitize_text_field((string) ($input['name'] ?? '')));
-        $contact = trim(sanitize_text_field((string) ($input['contact'] ?? '')));
+        $contact = trim(self::without_format_chars(sanitize_text_field((string) ($input['contact'] ?? ''))));
         $request = mb_substr(trim(sanitize_textarea_field((string) ($input['request'] ?? ''))), 0, 500);
 
         if (mb_strlen($name) < 2 || mb_strlen($name) > 80) {
@@ -34,39 +34,58 @@ class Leads
         $data = ['name' => $name, 'contact' => $contact, 'request' => $request, 'page_id' => $page_id];
 
         if ($existing) {
-            $wpdb->update($table, $data, ['id' => $existing]);
+            if ($wpdb->update($table, $data, ['id' => $existing]) === false) {
+                return self::storage_failed();
+            }
             $id = $existing;
         } else {
             $ok = $wpdb->insert($table, $data + ['thread_id' => $thread_id, 'created_at' => current_time('mysql')]);
             if (! $ok) {
-                return ['error' => 'storage_failed', 'message' => 'The lead could not be saved. Apologise and offer the contact option instead.'];
+                return self::storage_failed();
             }
             $id = (int) $wpdb->insert_id;
         }
 
         // a failed email keeps the lead; the flag lets the admin show which ones the owner never heard about
-        $sent = self::notify($id);
+        $sent = self::notify($id, $existing > 0);
         $wpdb->update($table, ['email_sent' => $sent ? 1 : 0], ['id' => $id]);
 
         return ['saved' => true, 'id' => $id];
     }
 
+    private static function storage_failed(): array
+    {
+        return ['error' => 'storage_failed', 'message' => 'The lead could not be saved. Apologise and offer the contact option instead.'];
+    }
+
     /** Digits with the usual separators, 7 to 15 digits in total. */
     public static function is_phone(string $value): bool
     {
+        $value = self::without_format_chars($value);
         $digits = preg_replace('/\D/', '', $value) ?? '';
 
         return (bool) preg_match('/^\+?[\d\s().-]{7,20}$/', $value) && strlen($digits) >= 7 && strlen($digits) <= 15;
     }
 
-    private static function notify(int $id): bool
+    /** Invisible direction and joining marks, which a phone app pastes along with the number on an RTL site. */
+    private static function without_format_chars(string $value): string
+    {
+        return preg_replace('/\p{Cf}/u', '', $value) ?? $value;
+    }
+
+    private static function notify(int $id, bool $updated): bool
     {
         $lead = self::find($id);
         if (! $lead) {
             return false;
         }
         $to = (string) Settings::get('leads_email');
-        $subject = sprintf(__('New lead from the AI Assistant: %s', 'woocommerce-shop-agent'), $lead['name']);
+        $subject = sprintf(
+            $updated
+                ? __('Updated lead from the AI Assistant: %s', 'woocommerce-shop-agent')
+                : __('New lead from the AI Assistant: %s', 'woocommerce-shop-agent'),
+            $lead['name'],
+        );
         $lines = [
             sprintf(__('Name: %s', 'woocommerce-shop-agent'), $lead['name']),
             sprintf(__('Contact: %s', 'woocommerce-shop-agent'), $lead['contact']),

@@ -63,6 +63,8 @@ class Content
         $html = preg_replace('#<(script|style|noscript|template)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
         $html = preg_replace('#<(br|/p|/div|/li|/h[1-6]|/tr)\b[^>]*>#i', "\n", $html) ?? $html;
         $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // a chips line written into a page would otherwise become buttons under the answer
+        $text = preg_replace(Prompt::CHIPS_PATTERN, ' ', $text) ?? $text;
         $text = preg_replace('/[ \t]+/u', ' ', $text) ?? $text;
         $text = preg_replace('/\s*\n\s*/u', "\n", $text) ?? $text;
 
