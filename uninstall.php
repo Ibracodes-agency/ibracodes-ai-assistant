@@ -14,6 +14,7 @@ global $wpdb;
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_messages');
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_threads');
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_chunks');
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_leads');
 
 delete_option('wsa_settings');
 delete_option('wsa_db_version');

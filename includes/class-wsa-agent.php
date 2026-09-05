@@ -59,6 +59,7 @@ class Agent
                         $name,
                         is_array($arguments) ? $arguments : [],
                         $cards,
+                        $context,
                     );
                     // a search that found nothing is the signal behind the
                     // "questions the agent could not answer" report

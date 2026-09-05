@@ -74,6 +74,18 @@ class Tools
             ]];
         }
 
+        if (Settings::get('leads_enabled')) {
+            $tools[] = ['type' => 'function', 'function' => [
+                'name' => 'capture_lead',
+                'description' => 'Save the visitor\'s details so the site owner can get back to them. Only call it after the visitor agreed and gave a name and a phone number or email. If the result is an error, ask again for the missing or invalid detail; never claim it was saved.',
+                'parameters' => ['type' => 'object', 'properties' => [
+                    'name' => ['type' => 'string'],
+                    'contact' => ['type' => 'string', 'description' => 'A phone number or an email address, exactly as the visitor wrote it.'],
+                    'request' => ['type' => 'string', 'description' => 'What the visitor wants, in one or two sentences, in the site language.'],
+                ], 'required' => ['name', 'contact', 'request']],
+            ]];
+        }
+
         // The button the model may point to only exists when the owner set a
         // destination; without one, the prompt says there is nothing to click
         // and the tool is not offered at all.
@@ -97,12 +109,17 @@ class Tools
      * is told never to) paste links or prices into its text.
      *
      * @param array<int, array> $cards collected product cards, keyed by id
+     * @param array{page_id?: int, thread_id?: int} $context the verified thread and the page being read, for the lead
      */
-    public static function run(string $name, array $input, array &$cards): array
+    public static function run(string $name, array $input, array &$cards, array $context = []): array
     {
         return match ($name) {
             'search_content' => ['results' => Content::search((string) ($input['query'] ?? ''))],
             'get_page' => self::page((int) ($input['id'] ?? 0)),
+            // the setting is checked again here: a tool the model was not offered must stay uncallable
+            'capture_lead' => Settings::get('leads_enabled')
+                ? Leads::capture($input, (int) ($context['thread_id'] ?? 0), (int) ($context['page_id'] ?? 0))
+                : ['error' => 'unknown_tool'],
             'search_products' => self::search($input, $cards),
             'hand_off' => ['shown' => true, 'label' => Prompt::handoff_label()],
             'get_categories' => ['categories' => Catalog::categories()],

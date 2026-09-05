@@ -17,7 +17,8 @@ if (! defined('ABSPATH')) {
 
 class Admin
 {
-    private const SLUG = 'shop-agent';
+    /** Public: the lead email links to the conversation and the leads tab. */
+    public const SLUG = 'shop-agent';
 
     private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations'];
 

@@ -21,7 +21,7 @@ class DB
 {
     public const PURGE_HOOK = 'wsa_purge_threads';
 
-    private const DB_VERSION = '1.1.0';
+    private const DB_VERSION = '1.2.0';
 
     public static function threads_table(): string
     {
@@ -44,6 +44,13 @@ class DB
         return $wpdb->prefix . 'wsa_chunks';
     }
 
+    public static function leads_table(): string
+    {
+        global $wpdb;
+
+        return $wpdb->prefix . 'wsa_leads';
+    }
+
     public static function install(): void
     {
         global $wpdb;
@@ -53,6 +60,7 @@ class DB
         $threads = self::threads_table();
         $messages = self::messages_table();
         $chunks = self::chunks_table();
+        $leads = self::leads_table();
 
         dbDelta("CREATE TABLE {$threads} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -92,6 +100,20 @@ class DB
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY post_id (post_id, ord)
+        ) {$charset};
+
+        CREATE TABLE {$leads} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            thread_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            name VARCHAR(80) NOT NULL,
+            contact VARCHAR(120) NOT NULL,
+            request TEXT NULL,
+            page_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            email_sent TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY thread_id (thread_id),
+            KEY created_at (created_at)
         ) {$charset};");
 
         update_option('wsa_db_version', self::DB_VERSION, false);
@@ -306,7 +328,7 @@ class DB
         }
     }
 
-    /** Deletes threads past the retention window, in bounded chunks. */
+    /** Deletes threads past the retention window, in bounded chunks, then leads past their own. */
     public static function purge(): void
     {
         global $wpdb;
@@ -322,12 +344,14 @@ class DB
                 $cutoff,
             )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             if (! $ids) {
-                return;
+                break;
             }
             $in = implode(',', array_map('intval', $ids));
             $wpdb->query("DELETE FROM {$messages} WHERE thread_id IN ({$in})");
             $wpdb->query("DELETE FROM {$threads} WHERE id IN ({$in})");
         }
+
+        Leads::purge();
     }
 
     public static function delete_all_threads(): void
