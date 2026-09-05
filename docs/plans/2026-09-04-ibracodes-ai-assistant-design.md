@@ -92,8 +92,12 @@ created time. Email to the owner's address on arrival with a link to the
 conversation. A Leads tab with search, CSV export and delete.
 
 Retention: its own setting, default 180 days, deletable to zero.
-Transcripts still store no name, email or IP. The consent sentence gains
-a phrase about details passed to the site owner, editable by the owner.
+Transcripts store no name, email or IP as fields, but details a visitor
+types into the chat are part of the stored conversation. Decision taken
+with the owner on 2026-09-05: deleting a lead, by hand or by retention,
+deletes the conversation it came from as well, so no copy of the details
+stays behind. The consent sentence gains a phrase about details passed to
+the site owner, editable by the owner.
 
 Failure paths: email failure keeps the lead and flags it in the tab; a
 database failure returns an error and the model offers the handoff button.
