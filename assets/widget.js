@@ -166,7 +166,9 @@
 	panel.appendChild( head );
 	panel.appendChild( body );
 	panel.appendChild( form );
-	panel.appendChild( foot );
+	if ( foot.childNodes.length ) {
+		panel.appendChild( foot );
+	}
 	root.appendChild( panel );
 	root.appendChild( launcher );
 

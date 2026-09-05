@@ -47,6 +47,8 @@ class Settings
             'chips' => '',
             'accent' => '#111827',
             'position' => 'right',
+            // a credit link on a public site has to be the owner's choice
+            'show_credit' => false,
 
             // behaviour
             'max_products' => 3,
@@ -124,7 +126,7 @@ class Settings
             $value = $input[$key];
 
             $clean[$key] = match ($key) {
-                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'leads_enabled' => (bool) $value,
+                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'show_credit', 'leads_enabled' => (bool) $value,
                 'max_products' => max(1, min(4, absint($value))),
                 'retention_days' => max(1, min(365, absint($value))),
                 'excluded_cats' => array_values(array_unique(array_filter(array_map('absint', (array) $value)))),

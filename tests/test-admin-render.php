@@ -14,6 +14,7 @@ use WSA\Index;
 use WSA\Leads;
 use WSA\Rest;
 use WSA\Settings;
+use WSA\Widget;
 
 wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]);
 $snapshot = Settings::all();
@@ -50,6 +51,15 @@ $agent = $render('agent');
 wsa_assert(str_contains($agent, 'id="wsa-rebuild"'), 'rebuild button in embeddings mode');
 wsa_assert(str_contains($agent, 'id="wsa-index-status"'), 'index status line in embeddings mode');
 Settings::update(['retrieval' => 'search']);
+
+// ---- appearance tab: the credit line is opt-in
+wsa_assert(str_contains($render('appearance'), 'name="show_credit"'), 'show_credit toggle on the appearance tab');
+Settings::update(['show_credit' => false]);
+wsa_assert_same(null, Widget::config()['brand'], 'no brand in the widget config while the credit is off');
+Settings::update(['show_credit' => true]);
+$brand = Widget::config()['brand'];
+wsa_assert(is_array($brand) && str_starts_with($brand['url'], 'https://ibracodes.com/') && str_ends_with($brand['logo'], 'assets/ibracodes.svg'), 'brand url and logo in the widget config once the credit is on');
+Settings::update(['show_credit' => (bool) $snapshot['show_credit']]);
 
 // ---- leads tab
 $leads = $render('leads');

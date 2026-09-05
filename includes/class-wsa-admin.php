@@ -144,7 +144,7 @@ class Admin
         // tab actually rendered may be written; otherwise saving Appearance
         // would silently switch off everything on the Agent tab.
         $toggles = [
-            'appearance' => ['show_launcher_label'],
+            'appearance' => ['show_launcher_label', 'show_credit'],
             'agent' => ['enabled', 'ask_first', 'leads_enabled'],
             'catalogue' => ['only_in_stock'],
             'conversations' => ['log_threads'],
@@ -536,6 +536,9 @@ class Admin
                     <label class="wsa-label" for="wsa-chips"><?php esc_html_e('Opening chips', 'woocommerce-shop-agent'); ?></label>
                     <textarea class="fld" id="wsa-chips" name="chips" rows="4" style="min-height:92px;"><?php echo esc_textarea($s['chips']); ?></textarea>
                     <p class="wsa-help"><?php esc_html_e('One per line, up to four. Shown as buttons under the opening message.', 'woocommerce-shop-agent'); ?></p>
+                </div>
+                <div style="margin-top:16px;">
+                    <?php self::toggle('show_credit', (bool) $s['show_credit'], __('Show "Developed by Ibracodes" under the chat', 'woocommerce-shop-agent'), __('A small credit line linking to ibracodes.com. Off by default.', 'woocommerce-shop-agent')); ?>
                 </div>
             </div>
         </div>

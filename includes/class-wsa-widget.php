@@ -46,7 +46,7 @@ class Widget
         wp_localize_script('wsa-widget', 'wsaConfig', self::config());
     }
 
-    private static function config(): array
+    public static function config(): array
     {
         return [
             'endpoint' => esc_url_raw(rest_url('wsa/v1/chat')),
@@ -65,11 +65,12 @@ class Widget
             ],
             'pageId' => is_singular() ? (int) get_queried_object_id() : 0,
             'privacyNote' => (string) Settings::get('privacy_note'),
-            'brand' => [
+            // opt-in: a credit link on the public site is the owner's choice
+            'brand' => Settings::get('show_credit') ? [
                 'url' => 'https://ibracodes.com/?utm_source=ai-assistant&utm_medium=widget',
                 'label' => __('Developed by Ibracodes', 'woocommerce-shop-agent'),
                 'logo' => WSA_URL . 'assets/ibracodes.svg',
-            ],
+            ] : null,
             'i18n' => [
                 'open' => __('Open chat', 'woocommerce-shop-agent'),
                 'close' => __('Close chat', 'woocommerce-shop-agent'),

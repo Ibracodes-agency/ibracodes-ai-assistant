@@ -55,8 +55,11 @@ const replayed = await page.locator('.wsa-chip.is-handoff').count();
 console.log('handoff chip replayed on page 3: ' + replayed);
 const last = posted[posted.length - 1];
 console.log('page 2 second ask  : thread=' + JSON.stringify(last.thread) + ' messages sent=' + last.messages.length);
+await page.goto(base + '/page.html?bare=1'); await page.click('.wsa-launcher'); await page.waitForTimeout(200);
+const bareFoot = await page.locator('.wsa-foot').count();
+console.log('bare page (no credit, no note) footer elements: ' + bareFoot);
 const ok = after.user === 1 && after.assistant === 2 && after.cards === 1 && after.chips >= 1 && last.thread === '7.abcdefabcdefabcdefab' && last.messages.length === 3 && handoffHref === 'https://wa.me/972500000000' && replayed === 1
-  && posted[0].page === 42 && footer === 1 && note === 1 && logo === 1;
-console.log(ok ? 'PASS: conversation survives navigation, page id and footer present' : 'FAIL: conversation lost on navigation, or page id / footer missing');
+  && posted[0].page === 42 && footer === 1 && note === 1 && logo === 1 && bareFoot === 0;
+console.log(ok ? 'PASS: conversation survives navigation, page id and footer present, footer absent when bare' : 'FAIL: conversation lost on navigation, or page id / footer wrong');
 process.exitCode = ok ? 0 : 1;
 await browser.close(); server.close();
