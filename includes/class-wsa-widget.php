@@ -35,10 +35,12 @@ class Widget
         }
 
         wp_enqueue_style('wsa-widget', WSA_URL . 'assets/widget.css', [], WSA_VERSION);
-        // WooCommerce's own add-to-cart script: with it the card button adds
-        // without a page load and updates the cart fragments; without it the
-        // button is still a working link
-        wp_enqueue_script('wc-add-to-cart');
+        if (Capabilities::has_commerce()) {
+            // WooCommerce's own add-to-cart script: with it the card button adds
+            // without a page load and updates the cart fragments; without it the
+            // button is still a working link
+            wp_enqueue_script('wc-add-to-cart');
+        }
         wp_enqueue_script('wsa-widget', WSA_URL . 'assets/widget.js', [], WSA_VERSION, true);
 
         wp_localize_script('wsa-widget', 'wsaConfig', self::config());
@@ -60,6 +62,13 @@ class Widget
             'handoff' => [
                 'url' => (string) Settings::get('handoff_url'),
                 'label' => (string) Settings::get('handoff_label') ?: __('Contact us', 'woocommerce-shop-agent'),
+            ],
+            'pageId' => is_singular() ? (int) get_queried_object_id() : 0,
+            'privacyNote' => (string) Settings::get('privacy_note'),
+            'brand' => [
+                'url' => 'https://ibracodes.com/?utm_source=ai-assistant&utm_medium=widget',
+                'label' => __('Developed by Ibracodes', 'woocommerce-shop-agent'),
+                'logo' => WSA_URL . 'assets/ibracodes.svg',
             ],
             'i18n' => [
                 'open' => __('Open chat', 'woocommerce-shop-agent'),

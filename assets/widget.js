@@ -3,7 +3,9 @@
  *
  * The markup here mirrors the design file (docs/widget-design.dc.html)
  * element for element, because the stylesheet is lifted from it verbatim. If a
- * class or nesting level changes here, it has to change there too.
+ * class or nesting level changes here, it has to change there too. The one
+ * element the design file does not have is the footer under the input: the
+ * privacy note and the maker's mark.
  *
  * Self-injecting and dependency-free: it builds its own DOM, owns every class
  * under the wsa- prefix, and assumes nothing about the host theme. Product text
@@ -142,9 +144,29 @@
 	form.appendChild( input );
 	form.appendChild( send );
 
+	var foot = el( 'div', 'wsa-foot' );
+	if ( cfg.privacyNote ) {
+		foot.appendChild( el( 'p', 'wsa-note', cfg.privacyNote ) );
+	}
+	if ( cfg.brand && cfg.brand.url ) {
+		var brand = el( 'a', 'wsa-brand' );
+		brand.href = cfg.brand.url;
+		brand.target = '_blank';
+		brand.rel = 'noopener';
+		var mark = el( 'img' );
+		mark.src = cfg.brand.logo;
+		mark.alt = '';
+		mark.width = 52;
+		mark.height = 8;
+		brand.appendChild( mark );
+		brand.appendChild( el( 'span', '', cfg.brand.label ) );
+		foot.appendChild( brand );
+	}
+
 	panel.appendChild( head );
 	panel.appendChild( body );
 	panel.appendChild( form );
+	panel.appendChild( foot );
 	root.appendChild( panel );
 	root.appendChild( launcher );
 
@@ -287,6 +309,7 @@
 					return { role: m.role, text: m.text };
 				} ),
 				thread: thread,
+				page: cfg.pageId || 0,
 				device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
 			} ),
 		} )

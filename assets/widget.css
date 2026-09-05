@@ -467,6 +467,23 @@
 [dir="rtl"] .wsa-send svg{transform:scaleX(-1);}
 .wsa-root.is-busy .wsa-input{color:var(--wsa-ink-3);}
 
+/* ---------- footer: privacy note and the maker's mark ---------- */
+.wsa-foot{
+  flex:0 0 auto;
+  display:flex;flex-direction:column;gap:4px;
+  padding:6px 14px 10px;
+  background:var(--wsa-surface);
+}
+.wsa-note{margin:0;font-size:11.5px;line-height:1.4;color:var(--wsa-ink-3);text-align:start;}
+.wsa-brand{
+  display:inline-flex;align-items:center;gap:6px;
+  align-self:center;
+  font-size:11px;line-height:1;color:var(--wsa-ink-3);
+  text-decoration:none;opacity:.8;
+}
+.wsa-brand:hover{opacity:1;}
+.wsa-brand img{inline-size:52px;block-size:8px;display:block;}
+
 /* ---------- focus ---------- */
 .wsa-launcher:focus-visible,
 .wsa-close:focus-visible,
