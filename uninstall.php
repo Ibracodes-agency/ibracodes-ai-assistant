@@ -20,7 +20,10 @@ delete_option('wsa_db_version');
 delete_option('wsa_openai_key');
 delete_option('wsa_last_failure');
 delete_option('wsa_index_queue');
+delete_option('wsa_index_backoff');
+delete_option('wsa_index_model');
 wp_unschedule_hook('wsa_index_batch');
+wp_unschedule_hook('wsa_index_reconcile');
 
 // monthly call counters are options (they must survive a cache flush)
 $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wsa\\_calls\\_month\\_%'");

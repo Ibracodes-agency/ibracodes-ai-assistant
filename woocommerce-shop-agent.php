@@ -47,7 +47,10 @@ register_activation_hook(__FILE__, function (): void {
 
 register_deactivation_hook(__FILE__, function (): void {
     require_once WSA_PATH . 'includes/class-wsa-db.php';
+    require_once WSA_PATH . 'includes/class-wsa-index.php';
     wp_clear_scheduled_hook(DB::PURGE_HOOK);
+    wp_clear_scheduled_hook(Index::HOOK);
+    wp_clear_scheduled_hook(Index::RECONCILE_HOOK);
 });
 
 add_action('plugins_loaded', function (): void {
@@ -72,6 +75,8 @@ add_action('plugins_loaded', function (): void {
 
     DB::maybe_upgrade();
     DB::schedule_purge();
+    // on init, not here: it reads the settings, whose defaults are translated strings
+    add_action('init', [Index::class, 'schedule_reconcile']);
     add_action(DB::PURGE_HOOK, [DB::class, 'purge']);
 
     Catalog::boot();

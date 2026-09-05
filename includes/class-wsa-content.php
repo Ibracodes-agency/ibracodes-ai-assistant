@@ -159,7 +159,7 @@ class Content
         if (mb_strlen($query) < 2) {
             return [];
         }
-        if (Settings::get('retrieval') === 'embeddings' && class_exists(Index::class) && Index::ready()) {
+        if (Settings::get('retrieval') === 'embeddings' && Index::ready()) {
             return Index::search($query, $limit);
         }
 

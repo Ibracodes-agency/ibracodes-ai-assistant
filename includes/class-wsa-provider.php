@@ -24,7 +24,7 @@ class Provider
 
     private const EMBED_ENDPOINT = 'https://api.openai.com/v1/embeddings';
 
-    private const EMBED_MODEL = 'text-embedding-3-small';
+    public const EMBED_MODEL = 'text-embedding-3-small';
 
     public const EMBED_DIMS = 512;
 
@@ -105,7 +105,7 @@ class Provider
         }
         // tests and the index tests hand vectors back here, so nothing touches the network
         $pre = apply_filters('wsa_pre_embed', null, $texts);
-        if (is_array($pre)) {
+        if (is_array($pre) || $pre instanceof WP_Error) {
             return $pre;
         }
 
