@@ -60,6 +60,13 @@ class Rest
             'permission_callback' => static fn () => current_user_can(Capabilities::admin_cap()),
             'callback' => [self::class, 'test_key'],
         ]);
+
+        // admin-only: throws the embeddings index away and queues every page in scope again
+        register_rest_route(self::NS, '/rebuild-index', [
+            'methods' => 'POST',
+            'permission_callback' => static fn () => current_user_can(Capabilities::admin_cap()),
+            'callback' => [self::class, 'rebuild_index'],
+        ]);
     }
 
     public static function chat(WP_REST_Request $request): WP_REST_Response|WP_Error
@@ -111,6 +118,28 @@ class Rest
         }
 
         return rest_ensure_response(['ok' => true]);
+    }
+
+    public static function rebuild_index(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        if (! Index::enabled()) {
+            return new WP_Error('wsa_index_off', __('Switch retrieval to the embeddings index first.', 'woocommerce-shop-agent'), ['status' => 400]);
+        }
+        Index::drop();
+        Index::queue_all();
+        // one batch right away, so the owner sees progress even where WP-Cron is slow
+        Index::process_batch();
+        $pending = (int) Index::status()['pending'];
+
+        return rest_ensure_response([
+            'ok' => true,
+            'pending' => $pending,
+            'message' => sprintf(
+                /* translators: %s: number of pages waiting to be indexed */
+                __('Rebuilding, %s pages queued.', 'woocommerce-shop-agent'),
+                number_format_i18n($pending),
+            ),
+        ]);
     }
 
     public static function test_key(WP_REST_Request $request): WP_REST_Response

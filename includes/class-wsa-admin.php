@@ -20,7 +20,7 @@ class Admin
     /** Public: the lead email links to the conversation and the leads tab. */
     public const SLUG = 'shop-agent';
 
-    private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations'];
+    private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations', 'leads'];
 
     /** Hook suffix of our page, wherever the menu put it, so assets() recognises the screen. */
     private static string $hook = '';
@@ -72,9 +72,10 @@ class Admin
         wp_enqueue_script('wsa-admin', WSA_URL . 'assets/admin.js', [], WSA_VERSION, true);
         wp_localize_script('wsa-admin', 'wsaAdmin', [
             'endpoint' => esc_url_raw(rest_url('wsa/v1/test-key')),
+            'rebuildEndpoint' => esc_url_raw(rest_url('wsa/v1/rebuild-index')),
             'nonce' => wp_create_nonce('wp_rest'),
             'testing' => __('Testing…', 'woocommerce-shop-agent'),
-            'test' => __('Test connection', 'woocommerce-shop-agent'),
+            'rebuilding' => __('Rebuilding…', 'woocommerce-shop-agent'),
         ]);
     }
 
@@ -115,6 +116,19 @@ class Admin
         $posted = wp_unslash($_POST);
         $tab = self::valid_tab(isset($posted['tab']) ? sanitize_key($posted['tab']) : 'overview');
 
+        // the leads tab holds no settings: its forms delete one lead or export them all
+        if ($tab === 'leads') {
+            if (! empty($posted['export_leads'])) {
+                self::export_leads();
+            }
+            $deleted = ! empty($posted['delete_lead']);
+            if ($deleted) {
+                Leads::delete(absint($posted['delete_lead']));
+            }
+            wp_safe_redirect(self::url('leads', $deleted ? ['deleted' => '1'] : []));
+            exit;
+        }
+
         // an unchanged field still holds the mask, which must never overwrite
         // the real key
         if (! Settings::key_is_constant() && isset($posted['api_key'])) {
@@ -131,7 +145,7 @@ class Admin
         // would silently switch off everything on the Agent tab.
         $toggles = [
             'appearance' => ['show_launcher_label'],
-            'agent' => ['enabled', 'ask_first'],
+            'agent' => ['enabled', 'ask_first', 'leads_enabled'],
             'catalogue' => ['only_in_stock'],
             'conversations' => ['log_threads'],
         ];
@@ -141,6 +155,15 @@ class Admin
         }
         if ($tab === 'catalogue' && ! isset($posted['excluded_cats'])) {
             $input['excluded_cats'] = [];
+        }
+        if ($tab === 'agent') {
+            if (! isset($posted['content_post_types'])) {
+                $input['content_post_types'] = [];
+            }
+            if (isset($posted['content_pages'])) {
+                // typed as "12, 40 41": ids separated by commas or spaces
+                $input['content_pages'] = preg_split('/[\s,]+/', (string) $posted['content_pages'], -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            }
         }
 
         Settings::update($input);
@@ -171,6 +194,7 @@ class Admin
                     'agent' => self::tab_agent($s),
                     'catalogue' => self::tab_catalogue($s),
                     'conversations' => self::tab_conversations($s),
+                    'leads' => self::tab_leads($s),
                     default => self::tab_overview($s),
                 };
                 ?>
@@ -184,6 +208,7 @@ class Admin
         $ready = Settings::ready();
         $threads = DB::stats(30);
         $catalogue = Capabilities::has_commerce() ? (int) (wp_count_posts('product')->publish ?? 0) : 0;
+        $leads_month = Leads::count_since(30);
         ?>
         <div class="wsa-band">
             <div class="wsa-band-top">
@@ -214,6 +239,7 @@ class Admin
                     'agent' => [__('Agent', 'woocommerce-shop-agent'), $ready ? '' : __('Setup', 'woocommerce-shop-agent')],
                     'catalogue' => [__('Catalogue', 'woocommerce-shop-agent'), number_format_i18n($catalogue)],
                     'conversations' => [__('Conversations', 'woocommerce-shop-agent'), $threads['threads'] ? number_format_i18n($threads['threads']) : ''],
+                    'leads' => [__('Leads', 'woocommerce-shop-agent'), $leads_month ? number_format_i18n($leads_month) : ''],
                 ];
                 $labels = array_intersect_key($labels, array_flip(self::tabs()));
                 foreach ($labels as $key => [$label, $badge]) : ?>
@@ -234,6 +260,9 @@ class Admin
         if (isset($_GET['updated'])) {
             self::alert('good', '&#10003;', __('Settings saved.', 'woocommerce-shop-agent'));
         }
+        if (isset($_GET['deleted'])) {
+            self::alert('good', '&#10003;', __('Lead deleted, along with its conversation.', 'woocommerce-shop-agent'));
+        }
 
         if (! Settings::ready()) {
             $why = Settings::api_key() === ''
@@ -244,14 +273,20 @@ class Admin
 
         $failure = Provider::last_failure();
         if ($failure) {
-            self::alert('bad', '!', sprintf(
-                /* translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time */
-                __('The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)', 'woocommerce-shop-agent'),
-                (int) $failure['code'],
-                $failure['message'],
-                $failure['at'],
-            ));
+            self::alert('bad', '!', self::failure_message($failure));
         }
+    }
+
+    /** One sentence about the last failed call to OpenAI, shown in the notices and next to the index status. */
+    private static function failure_message(array $failure): string
+    {
+        return sprintf(
+            /* translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time */
+            __('The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)', 'woocommerce-shop-agent'),
+            (int) $failure['code'],
+            $failure['message'],
+            $failure['at'],
+        );
     }
 
     private static function alert(string $tone, string $mark, string $message, string $action_url = '', string $action_label = ''): void
@@ -322,9 +357,12 @@ class Admin
                 $kpis = [
                     [__('Conversations', 'woocommerce-shop-agent'), number_format_i18n($stats['threads']), __('last 30 days', 'woocommerce-shop-agent')],
                     [__('Replies sent', 'woocommerce-shop-agent'), number_format_i18n($stats['turns']), __('last 30 days', 'woocommerce-shop-agent')],
-                    [__('Products shown', 'woocommerce-shop-agent'), number_format_i18n($stats['products']), __('recommendations made', 'woocommerce-shop-agent')],
-                    [__('Added to cart', 'woocommerce-shop-agent'), number_format_i18n($stats['carts']), __('chats that led to a cart', 'woocommerce-shop-agent')],
                 ];
+                if ($commerce) {
+                    $kpis[] = [__('Products shown', 'woocommerce-shop-agent'), number_format_i18n($stats['products']), __('recommendations made', 'woocommerce-shop-agent')];
+                    $kpis[] = [__('Added to cart', 'woocommerce-shop-agent'), number_format_i18n($stats['carts']), __('chats that led to a cart', 'woocommerce-shop-agent')];
+                }
+                $kpis[] = [__('Leads, 30 days', 'woocommerce-shop-agent'), number_format_i18n(Leads::count_since(30)), __('visitors who left their details', 'woocommerce-shop-agent')];
                 foreach ($kpis as [$k, $v, $t]) : ?>
                     <div class="wsa-kpi">
                         <div class="wsa-kpi-k"><?php echo esc_html($k); ?></div>
@@ -583,6 +621,116 @@ class Admin
 
             <div class="wsa-card">
                 <div class="wsa-card-head">
+                    <div>
+                        <h2 class="wsa-card-title"><?php esc_html_e('Content', 'woocommerce-shop-agent'); ?></h2>
+                        <p class="wsa-card-sub"><?php esc_html_e('The pages and posts the assistant may read and answer from. Drafts, private and password-protected content are never included.', 'woocommerce-shop-agent'); ?></p>
+                    </div>
+                </div>
+
+                <div class="wsa-field">
+                    <span class="wsa-label"><?php esc_html_e('Content types', 'woocommerce-shop-agent'); ?></span>
+                    <div class="wsa-checks">
+                        <?php
+                        $post_types = array_map('strval', (array) $s['content_post_types']);
+                        foreach (Settings::indexable_post_types() as $type) :
+                            $object = get_post_type_object($type);
+                            ?>
+                            <label class="wsa-check">
+                                <input type="checkbox" name="content_post_types[]" value="<?php echo esc_attr($type); ?>" <?php checked(in_array($type, $post_types, true)); ?>>
+                                <span><?php echo esc_html($object ? $object->labels->name : $type); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="wsa-field">
+                    <span class="wsa-label"><?php esc_html_e('Which pages', 'woocommerce-shop-agent'); ?></span>
+                    <div class="wsa-choices">
+                        <?php foreach ([
+                            'all' => __('All published pages and posts', 'woocommerce-shop-agent'),
+                            'selected' => __('Only the pages listed below', 'woocommerce-shop-agent'),
+                        ] as $value => $label) : ?>
+                            <label class="wsa-choice">
+                                <input type="radio" name="content_scope" value="<?php echo esc_attr($value); ?>" <?php checked($s['content_scope'], $value); ?>>
+                                <span class="wsa-choice-t"><?php echo esc_html($label); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <?php
+                self::text_field(
+                    'content_pages',
+                    __('Pages', 'woocommerce-shop-agent'),
+                    implode(', ', array_map('strval', (array) $s['content_pages'])),
+                    __('Page ids, comma separated. The id is in the address bar when you edit a page.', 'woocommerce-shop-agent'),
+                );
+                ?>
+
+                <div class="wsa-field">
+                    <span class="wsa-label"><?php esc_html_e('How the assistant finds content', 'woocommerce-shop-agent'); ?></span>
+                    <div class="wsa-choices">
+                        <?php foreach ([
+                            'search' => __('WordPress search (free)', 'woocommerce-shop-agent'),
+                            'embeddings' => __('Embeddings index (better answers)', 'woocommerce-shop-agent'),
+                        ] as $value => $label) : ?>
+                            <label class="wsa-choice">
+                                <input type="radio" name="retrieval" value="<?php echo esc_attr($value); ?>" <?php checked($s['retrieval'], $value); ?>>
+                                <span class="wsa-choice-t"><?php echo esc_html($label); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="wsa-help"><?php esc_html_e('Building the index costs about one cent per hundred pages once, then a fraction of that per question. It uses your OpenAI key and counts against your daily and monthly limits.', 'woocommerce-shop-agent'); ?></p>
+                </div>
+
+                <?php if (Index::enabled()) :
+                    $status = Index::status();
+                    $failure = Provider::last_failure();
+                    ?>
+                    <div class="wsa-field">
+                        <p class="wsa-help" id="wsa-index-status">
+                            <?php
+                            printf(
+                                /* translators: 1: pages indexed, 2: pages in scope, 3: pages waiting in the queue */
+                                esc_html__('Indexed %1$s of %2$s pages, %3$s waiting.', 'woocommerce-shop-agent'),
+                                esc_html(number_format_i18n($status['posts'])),
+                                esc_html(number_format_i18n($status['total'])),
+                                esc_html(number_format_i18n($status['pending'])),
+                            );
+                            ?>
+                        </p>
+                        <?php if ($failure) : ?>
+                            <div style="margin-top:10px;"><?php self::alert('bad', '!', self::failure_message($failure)); ?></div>
+                        <?php endif; ?>
+                        <p style="margin-top:10px;">
+                            <button type="button" class="wsa-btn is-ghost" id="wsa-rebuild"><?php esc_html_e('Rebuild index', 'woocommerce-shop-agent'); ?></button>
+                            <span id="wsa-rebuild-result" class="wsa-test-result"></span>
+                        </p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="wsa-card">
+                <div class="wsa-card-head">
+                    <div><h2 class="wsa-card-title"><?php esc_html_e('Leads', 'woocommerce-shop-agent'); ?></h2></div>
+                </div>
+                <?php self::toggle('leads_enabled', (bool) $s['leads_enabled'], __('Offer to take the visitor\'s details', 'woocommerce-shop-agent'), __('The assistant asks for a name and a phone or email, saves the lead and emails you.', 'woocommerce-shop-agent')); ?>
+                <div class="wsa-field" style="margin-top:16px;">
+                    <label class="wsa-label" for="wsa-leads-when"><?php esc_html_e('When to offer', 'woocommerce-shop-agent'); ?></label>
+                    <input class="fld" type="text" id="wsa-leads-when" name="leads_when" value="<?php echo esc_attr($s['leads_when']); ?>">
+                    <p class="wsa-help"><?php esc_html_e('One line, for example: when someone wants a quote or a callback.', 'woocommerce-shop-agent'); ?></p>
+                </div>
+                <?php self::text_field('leads_email', __('Send leads to', 'woocommerce-shop-agent'), $s['leads_email'], '', 'email'); ?>
+                <div class="wsa-field">
+                    <label class="wsa-label" for="wsa-leads-retention-days"><?php esc_html_e('Keep leads for (days)', 'woocommerce-shop-agent'); ?></label>
+                    <input class="fld" style="max-width:110px;" type="number" min="1" max="365" id="wsa-leads-retention-days" name="leads_retention_days" value="<?php echo esc_attr((string) $s['leads_retention_days']); ?>">
+                    <p class="wsa-help"><?php esc_html_e('Older leads are deleted once a day, along with the conversation they came from.', 'woocommerce-shop-agent'); ?></p>
+                </div>
+                <?php self::text_field('privacy_note', __('Note under the chat input', 'woocommerce-shop-agent'), $s['privacy_note'], __('Say that details typed here are passed to the site owner and kept with the conversation.', 'woocommerce-shop-agent')); ?>
+            </div>
+
+            <div class="wsa-card">
+                <div class="wsa-card-head">
                     <div><h2 class="wsa-card-title"><?php esc_html_e('Behaviour', 'woocommerce-shop-agent'); ?></h2></div>
                 </div>
                 <div class="wsa-field">
@@ -701,6 +849,156 @@ class Admin
         </div>
         <?php
         self::save_bar();
+    }
+
+    // -------------------------------------------------------------- tab: leads
+    private static function tab_leads(array $s): void
+    {
+        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+        $per_page = 20;
+        $data = Leads::list($page, $per_page, $search);
+        $pages = max(1, (int) ceil($data['total'] / $per_page));
+        $columns = '100px minmax(0,1fr) minmax(0,1fr) minmax(0,1.8fr) minmax(0,1fr) 70px 80px';
+        $paging = $search !== '' ? ['s' => $search] : [];
+        ?>
+        <div class="wsa-stack">
+            <div class="wsa-card">
+                <div class="wsa-card-head">
+                    <div>
+                        <h2 class="wsa-card-title"><?php esc_html_e('Leads', 'woocommerce-shop-agent'); ?></h2>
+                        <p class="wsa-card-sub">
+                            <?php
+                            printf(
+                                /* translators: %s: number of days leads are kept */
+                                esc_html__('Leads are kept %s days, then deleted along with the conversation they came from.', 'woocommerce-shop-agent'),
+                                esc_html(number_format_i18n((int) $s['leads_retention_days'])),
+                            );
+                            ?>
+                        </p>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>" style="display:flex;gap:8px;">
+                            <input type="hidden" name="page" value="<?php echo esc_attr(self::SLUG); ?>">
+                            <input type="hidden" name="tab" value="leads">
+                            <input class="fld" style="max-width:220px;" type="search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search leads', 'woocommerce-shop-agent'); ?>" aria-label="<?php esc_attr_e('Search leads', 'woocommerce-shop-agent'); ?>">
+                            <button type="submit" class="wsa-btn is-ghost"><?php esc_html_e('Search', 'woocommerce-shop-agent'); ?></button>
+                        </form>
+                        <?php self::form_open('leads'); ?>
+                            <button type="submit" class="wsa-btn is-ghost" name="export_leads" value="1"><?php esc_html_e('Export CSV', 'woocommerce-shop-agent'); ?></button>
+                        </form>
+                    </div>
+                </div>
+
+                <?php if (! $data['rows']) : ?>
+                    <div class="wsa-empty">
+                        <?php echo esc_html($search === '' ? __('No leads yet. Turn on lead capture on the Agent tab.', 'woocommerce-shop-agent') : __('No leads match that search.', 'woocommerce-shop-agent')); ?>
+                    </div>
+                <?php else : ?>
+                    <div class="wsa-rows">
+                        <div class="wsa-row wsa-row-head" style="grid-template-columns:<?php echo esc_attr($columns); ?>;">
+                            <div><?php esc_html_e('When', 'woocommerce-shop-agent'); ?></div>
+                            <div><?php esc_html_e('Name', 'woocommerce-shop-agent'); ?></div>
+                            <div><?php esc_html_e('Contact', 'woocommerce-shop-agent'); ?></div>
+                            <div><?php esc_html_e('Request', 'woocommerce-shop-agent'); ?></div>
+                            <div><?php esc_html_e('Page', 'woocommerce-shop-agent'); ?></div>
+                            <div><?php esc_html_e('Email', 'woocommerce-shop-agent'); ?></div>
+                            <div></div>
+                        </div>
+                        <?php foreach ($data['rows'] as $row) :
+                            $permalink = $row['page_id'] ? (string) get_permalink((int) $row['page_id']) : '';
+                            $thread_id = (int) $row['thread_id'];
+                            ?>
+                            <div class="wsa-row" style="grid-template-columns:<?php echo esc_attr($columns); ?>;">
+                                <div style="color:var(--muted);font-size:12.5px;"><?php echo esc_html(self::ago($row['created_at'])); ?></div>
+                                <div class="wsa-truncate">
+                                    <?php if ($thread_id > 0) : ?>
+                                        <a href="<?php echo esc_url(self::url('conversations', ['thread' => $thread_id])); ?>"><?php echo esc_html($row['name']); ?></a>
+                                    <?php else : ?>
+                                        <?php echo esc_html($row['name']); ?>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="wsa-truncate"><?php echo esc_html($row['contact']); ?></div>
+                                <div class="wsa-truncate"><?php echo esc_html(wp_html_excerpt((string) $row['request'], 80, '…')); ?></div>
+                                <div class="wsa-truncate">
+                                    <?php if ($permalink) : ?>
+                                        <a href="<?php echo esc_url($permalink); ?>"><?php echo esc_html(get_the_title((int) $row['page_id']) ?: $permalink); ?></a>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <?php if ((int) $row['email_sent']) : ?>
+                                        <span class="wsa-pill is-good"><?php esc_html_e('Sent', 'woocommerce-shop-agent'); ?></span>
+                                    <?php else : ?>
+                                        <span class="wsa-pill is-warn"><?php esc_html_e('Failed', 'woocommerce-shop-agent'); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <?php self::form_open('leads'); ?>
+                                        <button type="submit" class="wsa-btn is-ghost" name="delete_lead" value="<?php echo esc_attr((string) (int) $row['id']); ?>" data-wsa-confirm="<?php esc_attr_e('Delete this lead and the conversation it came from?', 'woocommerce-shop-agent'); ?>"><?php esc_html_e('Delete', 'woocommerce-shop-agent'); ?></button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($pages > 1) : ?>
+                        <div style="display:flex;gap:10px;align-items:center;margin-top:14px;">
+                            <?php if ($page > 1) : ?>
+                                <a class="wsa-btn is-ghost" href="<?php echo esc_url(self::url('leads', ['paged' => $page - 1] + $paging)); ?>"><?php esc_html_e('Previous', 'woocommerce-shop-agent'); ?></a>
+                            <?php endif; ?>
+                            <span class="wsa-help">
+                                <?php
+                                printf(
+                                    /* translators: 1: current page, 2: total pages */
+                                    esc_html__('Page %1$s of %2$s', 'woocommerce-shop-agent'),
+                                    esc_html(number_format_i18n($page)),
+                                    esc_html(number_format_i18n($pages)),
+                                );
+                                ?>
+                            </span>
+                            <?php if ($page < $pages) : ?>
+                                <a class="wsa-btn is-ghost" href="<?php echo esc_url(self::url('leads', ['paged' => $page + 1] + $paging)); ?>"><?php esc_html_e('Next', 'woocommerce-shop-agent'); ?></a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+    }
+
+    /** Streams every lead as a CSV download and ends the request. Reached from save(), so the nonce and capability are already checked. */
+    private static function export_leads(): void
+    {
+        nocache_headers();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="leads.csv"');
+        $out = fopen('php://output', 'w');
+        // the byte order mark is what makes Excel read Hebrew as Hebrew
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, ['id', 'created_at', 'name', 'contact', 'request', 'page']);
+        $page = 1;
+        do {
+            $data = Leads::list($page, 500);
+            foreach ($data['rows'] as $row) {
+                fputcsv($out, array_map([self::class, 'csv_cell'], [
+                    (string) $row['id'],
+                    (string) $row['created_at'],
+                    (string) $row['name'],
+                    (string) $row['contact'],
+                    (string) $row['request'],
+                    $row['page_id'] ? (string) get_permalink((int) $row['page_id']) : '',
+                ]));
+            }
+            $page++;
+        } while (count($data['rows']) === 500);
+        exit;
+    }
+
+    /** A cell that starts like a formula gets a quote in front, so a spreadsheet shows it instead of running it. */
+    private static function csv_cell(string $value): string
+    {
+        return $value !== '' && in_array($value[0], ['=', '+', '-', '@'], true) ? "'" . $value : $value;
     }
 
     // ------------------------------------------------------ tab: conversations

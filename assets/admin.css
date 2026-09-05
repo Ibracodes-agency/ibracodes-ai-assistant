@@ -156,7 +156,8 @@
 
 .wsa-kpis {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	/* auto-fit rather than a fixed four: the tile count depends on the site (five with WooCommerce, three without) */
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	background: var(--card);
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
