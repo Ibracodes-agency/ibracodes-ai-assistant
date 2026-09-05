@@ -16,7 +16,8 @@
  * The agent is grounded: on a WooCommerce store every product it mentions
  * comes back from a tool call against live catalog data, so it cannot invent
  * a product, a price or stock. It never mutates the cart (the customer clicks
- * the button on the card), never looks up orders, and never sends email.
+ * the button on the card), never looks up orders, and the only email it sends
+ * is the owner's own notification of a lead the visitor agreed to leave.
  */
 
 namespace WSA;

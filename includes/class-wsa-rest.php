@@ -38,6 +38,9 @@ class Rest
                     'type' => 'array',
                     'validate_callback' => static fn ($value) => is_array($value),
                 ],
+                // the post the visitor is reading; the prompt only uses it when the page is public and in scope
+                'page' => ['type' => 'integer', 'required' => false],
+                'thread' => ['type' => 'string', 'required' => false],
             ],
         ]);
 
@@ -72,7 +75,11 @@ class Rest
 
         try {
             $messages = (array) $request['messages'];
-            $answer = Agent::answer($messages);
+            $context = [
+                'page_id' => absint($request->get_param('page')),
+                'thread_id' => Threads::id_from_token(sanitize_text_field((string) $request->get_param('thread'))),
+            ];
+            $answer = Agent::answer($messages, $context);
             if ($answer instanceof WP_Error) {
                 return $answer;
             }

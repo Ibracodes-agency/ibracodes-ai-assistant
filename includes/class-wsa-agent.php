@@ -22,9 +22,12 @@ class Agent
     /** Hard ceiling; the owner's "products per reply" setting cuts below it. */
     private const MAX_CARDS = 4;
 
-    public static function answer(array $history): array|WP_Error
+    /**
+     * @param array{page_id?: int, thread_id?: int} $context what the widget sent with the message: the page being read, the verified thread
+     */
+    public static function answer(array $history, array $context = []): array|WP_Error
     {
-        $messages = [Prompt::system_message(), ...Scrubber::sanitize_history($history)];
+        $messages = [Prompt::system_message($context), ...Scrubber::sanitize_history($history)];
 
         if (count($messages) < 2 || end($messages)['role'] !== 'user') {
             return new WP_Error('wsa_bad_request', __('No message received.', 'woocommerce-shop-agent'), ['status' => 400]);

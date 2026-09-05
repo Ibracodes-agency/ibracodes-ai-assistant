@@ -18,15 +18,31 @@ class Tools
 {
     /**
      * Schemas are described in English because that is what the model reasons
-     * over. The instruction that matters for a non-English store is that
-     * SEARCH TERMS must be in the store's own language, since the catalog is.
+     * over. The instruction that matters for a non-English site is that
+     * SEARCH TERMS must be in the site's own language, since the content is.
+     *
+     * The content tools are always offered; the product tools only where
+     * WooCommerce is, and the lead and handoff tools only when the owner
+     * switched them on.
      */
     public static function definitions(): array
     {
         $language = Prompt::store_language();
 
-        $tools = [
-            ['type' => 'function', 'function' => [
+        $tools = [];
+        $tools[] = ['type' => 'function', 'function' => [
+            'name' => 'search_content',
+            'description' => sprintf('Search this website\'s own pages and posts for passages that answer the question. You MUST call this before stating anything about the site, its services, policies, prices, hours or people, unless the answer is in the store facts or on the current page given to you. Search in %s. Results are passages with the page title and URL; quote or paraphrase only what they contain.', $language),
+            'parameters' => ['type' => 'object', 'properties' => ['query' => ['type' => 'string', 'description' => 'What to look for, in the site language.']], 'required' => ['query']],
+        ]];
+        $tools[] = ['type' => 'function', 'function' => [
+            'name' => 'get_page',
+            'description' => 'The full text of one page by the id returned from search_content, for a follow-up question the passage did not cover.',
+            'parameters' => ['type' => 'object', 'properties' => ['id' => ['type' => 'integer']], 'required' => ['id']],
+        ]];
+
+        if (Capabilities::has_commerce()) {
+            $tools[] = ['type' => 'function', 'function' => [
                 'name' => 'search_products',
                 'description' => sprintf(
                     'Search the real product catalog by keywords, product name or SKU. You MUST call this before recommending or mentioning any product. The catalog is written in %1$s, so always search in %1$s (model numbers and SKUs may be latin). If there are no results, try once more with a broader, more general word before concluding the store does not carry it. Set on_sale=true when the customer asks about deals, discounts or sale items; every result carries an on_sale flag.',
@@ -41,13 +57,13 @@ class Tools
                     ],
                     'required' => ['query'],
                 ],
-            ]],
-            ['type' => 'function', 'function' => [
+            ]];
+            $tools[] = ['type' => 'function', 'function' => [
                 'name' => 'get_categories',
                 'description' => 'List the store\'s top-level product categories with how many products each holds. Useful when a search finds nothing and you want to offer the customer a real alternative.',
                 'parameters' => ['type' => 'object', 'properties' => new \stdClass()],
-            ]],
-            ['type' => 'function', 'function' => [
+            ]];
+            $tools[] = ['type' => 'function', 'function' => [
                 'name' => 'get_product_details',
                 'description' => 'Full details for one product by the id returned from search_products: price, stock, SKU, attributes and description. Use it when the customer asks something specific about a product you already found.',
                 'parameters' => [
@@ -55,8 +71,8 @@ class Tools
                     'properties' => ['id' => ['type' => 'integer', 'description' => 'Product id from a search_products result.']],
                     'required' => ['id'],
                 ],
-            ]],
-        ];
+            ]];
+        }
 
         // The button the model may point to only exists when the owner set a
         // destination; without one, the prompt says there is nothing to click
@@ -85,6 +101,8 @@ class Tools
     public static function run(string $name, array $input, array &$cards): array
     {
         return match ($name) {
+            'search_content' => ['results' => Content::search((string) ($input['query'] ?? ''))],
+            'get_page' => self::page((int) ($input['id'] ?? 0)),
             'search_products' => self::search($input, $cards),
             'hand_off' => ['shown' => true, 'label' => Prompt::handoff_label()],
             'get_categories' => ['categories' => Catalog::categories()],
@@ -92,6 +110,16 @@ class Tools
                 ?? ['error' => 'not_found'],
             default => ['error' => 'unknown_tool'],
         };
+    }
+
+    /** One page's text, through the same gate as search: an id the model guessed at gets nothing. */
+    private static function page(int $id): array
+    {
+        if (! Content::is_allowed($id)) {
+            return ['error' => 'not_found'];
+        }
+
+        return ['id' => $id, 'title' => get_the_title($id), 'url' => get_permalink($id), 'text' => mb_substr(Content::text_for($id), 0, 6000)];
     }
 
     private static function search(array $input, array &$cards): array
