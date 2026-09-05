@@ -54,7 +54,24 @@ class Content
         // can supply text here
         $text = (string) apply_filters('wsa_content_text', $text, $post);
 
-        return mb_substr(trim($text), 0, self::MAX_CHARS);
+        return self::fence_safe(mb_substr(trim($text), 0, self::MAX_CHARS));
+    }
+
+    /**
+     * A line that is exactly a fence marker would end the fence the prompt
+     * puts around page text early; a space inside it (">> >") keeps it plain
+     * text. Runs last, so text added through the wsa_content_text filter is
+     * covered as well as the rendered content.
+     */
+    private static function fence_safe(string $text): string
+    {
+        $markers = preg_quote(Prompt::PAGE_OPEN, '/') . '|' . preg_quote(Prompt::PAGE_CLOSE, '/');
+
+        return preg_replace_callback(
+            '/^[ \t]*(' . $markers . ')[ \t\r]*$/mu',
+            static fn (array $m) => str_replace($m[1], mb_substr($m[1], 0, -1) . ' ' . mb_substr($m[1], -1), $m[0]),
+            $text,
+        ) ?? $text;
     }
 
     /** Markup and script bodies stripped, entities decoded, whitespace collapsed to single spaces and newlines. */

@@ -131,18 +131,39 @@ class Leads
         return ['rows' => $rows ?: [], 'total' => $total];
     }
 
+    /** The conversation the lead came from goes with it: that is the owner's promise to the visitor. */
     public static function delete(int $id): void
     {
+        $lead = self::find($id);
+        if (! $lead) {
+            return;
+        }
+        if ((int) $lead['thread_id'] > 0) {
+            DB::delete_thread((int) $lead['thread_id']);
+        }
         global $wpdb;
-        $wpdb->delete(DB::leads_table(), ['id' => $id]);
+        $wpdb->delete(DB::leads_table(), ['id' => $id], ['%d']);
     }
 
     public static function purge(): void
     {
         global $wpdb;
+        $table = DB::leads_table();
         $days = max(1, (int) Settings::get('leads_retention_days'));
         $cutoff = gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - $days * DAY_IN_SECONDS);
-        $wpdb->query($wpdb->prepare('DELETE FROM ' . DB::leads_table() . ' WHERE created_at < %s LIMIT 1000', $cutoff)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT id, thread_id FROM {$table} WHERE created_at < %s LIMIT 1000", $cutoff), ARRAY_A) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        if (! $rows) {
+            return;
+        }
+        // transcripts first, so a purged lead never leaves its conversation behind
+        foreach (array_unique(array_map('intval', array_column($rows, 'thread_id'))) as $thread_id) {
+            if ($thread_id > 0) {
+                DB::delete_thread($thread_id);
+            }
+        }
+        $ids = array_map('intval', array_column($rows, 'id'));
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE id IN ({$placeholders})", ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
     }
 
     public static function count_since(int $days): int

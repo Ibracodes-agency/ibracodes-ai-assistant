@@ -204,6 +204,14 @@ class DB
         $wpdb->update(self::threads_table(), ['added_to_cart' => 1], ['id' => $thread_id]);
     }
 
+    /** Removes one conversation outright: a deleted lead takes the transcript it came from with it. */
+    public static function delete_thread(int $thread_id): void
+    {
+        global $wpdb;
+        $wpdb->delete(self::messages_table(), ['thread_id' => $thread_id], ['%d']);
+        $wpdb->delete(self::threads_table(), ['id' => $thread_id], ['%d']);
+    }
+
     // -----------------------------------------------------------------------
     // Reading
     // -----------------------------------------------------------------------

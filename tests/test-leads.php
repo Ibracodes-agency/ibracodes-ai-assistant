@@ -1,19 +1,31 @@
 <?php
 require_once __DIR__ . '/lib.php';
 
+use WSA\DB;
 use WSA\Leads;
 use WSA\Settings;
 use WSA\Tools;
 
 $snapshot = Settings::all();
-// the table is shared with the owner's real leads: every row this test adds goes, even after a failed assertion
+// the tables are shared with the owner's real leads and conversations: every row this test adds goes, even after a failed assertion
 $GLOBALS['wsa_test_leads'] = [];
+$GLOBALS['wsa_test_threads'] = [];
 register_shutdown_function(static function () use ($snapshot): void {
     foreach ($GLOBALS['wsa_test_leads'] as $id) {
         Leads::delete((int) $id);
     }
+    foreach ($GLOBALS['wsa_test_threads'] as $id) {
+        DB::delete_thread((int) $id);
+    }
     Settings::update($snapshot);
 });
+$start_thread = static function (): int {
+    $id = DB::start_thread('I want a quote', 'desktop');
+    DB::log_turn($id, 'I want a quote', 'Sure, what is your name and number?', [], false);
+    $GLOBALS['wsa_test_threads'][] = $id;
+
+    return $id;
+};
 $own = static function (array $result): array {
     if (! empty($result['id'])) {
         $GLOBALS['wsa_test_leads'][] = (int) $result['id'];
@@ -105,6 +117,23 @@ Leads::purge();
 wsa_assert_same(null, Leads::find((int) $old['id']), 'purge deletes a lead past the retention window');
 wsa_assert(Leads::find((int) $fresh['id']) !== null, 'purge keeps a fresh lead');
 Leads::delete((int) $fresh['id']);
+
+// the conversation a lead came from goes with the lead, whether the owner deletes it or retention does
+$messages = $wpdb->prefix . 'wsa_messages';
+$thread = $start_thread();
+wsa_assert(DB::thread($thread) !== null && count(DB::thread($thread)['messages']) === 2, 'fixture thread has a transcript');
+$linked = $own(Leads::capture(['name' => 'Linked Lead', 'contact' => '0503333333', 'request' => 'x'], $thread, 0));
+wsa_assert_same($thread, (int) Leads::find((int) $linked['id'])['thread_id'], 'lead points at the thread');
+Leads::delete((int) $linked['id']);
+wsa_assert_same(null, DB::thread($thread), 'deleting the lead deletes its thread');
+wsa_assert_same(0, (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$messages} WHERE thread_id = %d", $thread)), 'deleting the lead deletes the thread\'s messages');
+$thread = $start_thread();
+$expired = $own(Leads::capture(['name' => 'Expired Lead', 'contact' => '0504444444', 'request' => 'x'], $thread, 0));
+$wpdb->update($table, ['created_at' => gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - 200 * DAY_IN_SECONDS)], ['id' => (int) $expired['id']]);
+Leads::purge();
+wsa_assert_same(null, Leads::find((int) $expired['id']), 'purge removed the expired lead');
+wsa_assert_same(null, DB::thread($thread), 'purging the lead deletes its thread');
+wsa_assert_same(0, (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$messages} WHERE thread_id = %d", $thread)), 'purging the lead deletes the thread\'s messages');
 
 $cards = [];
 $via_tool = $own(Tools::run('capture_lead', ['name' => 'Noa', 'contact' => 'noa@example.com', 'request' => 'call me'], $cards, ['thread_id' => 78, 'page_id' => 0]));
