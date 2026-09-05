@@ -18,7 +18,8 @@ class Provider
 {
     private const ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
-    private const TIMEOUT = 25;
+    /** Seconds one upstream call may take; the index sizes its batch lock by it. */
+    public const TIMEOUT = 25;
 
     private const MAX_TOKENS = 700;
 

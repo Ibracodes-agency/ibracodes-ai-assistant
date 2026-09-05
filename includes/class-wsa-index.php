@@ -67,18 +67,43 @@ class Index
     {
         global $wpdb;
         $table = DB::chunks_table();
+        // a count, not the ids: scope_args() switches found_posts off, so switch it back on
+        $scope = new \WP_Query(array_merge(Content::scope_args(), [
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'no_found_rows' => false,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ]));
 
         return [
             'pending' => count((array) get_option(self::QUEUE, [])),
             'posts' => (int) $wpdb->get_var("SELECT COUNT(DISTINCT post_id) FROM {$table}"),
             'chunks' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}"),
-            'total' => count(get_posts(array_merge(Content::scope_args(), ['posts_per_page' => -1, 'fields' => 'ids']))),
+            'total' => (int) $scope->found_posts,
         ];
     }
 
     private static function model_stamp(): string
     {
         return Provider::EMBED_MODEL . ':' . Provider::EMBED_DIMS;
+    }
+
+    /**
+     * Vectors made by another model or at another size are worthless next to
+     * new ones, so a stamp that disagrees with the current constants means a
+     * rebuild from scratch. drop() removes the stamp, so this runs once.
+     */
+    private static function rebuild_on_model_change(): bool
+    {
+        $stamp = get_option(self::MODEL);
+        if ($stamp === false || $stamp === self::model_stamp()) {
+            return false;
+        }
+        self::drop();
+        self::queue_all();
+
+        return true;
     }
 
     // ------------------------------------------------------------ queue
@@ -129,8 +154,10 @@ class Index
         if (! self::enabled() || get_transient(self::LOCK)) {
             return;
         }
-        set_transient(self::LOCK, 1, 2 * MINUTE_IN_SECONDS);
+        // long enough for every post in the batch to hit the upstream timeout, so a live batch is never mistaken for a dead one
+        set_transient(self::LOCK, 1, self::BATCH_POSTS * Provider::TIMEOUT + MINUTE_IN_SECONDS);
         try {
+            self::rebuild_on_model_change();
             $queue = array_map('intval', (array) get_option(self::QUEUE, []));
             $batch = array_splice($queue, 0, self::BATCH_POSTS);
             update_option(self::QUEUE, $queue, false);
@@ -208,7 +235,8 @@ class Index
                 'updated_at' => $now,
             ], ['%d', '%d', '%s', '%s', '%s']);
         }
-        if ($chunks && get_option(self::MODEL) !== self::model_stamp()) {
+        // stamped once, by the first vectors stored; a later mismatch is a rebuild, never an overwrite
+        if ($chunks && get_option(self::MODEL) === false) {
             update_option(self::MODEL, self::model_stamp(), false);
         }
         if (get_option(self::BACKOFF)) {
@@ -242,32 +270,35 @@ class Index
      */
     public static function reconcile(): void
     {
-        if (! self::enabled()) {
+        if (! self::enabled() || self::rebuild_on_model_change()) {
             return;
         }
         global $wpdb;
         $table = DB::chunks_table();
-        $posts = get_posts(array_merge(Content::scope_args(), [
-            'posts_per_page' => -1,
-            'update_post_meta_cache' => false,
-            'update_post_term_cache' => false,
-        ]));
+        $ids = array_map('intval', get_posts(array_merge(Content::scope_args(), ['posts_per_page' => -1, 'fields' => 'ids'])));
         $indexed = array_column(
             $wpdb->get_results("SELECT post_id, MAX(updated_at) AS updated_at FROM {$table} GROUP BY post_id", ARRAY_A) ?: [],
             'updated_at',
             'post_id',
         );
+        // ids first, then the one column the comparison needs: hydrating every post in scope is what a big site cannot afford daily
+        $modified = [];
+        foreach (array_chunk($ids, 500) as $slice) {
+            $placeholders = implode(',', array_fill(0, count($slice), '%d'));
+            $modified += array_column(
+                $wpdb->get_results($wpdb->prepare("SELECT ID, post_modified_gmt FROM {$wpdb->posts} WHERE ID IN ({$placeholders})", ...$slice), ARRAY_A) ?: [], // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                'post_modified_gmt',
+                'ID',
+            );
+        }
 
-        $allowed = [];
         $missing = [];
-        foreach ($posts as $post) {
-            $id = (int) $post->ID;
-            $allowed[$id] = true;
-            if (! isset($indexed[$id]) || $post->post_modified_gmt > $indexed[$id]) {
+        foreach ($ids as $id) {
+            if (! isset($indexed[$id]) || ($modified[$id] ?? '') > $indexed[$id]) {
                 $missing[] = $id;
             }
         }
-        $stale = array_values(array_diff(array_map('intval', array_keys($indexed)), array_keys($allowed)));
+        $stale = array_values(array_diff(array_map('intval', array_keys($indexed)), $ids));
         if ($stale) {
             $placeholders = implode(',', array_fill(0, count($stale), '%d'));
             $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE post_id IN ({$placeholders})", ...$stale)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
