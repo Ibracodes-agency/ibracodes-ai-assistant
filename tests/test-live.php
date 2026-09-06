@@ -60,7 +60,7 @@ $id = Live::visitor_message($thread, 'Hello? Anyone there?');
 wsa_assert($id > 0, 'visitor message stored while waiting');
 $poll = Live::poll_visitor($thread, 0);
 wsa_assert_same('waiting', $poll['status'], 'visitor poll reports waiting');
-wsa_assert_same(0, count($poll['messages']), 'no manager messages yet');
+wsa_assert_same([['system', Settings::get('live_text_waiting')]], array_map(static fn (array $m): array => [$m['role'], $m['text']], $poll['messages']), 'the waiting line is delivered on the first visitor poll, and once for two requests');
 
 $admin = (int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID', 'orderby' => 'ID'])[0];
 $list = Live::open_threads();
@@ -122,8 +122,11 @@ wsa_assert(str_contains($poll['texts']['closed'], $second_name), 'the closed tex
 $t2 = $start('Person please', 'mobile');
 Live::request($t2, 0);
 $wpdb->update(DB::threads_table(), ['requested_at' => gmdate('Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS)], ['id' => $t2]);
-wsa_assert_same('missed', Live::poll_visitor($t2, 0)['status'], 'a stale wait becomes missed');
+$poll = Live::poll_visitor($t2, 0);
+wsa_assert_same('missed', $poll['status'], 'a stale wait becomes missed');
 wsa_assert_same('missed', Live::state($t2), 'and is persisted');
+wsa_assert_same(['system', Settings::get('live_text_missed')], [end($poll['messages'])['role'], end($poll['messages'])['text']], 'with the missed line, after the waiting one');
+wsa_assert_same(2, count($poll['messages']), 'the waiting line and the missed line, nothing else');
 wsa_assert_same('live', Live::claim($t2, $admin)['status'], 'a late claim revives a missed thread');
 
 // closing a request nobody joined: the visitor gets the missed fallback, not a chat that "ended"
@@ -155,6 +158,8 @@ $idle = $local_ago(31 * MINUTE_IN_SECONDS);
 $wpdb->update(DB::threads_table(), ['claimed_at' => $idle, 'last_manager_at' => $idle, 'last_visitor_at' => $idle], ['id' => $t5]);
 $by_id = array_column(Live::open_threads(), null, 'id');
 wsa_assert_same('missed', $by_id[$t4]['status'] ?? '', 'the list marks a stale wait missed');
+$last = end(DB::thread($t4)['messages']);
+wsa_assert_same(['system', Settings::get('live_text_missed')], [$last['role'], $last['content']], 'and writes the missed line on it');
 wsa_assert_same('live', $by_id[$t2]['status'] ?? '', 'a live chat with recent activity is left alone');
 wsa_assert(! isset($by_id[$t5]), 'an idle live chat leaves the list');
 wsa_assert_same('closed', Live::state($t5), 'and is closed');

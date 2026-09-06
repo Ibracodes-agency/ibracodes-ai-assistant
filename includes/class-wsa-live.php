@@ -20,7 +20,9 @@
  *
  * Every transition is a conditional UPDATE on the current status, so two
  * managers claiming at once, or two requests racing, resolve to one winner
- * and one email.
+ * and one email. And every transition the visitor can see writes one system
+ * line (waiting, joined, missed, closed) on the thread, so the widget only
+ * ever renders what the server stored and never has to synthesise a text.
  */
 
 namespace WSA;
@@ -52,8 +54,9 @@ class Live
     // Visitor side
     // -----------------------------------------------------------------------
     /**
-     * Asks for a person. Idempotent: only the transition into `waiting` emails
-     * the desk, so the model calling hand_off twice costs one email.
+     * Asks for a person. Idempotent: only the transition into `waiting` writes
+     * the waiting line and emails the desk, so the model calling hand_off
+     * twice costs one line and one email.
      *
      * @return array{status: string}
      */
@@ -71,6 +74,7 @@ class Live
         )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
         if ($changed > 0) {
+            DB::add_message($thread_id, 'system', self::text('live_text_waiting', ''));
             self::notify($thread_id, $page_id);
         }
 
@@ -212,8 +216,9 @@ class Live
     /**
      * The manager's line. A different manager than the one who claimed takes
      * the thread over, and the visitor is told who is talking now before the
-     * line arrives. Returns the message id, 0 unless the thread is live and the
-     * text is not empty.
+     * line arrives. The takeover is conditional on the current owner, so two
+     * replies from the same newcomer racing produce one joined line. Returns
+     * the message id, 0 unless the thread is live and the text is not empty.
      */
     public static function manager_reply(int $thread_id, int $user_id, string $text): int
     {
@@ -229,14 +234,16 @@ class Live
         if ((int) $row['manager_id'] !== $user_id) {
             $threads = DB::threads_table();
             $changed = (int) $wpdb->query($wpdb->prepare(
-                "UPDATE {$threads} SET manager_id = %d WHERE id = %d AND status = 'live'",
+                "UPDATE {$threads} SET manager_id = %d WHERE id = %d AND status = 'live' AND manager_id <> %d",
                 $user_id,
                 $thread_id,
+                $user_id,
             )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-            if ($changed === 0) {
-                return 0; // the chat ended between the read and the write
+            if ($changed > 0) {
+                DB::add_message($thread_id, 'system', self::text('live_text_joined', self::manager_name($user_id)));
+            } elseif (self::state($thread_id) !== 'live') {
+                return 0; // the chat ended between the read and the write; no change means it was already mine
             }
-            DB::add_message($thread_id, 'system', self::text('live_text_joined', self::manager_name($user_id)));
         }
         $id = DB::add_message($thread_id, 'manager', $text);
         if ($id > 0) {
@@ -280,20 +287,12 @@ class Live
      */
     public static function close(int $thread_id): array
     {
-        global $wpdb;
         $row = self::row($thread_id);
 
         if (($row['status'] ?? '') === 'live') {
             self::end($thread_id, (int) $row['manager_id']);
         } else {
-            $threads = DB::threads_table();
-            $changed = (int) $wpdb->query($wpdb->prepare(
-                "UPDATE {$threads} SET status = 'missed' WHERE id = %d AND status = 'waiting'",
-                $thread_id,
-            )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-            if ($changed > 0) {
-                DB::add_message($thread_id, 'system', self::text('live_text_missed', ''));
-            }
+            self::miss($thread_id);
         }
 
         return ['status' => self::state($thread_id)];
@@ -304,10 +303,10 @@ class Live
     // -----------------------------------------------------------------------
     /**
      * Judges one thread, or with 0 every thread. A wait past the window is
-     * missed, with no line: the widget shows the missed text on the state
-     * change. A live chat nobody has written in for IDLE_MINUTES is closed
-     * with the closed line. requested_at is GMT and the activity columns are
-     * site-local, see DB::install(), so each rule has its own cutoff.
+     * missed, with the missed line. A live chat nobody has written in for
+     * IDLE_MINUTES is closed with the closed line. requested_at is GMT and the
+     * activity columns are site-local, see DB::install(), so each rule has
+     * its own cutoff.
      */
     private static function apply_timeouts(int $thread_id = 0): void
     {
@@ -315,13 +314,19 @@ class Live
         $threads = DB::threads_table();
         $wait = max(1, (int) Settings::get('live_wait_minutes'));
 
-        $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads} SET status = 'missed'
-             WHERE status = 'waiting' AND requested_at < %s AND (%d = 0 OR id = %d)",
+        $stale = $wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$threads}
+             WHERE status = 'waiting' AND requested_at < %s AND (%d = 0 OR id = %d)
+             LIMIT %d",
             gmdate('Y-m-d H:i:s', time() - $wait * MINUTE_IN_SECONDS),
             $thread_id,
             $thread_id,
+            self::LIST_LIMIT,
         )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        foreach ($stale ?: [] as $id) {
+            self::miss((int) $id);
+        }
 
         $idle = $wpdb->get_results($wpdb->prepare(
             "SELECT id, manager_id FROM {$threads}
@@ -337,6 +342,22 @@ class Live
 
         foreach ($idle ?: [] as $row) {
             self::end((int) $row['id'], (int) $row['manager_id']);
+        }
+    }
+
+    /** A request nobody joined, with the missed line. The wait timeout and a manager declining both land here; a claim racing in wins. */
+    private static function miss(int $thread_id): void
+    {
+        global $wpdb;
+        $threads = DB::threads_table();
+
+        $changed = (int) $wpdb->query($wpdb->prepare(
+            "UPDATE {$threads} SET status = 'missed' WHERE id = %d AND status = 'waiting'",
+            $thread_id,
+        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        if ($changed > 0) {
+            DB::add_message($thread_id, 'system', self::text('live_text_missed', ''));
         }
     }
 
