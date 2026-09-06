@@ -24,6 +24,9 @@ class Guards
     /** Frees itself even if the request dies mid-flight, so a crash cannot leak a slot forever. */
     private const SLOT_TTL = 2 * MINUTE_IN_SECONDS;
 
+    /** Live-chat polls per visitor per minute: the widget's every-few-seconds cadence with room to spare. */
+    private const POLLS_PER_MINUTE = 40;
+
     /**
      * Checks every gate and, when they all pass, claims the caller's share of
      * the budget. Returns null to proceed.
@@ -84,6 +87,33 @@ class Guards
         update_option(self::month_key(), self::month_count() + 1, false);
 
         return null;
+    }
+
+    /**
+     * The gate for live-chat polling, separate from the chat limits so polling
+     * never eats the chat budget. No upstream call sits behind it, so the
+     * budget is about the database, not the bill.
+     *
+     * The minute window lives in the stored value rather than in the
+     * transient's expiry: set_transient() pushes the expiry forward on every
+     * write, and a widget polling every few seconds would otherwise never see
+     * the counter reset and lock itself out after the fortieth poll.
+     */
+    public static function poll_allowed(): bool
+    {
+        $key = 'wsa_poll_' . self::client_ip_hash();
+        $now = time();
+        $window = (array) get_transient($key);
+        if ((int) ($window['until'] ?? 0) <= $now) {
+            $window = ['count' => 0, 'until' => $now + MINUTE_IN_SECONDS];
+        }
+        if ((int) ($window['count'] ?? 0) >= self::POLLS_PER_MINUTE) {
+            return false;
+        }
+        $window['count'] = (int) ($window['count'] ?? 0) + 1;
+        set_transient($key, $window, max(1, (int) $window['until'] - $now));
+
+        return true;
     }
 
     public static function store_day_count(): int

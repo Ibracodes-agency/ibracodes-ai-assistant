@@ -1,10 +1,12 @@
 <?php
 /**
- * The one public endpoint.
+ * The REST surface.
  *
- * Public by necessity: shop visitors are not logged in. That is exactly why
- * every guard in Guards runs before a single upstream call, and why the API
- * key never leaves the server.
+ * The visitor routes are public by necessity: shop visitors are not logged
+ * in. That is exactly why every guard in Guards runs before a single upstream
+ * call, why the API key never leaves the server, and why the live-chat routes
+ * trust nothing but the signed thread token. The manager routes sit behind the
+ * admin capability, with the REST nonce the admin script already sends.
  */
 
 namespace WSA;
@@ -66,6 +68,60 @@ class Rest
             'methods' => 'POST',
             'permission_callback' => static fn () => current_user_can(Capabilities::admin_cap()),
             'callback' => [self::class, 'rebuild_index'],
+        ]);
+
+        // Live chat, visitor side. Public like /chat: the signed thread token is
+        // the credential, and each route verifies it before touching a row.
+        register_rest_route(self::NS, '/live/thread', [
+            'methods' => 'GET',
+            'permission_callback' => '__return_true',
+            'callback' => [self::class, 'live_visitor_poll'],
+            'args' => [
+                'thread' => ['type' => 'string', 'required' => true],
+                'since' => ['type' => 'integer', 'required' => false, 'default' => 0],
+            ],
+        ]);
+        register_rest_route(self::NS, '/live/thread/message', [
+            'methods' => 'POST',
+            'permission_callback' => '__return_true',
+            'callback' => [self::class, 'live_visitor_message'],
+            'args' => [
+                'thread' => ['type' => 'string', 'required' => true],
+                'text' => ['type' => 'string', 'required' => true],
+            ],
+        ]);
+
+        // Live chat, manager side: the admin capability, cookie auth with the REST nonce
+        $manager = static fn () => current_user_can(Capabilities::admin_cap());
+        $by_id = ['id' => ['type' => 'integer', 'required' => true]];
+        register_rest_route(self::NS, '/live/open', [
+            'methods' => 'GET',
+            'permission_callback' => $manager,
+            'callback' => [self::class, 'live_open'],
+        ]);
+        register_rest_route(self::NS, '/live/poll', [
+            'methods' => 'GET',
+            'permission_callback' => $manager,
+            'callback' => [self::class, 'live_manager_poll'],
+            'args' => $by_id + ['since' => ['type' => 'integer', 'required' => false, 'default' => 0]],
+        ]);
+        register_rest_route(self::NS, '/live/claim', [
+            'methods' => 'POST',
+            'permission_callback' => $manager,
+            'callback' => [self::class, 'live_claim'],
+            'args' => $by_id,
+        ]);
+        register_rest_route(self::NS, '/live/reply', [
+            'methods' => 'POST',
+            'permission_callback' => $manager,
+            'callback' => [self::class, 'live_reply'],
+            'args' => $by_id + ['text' => ['type' => 'string', 'required' => true]],
+        ]);
+        register_rest_route(self::NS, '/live/close', [
+            'methods' => 'POST',
+            'permission_callback' => $manager,
+            'callback' => [self::class, 'live_close'],
+            'args' => $by_id,
         ]);
     }
 
@@ -143,6 +199,137 @@ class Rest
                 number_format_i18n($pending),
             ),
         ]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Live chat, visitor side
+    // -----------------------------------------------------------------------
+    public static function live_visitor_poll(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_visitor_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+
+        return rest_ensure_response(Live::poll_visitor($thread_id, absint($request->get_param('since'))));
+    }
+
+    public static function live_visitor_message(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_visitor_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+        $state = Live::state($thread_id);
+        if (! in_array($state, ['waiting', 'live'], true)) {
+            return new WP_Error('wsa_not_live', __('No person is on this chat right now.', 'woocommerce-shop-agent'), ['status' => 409]);
+        }
+        $id = Live::visitor_message($thread_id, (string) $request->get_param('text'));
+        if ($id === 0) {
+            return self::empty_message();
+        }
+
+        return rest_ensure_response(['id' => $id, 'status' => $state]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Live chat, manager side
+    // -----------------------------------------------------------------------
+    public static function live_open(): WP_REST_Response|WP_Error
+    {
+        if (! Settings::live_ready()) {
+            return self::live_off();
+        }
+
+        return rest_ensure_response(['threads' => Live::open_threads()]);
+    }
+
+    public static function live_manager_poll(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_manager_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+
+        return rest_ensure_response(Live::poll_manager($thread_id, absint($request->get_param('since'))));
+    }
+
+    public static function live_claim(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_manager_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+
+        return rest_ensure_response(Live::claim($thread_id, get_current_user_id()));
+    }
+
+    public static function live_reply(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_manager_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+        if (Live::state($thread_id) !== 'live') {
+            return new WP_Error('wsa_not_live', __('Claim the chat before replying.', 'woocommerce-shop-agent'), ['status' => 409]);
+        }
+        $id = Live::manager_reply($thread_id, get_current_user_id(), (string) $request->get_param('text'));
+        if ($id === 0) {
+            return self::empty_message();
+        }
+
+        return rest_ensure_response(['id' => $id, 'status' => 'live']);
+    }
+
+    public static function live_close(WP_REST_Request $request): WP_REST_Response|WP_Error
+    {
+        $thread_id = self::live_manager_thread($request);
+        if ($thread_id instanceof WP_Error) {
+            return $thread_id;
+        }
+
+        return rest_ensure_response(Live::close($thread_id, get_current_user_id()));
+    }
+
+    /** The visitor's gate, in cost order: live chat on, token verified, poll budget left. Returns the thread id. */
+    private static function live_visitor_thread(WP_REST_Request $request): int|WP_Error
+    {
+        if (! Settings::live_ready()) {
+            return self::live_off();
+        }
+        $thread_id = Threads::id_from_token(sanitize_text_field((string) $request->get_param('thread')));
+        if ($thread_id === 0) {
+            return new WP_Error('wsa_bad_token', __('This conversation could not be verified.', 'woocommerce-shop-agent'), ['status' => 403]);
+        }
+        if (! Guards::poll_allowed()) {
+            return new WP_Error('wsa_rate_limited', __('Too many requests. Slow down a little.', 'woocommerce-shop-agent'), ['status' => 429]);
+        }
+
+        return $thread_id;
+    }
+
+    /** The manager's gate: live chat on and the thread exists. Returns the thread id. */
+    private static function live_manager_thread(WP_REST_Request $request): int|WP_Error
+    {
+        if (! Settings::live_ready()) {
+            return self::live_off();
+        }
+        $thread_id = absint($request->get_param('id'));
+        if ($thread_id === 0 || Live::state($thread_id) === '') {
+            return new WP_Error('wsa_no_thread', __('That conversation no longer exists.', 'woocommerce-shop-agent'), ['status' => 404]);
+        }
+
+        return $thread_id;
+    }
+
+    private static function live_off(): WP_Error
+    {
+        return new WP_Error('wsa_live_off', __('Live chat is not available right now.', 'woocommerce-shop-agent'), ['status' => 503]);
+    }
+
+    private static function empty_message(): WP_Error
+    {
+        return new WP_Error('wsa_empty_message', __('Write something first.', 'woocommerce-shop-agent'), ['status' => 400]);
     }
 
     public static function test_key(WP_REST_Request $request): WP_REST_Response
