@@ -125,10 +125,13 @@ class Rest
         if (! Index::enabled()) {
             return new WP_Error('wsa_index_off', __('Switch retrieval to the embeddings index first.', 'woocommerce-shop-agent'), ['status' => 400]);
         }
+        if (Settings::api_key() === '') {
+            return new WP_Error('wsa_no_key', __('Add an OpenAI key first.', 'woocommerce-shop-agent'), ['status' => 400]);
+        }
         Index::drop();
-        Index::queue_all();
-        // one batch right away, so the owner sees progress even where WP-Cron is slow
-        Index::process_batch();
+        // the batches run on WP-Cron, off this request; due now, so the spawn below actually fires
+        Index::queue_all(0);
+        spawn_cron();
         $pending = (int) Index::status()['pending'];
 
         return rest_ensure_response([

@@ -158,8 +158,9 @@
 		mark.alt = '';
 		mark.width = 52;
 		mark.height = 8;
-		brand.appendChild( mark );
+		// text first, so the reading order is the credit and then the mark
 		brand.appendChild( el( 'span', '', cfg.brand.label ) );
+		brand.appendChild( mark );
 		foot.appendChild( brand );
 	}
 
@@ -311,7 +312,7 @@
 					return { role: m.role, text: m.text };
 				} ),
 				thread: thread,
-				page: cfg.pageId || 0,
+				page: parseInt( cfg.pageId, 10 ) || 0,
 				device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
 			} ),
 		} )

@@ -136,7 +136,9 @@ class Settings
                 'retrieval' => $value === 'embeddings' ? 'embeddings' : 'search',
                 'leads_email' => is_email((string) $value) ? sanitize_email((string) $value) : (string) get_option('admin_email'),
                 'leads_retention_days' => max(1, min(365, absint($value))),
-                'leads_when', 'privacy_note' => sanitize_text_field((string) $value),
+                'leads_when' => sanitize_text_field((string) $value),
+                // one short sentence under the chat input, not a policy
+                'privacy_note' => mb_substr(sanitize_text_field((string) $value), 0, 240),
                 'model' => array_key_exists($value, self::models()) ? $value : $default,
                 'position' => $value === 'left' ? 'left' : 'right',
                 'price_policy' => $value === 'allow' ? 'allow' : 'cards_only',

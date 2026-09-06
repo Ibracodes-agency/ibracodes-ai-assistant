@@ -125,6 +125,13 @@ delete_transient('wsa_index_lock');
 $drain();
 wsa_assert_same(0, Index::status()['pending'], 'the batch runs once the lock is gone');
 
+// drop() clears the daily reconcile; init re-arms it on the next request while embeddings are on
+wsa_assert(has_action('init', [Index::class, 'schedule_reconcile']) !== false, 'the daily reconcile is armed from init');
+Index::drop();
+wsa_assert_same(false, wp_next_scheduled(Index::RECONCILE_HOOK), 'drop() clears the reconcile event');
+Index::schedule_reconcile();
+wsa_assert(wp_next_scheduled(Index::RECONCILE_HOOK) !== false, 'the init hook re-arms the reconcile while embeddings are on');
+
 // switching embeddings off drops the index through the settings hook alone
 Settings::update(['retrieval' => 'search']);
 wsa_assert_same(false, Index::ready(), 'the index is not ready in search mode');

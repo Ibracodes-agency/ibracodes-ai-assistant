@@ -43,7 +43,7 @@
 					result.className = 'wsa-test-result ' + ( data.ok ? 'is-ok' : 'is-bad' );
 				} )
 				.catch( function () {
-					result.textContent = 'Request failed.';
+					result.textContent = wsaAdmin.failed;
 					result.className = 'wsa-test-result is-bad';
 				} )
 				.finally( function () {

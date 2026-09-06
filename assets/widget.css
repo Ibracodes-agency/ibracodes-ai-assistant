@@ -474,7 +474,7 @@
   padding:6px 14px 10px;
   background:var(--wsa-surface);
 }
-.wsa-note{margin:0;font-size:11.5px;line-height:1.4;color:var(--wsa-ink-3);text-align:start;}
+.wsa-note{margin:0;font-size:11.5px;line-height:1.4;color:var(--wsa-ink-2);text-align:start;}
 .wsa-brand{
   display:inline-flex;align-items:center;gap:6px;
   align-self:center;

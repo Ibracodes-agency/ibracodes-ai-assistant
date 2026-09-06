@@ -107,11 +107,12 @@ class Index
     }
 
     // ------------------------------------------------------------ queue
-    public static function queue_all(): void
+    /** Queues every page in scope; the first batch runs after $delay seconds (0 lets a rebuild spawn cron right away). */
+    public static function queue_all(int $delay = self::BATCH_DELAY): void
     {
         $ids = get_posts(array_merge(Content::scope_args(), ['posts_per_page' => -1, 'fields' => 'ids']));
         update_option(self::QUEUE, array_values(array_unique(array_map('intval', $ids))), false);
-        self::schedule();
+        self::schedule($delay);
     }
 
     public static function queue_post(int $post_id): void

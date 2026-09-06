@@ -29,6 +29,7 @@ const browser = await chromium.launch({ headless: true, channel: 'chrome' });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await page.goto(base + '/page.html');
 await page.click('.wsa-launcher');
+await page.waitForSelector('.wsa-root.is-open');
 await page.screenshot({ path: path.join(here, 'footer-390.png') });
 await page.fill('.wsa-input', 'אינטרקום לבית');
 await page.press('.wsa-input', 'Enter');

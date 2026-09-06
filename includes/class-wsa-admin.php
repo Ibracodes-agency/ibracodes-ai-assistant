@@ -76,6 +76,7 @@ class Admin
             'nonce' => wp_create_nonce('wp_rest'),
             'testing' => __('Testing…', 'woocommerce-shop-agent'),
             'rebuilding' => __('Rebuilding…', 'woocommerce-shop-agent'),
+            'failed' => __('Request failed.', 'woocommerce-shop-agent'),
         ]);
     }
 
@@ -119,12 +120,13 @@ class Admin
         // the leads tab holds no settings: its forms delete one lead or export them all
         if ($tab === 'leads') {
             if (! empty($posted['export_leads'])) {
-                self::export_leads();
+                nocache_headers();
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="leads.csv"');
+                self::csv_write(fopen('php://output', 'w'), self::csv_rows());
+                exit;
             }
-            $deleted = ! empty($posted['delete_lead']);
-            if ($deleted) {
-                Leads::delete(absint($posted['delete_lead']));
-            }
+            $deleted = ! empty($posted['delete_lead']) && Leads::delete(absint($posted['delete_lead']));
             wp_safe_redirect(self::url('leads', $deleted ? ['deleted' => '1'] : []));
             exit;
         }
@@ -183,9 +185,10 @@ class Admin
     {
         $tab = self::current_tab();
         $s = Settings::all();
+        $leads_month = Leads::count_since(30);
         ?>
         <div class="wsa-admin">
-            <?php self::band($tab); ?>
+            <?php self::band($tab, $leads_month); ?>
             <div class="wsa-page">
                 <?php
                 self::notices();
@@ -195,7 +198,7 @@ class Admin
                     'catalogue' => self::tab_catalogue($s),
                     'conversations' => self::tab_conversations($s),
                     'leads' => self::tab_leads($s),
-                    default => self::tab_overview($s),
+                    default => self::tab_overview($s, $leads_month),
                 };
                 ?>
             </div>
@@ -203,12 +206,11 @@ class Admin
         <?php
     }
 
-    private static function band(string $tab): void
+    private static function band(string $tab, int $leads_month): void
     {
         $ready = Settings::ready();
         $threads = DB::stats(30);
         $catalogue = Capabilities::has_commerce() ? (int) (wp_count_posts('product')->publish ?? 0) : 0;
-        $leads_month = Leads::count_since(30);
         ?>
         <div class="wsa-band">
             <div class="wsa-band-top">
@@ -273,20 +275,14 @@ class Admin
 
         $failure = Provider::last_failure();
         if ($failure) {
-            self::alert('bad', '!', self::failure_message($failure));
+            self::alert('bad', '!', sprintf(
+                /* translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time */
+                __('The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)', 'woocommerce-shop-agent'),
+                (int) $failure['code'],
+                $failure['message'],
+                $failure['at'],
+            ));
         }
-    }
-
-    /** One sentence about the last failed call to OpenAI, shown in the notices and next to the index status. */
-    private static function failure_message(array $failure): string
-    {
-        return sprintf(
-            /* translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time */
-            __('The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)', 'woocommerce-shop-agent'),
-            (int) $failure['code'],
-            $failure['message'],
-            $failure['at'],
-        );
     }
 
     private static function alert(string $tone, string $mark, string $message, string $action_url = '', string $action_label = ''): void
@@ -338,7 +334,7 @@ class Admin
     }
 
     // ----------------------------------------------------------- tab: overview
-    private static function tab_overview(array $s): void
+    private static function tab_overview(array $s, int $leads_month): void
     {
         $stats = DB::stats(30);
         $usage = Guards::usage();
@@ -362,7 +358,7 @@ class Admin
                     $kpis[] = [__('Products shown', 'woocommerce-shop-agent'), number_format_i18n($stats['products']), __('recommendations made', 'woocommerce-shop-agent')];
                     $kpis[] = [__('Added to cart', 'woocommerce-shop-agent'), number_format_i18n($stats['carts']), __('chats that led to a cart', 'woocommerce-shop-agent')];
                 }
-                $kpis[] = [__('Leads, 30 days', 'woocommerce-shop-agent'), number_format_i18n(Leads::count_since(30)), __('visitors who left their details', 'woocommerce-shop-agent')];
+                $kpis[] = [__('Leads, 30 days', 'woocommerce-shop-agent'), number_format_i18n($leads_month), __('visitors who left their details', 'woocommerce-shop-agent')];
                 foreach ($kpis as [$k, $v, $t]) : ?>
                     <div class="wsa-kpi">
                         <div class="wsa-kpi-k"><?php echo esc_html($k); ?></div>
@@ -688,7 +684,6 @@ class Admin
 
                 <?php if (Index::enabled()) :
                     $status = Index::status();
-                    $failure = Provider::last_failure();
                     ?>
                     <div class="wsa-field">
                         <p class="wsa-help" id="wsa-index-status">
@@ -702,9 +697,6 @@ class Admin
                             );
                             ?>
                         </p>
-                        <?php if ($failure) : ?>
-                            <div style="margin-top:10px;"><?php self::alert('bad', '!', self::failure_message($failure)); ?></div>
-                        <?php endif; ?>
                         <p style="margin-top:10px;">
                             <button type="button" class="wsa-btn is-ghost" id="wsa-rebuild"><?php esc_html_e('Rebuild index', 'woocommerce-shop-agent'); ?></button>
                             <span id="wsa-rebuild-result" class="wsa-test-result"></span>
@@ -729,7 +721,11 @@ class Admin
                     <input class="fld" style="max-width:110px;" type="number" min="1" max="365" id="wsa-leads-retention-days" name="leads_retention_days" value="<?php echo esc_attr((string) $s['leads_retention_days']); ?>">
                     <p class="wsa-help"><?php esc_html_e('Older leads are deleted once a day, along with the conversation they came from.', 'woocommerce-shop-agent'); ?></p>
                 </div>
-                <?php self::text_field('privacy_note', __('Note under the chat input', 'woocommerce-shop-agent'), $s['privacy_note'], __('Say that details typed here are passed to the site owner and kept with the conversation.', 'woocommerce-shop-agent')); ?>
+                <div class="wsa-field">
+                    <label class="wsa-label" for="wsa-privacy-note"><?php esc_html_e('Note under the chat input', 'woocommerce-shop-agent'); ?></label>
+                    <input class="fld" type="text" id="wsa-privacy-note" name="privacy_note" maxlength="240" value="<?php echo esc_attr($s['privacy_note']); ?>">
+                    <p class="wsa-help"><?php esc_html_e('Say that details typed here are passed to the site owner and kept with the conversation.', 'woocommerce-shop-agent'); ?></p>
+                </div>
             </div>
 
             <div class="wsa-card">
@@ -970,32 +966,35 @@ class Admin
         <?php
     }
 
-    /** Streams every lead as a CSV download and ends the request. Reached from save(), so the nonce and capability are already checked. */
-    private static function export_leads(): void
+    /** Every lead as CSV rows, the header first, cells guarded against formulas; pages of 500 so a large table never sits in memory at once. */
+    private static function csv_rows(): \Generator
     {
-        nocache_headers();
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="leads.csv"');
-        $out = fopen('php://output', 'w');
-        // the byte order mark is what makes Excel read Hebrew as Hebrew
-        fwrite($out, "\xEF\xBB\xBF");
-        fputcsv($out, ['id', 'created_at', 'name', 'contact', 'request', 'page']);
+        yield ['id', 'created_at', 'name', 'contact', 'request', 'page'];
         $page = 1;
         do {
             $data = Leads::list($page, 500);
             foreach ($data['rows'] as $row) {
-                fputcsv($out, array_map([self::class, 'csv_cell'], [
+                yield array_map([self::class, 'csv_cell'], [
                     (string) $row['id'],
                     (string) $row['created_at'],
                     (string) $row['name'],
                     (string) $row['contact'],
                     (string) $row['request'],
                     $row['page_id'] ? (string) get_permalink((int) $row['page_id']) : '',
-                ]));
+                ]);
             }
             $page++;
         } while (count($data['rows']) === 500);
-        exit;
+    }
+
+    /** Writes the rows behind a byte order mark, which is what makes Excel read Hebrew as Hebrew. */
+    private static function csv_write($stream, iterable $rows): void
+    {
+        fwrite($stream, "\xEF\xBB\xBF");
+        foreach ($rows as $row) {
+            // no escape character: a backslash in a name stays a backslash, and quotes are doubled by the enclosure alone
+            fputcsv($stream, $row, ',', '"', '');
+        }
     }
 
     /** A cell that starts like a formula gets a quote in front, so a spreadsheet shows it instead of running it. */

@@ -131,18 +131,19 @@ class Leads
         return ['rows' => $rows ?: [], 'total' => $total];
     }
 
-    /** The conversation the lead came from goes with it: that is the owner's promise to the visitor. */
-    public static function delete(int $id): void
+    /** The conversation the lead came from goes with it: that is the owner's promise to the visitor. Returns whether a row was removed. */
+    public static function delete(int $id): bool
     {
         $lead = self::find($id);
         if (! $lead) {
-            return;
+            return false;
         }
         if ((int) $lead['thread_id'] > 0) {
             DB::delete_thread((int) $lead['thread_id']);
         }
         global $wpdb;
-        $wpdb->delete(DB::leads_table(), ['id' => $id], ['%d']);
+
+        return (bool) $wpdb->delete(DB::leads_table(), ['id' => $id], ['%d']);
     }
 
     public static function purge(): void
