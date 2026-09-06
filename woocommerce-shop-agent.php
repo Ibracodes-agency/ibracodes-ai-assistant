@@ -26,6 +26,17 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// A second copy of the plugin (a manual upload next to the store install) must
+// not redefine the constants and redeclare the classes, which would take the
+// site down. The copy that loaded first wins; this one only leaves a notice.
+if (defined('WSA_VERSION')) {
+    add_action('admin_notices', static function (): void {
+        echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'woocommerce-shop-agent') . '</p></div>';
+    });
+
+    return;
+}
+
 define('WSA_VERSION', '0.1.2');
 define('WSA_FILE', __FILE__);
 define('WSA_PATH', plugin_dir_path(__FILE__));
