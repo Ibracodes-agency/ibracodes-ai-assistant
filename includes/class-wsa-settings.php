@@ -72,6 +72,15 @@ class Settings
             'leads_email' => get_option('admin_email'),
             'leads_retention_days' => 180,
 
+            // live chat
+            'live_enabled' => false,
+            'live_email' => '',
+            'live_wait_minutes' => 3,
+            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'woocommerce-shop-agent'),
+            'live_text_joined' => __('%s joined the chat.', 'woocommerce-shop-agent'),
+            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'woocommerce-shop-agent'),
+            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'woocommerce-shop-agent'),
+
             // widget footnote under the input
             'privacy_note' => '',
 
@@ -126,7 +135,7 @@ class Settings
             $value = $input[$key];
 
             $clean[$key] = match ($key) {
-                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'show_credit', 'leads_enabled' => (bool) $value,
+                'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'show_credit', 'leads_enabled', 'live_enabled' => (bool) $value,
                 'max_products' => max(1, min(4, absint($value))),
                 'retention_days' => max(1, min(365, absint($value))),
                 'excluded_cats' => array_values(array_unique(array_filter(array_map('absint', (array) $value)))),
@@ -137,6 +146,10 @@ class Settings
                 'leads_email' => is_email((string) $value) ? sanitize_email((string) $value) : (string) get_option('admin_email'),
                 'leads_retention_days' => max(1, min(365, absint($value))),
                 'leads_when' => sanitize_text_field((string) $value),
+                // resolved below: an empty or invalid address means "the same as leads"
+                'live_email' => is_email((string) $value) ? sanitize_email((string) $value) : '',
+                'live_wait_minutes' => max(1, min(60, absint($value))),
+                'live_text_waiting', 'live_text_joined', 'live_text_missed', 'live_text_closed' => sanitize_text_field((string) $value),
                 // one short sentence under the chat input, not a policy
                 'privacy_note' => mb_substr(sanitize_text_field((string) $value), 0, 240),
                 'model' => array_key_exists($value, self::models()) ? $value : $default,
@@ -149,6 +162,14 @@ class Settings
                 'limit_ip_burst', 'limit_ip_day', 'limit_store_day', 'limit_concurrent', 'limit_month' => max(1, absint($value)),
                 default => sanitize_text_field((string) $value),
             };
+        }
+
+        // live chat lives on the thread table, so it cannot run with logging off
+        if ($clean['live_enabled']) {
+            $clean['log_threads'] = true;
+        }
+        if ($clean['live_email'] === '') {
+            $clean['live_email'] = is_email($clean['leads_email']) ? $clean['leads_email'] : (string) get_option('admin_email');
         }
 
         // the update_option_wsa_settings hook runs inside update_option(), and readers there must see the new values
@@ -220,6 +241,12 @@ class Settings
     public static function ready(): bool
     {
         return (bool) self::get('enabled') && self::api_key() !== '';
+    }
+
+    /** Live chat needs a thread to live on, so it is only ready when logging is on as well. */
+    public static function live_ready(): bool
+    {
+        return (bool) self::get('live_enabled') && (bool) self::get('log_threads');
     }
 
     /** Opening suggestion chips, one per line in the settings field, capped at four. */

@@ -7,6 +7,10 @@
  * user id. A shop owner reading these learns about their catalogue, not about
  * a person, and there is nothing here worth stealing.
  *
+ * A thread also carries its live-chat state (see Live): who is answering it,
+ * a person or the AI, and since when. The only user id stored is the
+ * manager's own.
+ *
  * Rows are deleted by age on a daily job. Retention is a setting, and the
  * default is short.
  */
@@ -21,7 +25,7 @@ class DB
 {
     public const PURGE_HOOK = 'wsa_purge_threads';
 
-    private const DB_VERSION = '1.2.0';
+    private const DB_VERSION = '1.3.0';
 
     public static function threads_table(): string
     {
@@ -62,6 +66,12 @@ class DB
         $chunks = self::chunks_table();
         $leads = self::leads_table();
 
+        // Live chat columns on threads: status is one of ai, waiting, live,
+        // missed, closed. requested_at alone is stored in GMT
+        // (current_time('mysql', true)) because the wait timeout compares it
+        // with time(); the other datetimes are site-local like created_at.
+        // A comment inside the CREATE TABLE would be read by dbDelta as a
+        // column, which is why this note sits here.
         dbDelta("CREATE TABLE {$threads} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             created_at DATETIME NOT NULL,
@@ -73,9 +83,17 @@ class DB
             no_match TINYINT(1) NOT NULL DEFAULT 0,
             added_to_cart TINYINT(1) NOT NULL DEFAULT 0,
             first_question TEXT NULL,
+            status VARCHAR(10) NOT NULL DEFAULT 'ai',
+            requested_at DATETIME NULL,
+            claimed_at DATETIME NULL,
+            closed_at DATETIME NULL,
+            manager_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            last_visitor_at DATETIME NULL,
+            last_manager_at DATETIME NULL,
             PRIMARY KEY  (id),
             KEY created_at (created_at),
-            KEY no_match (no_match, created_at)
+            KEY no_match (no_match, created_at),
+            KEY status (status, requested_at)
         ) {$charset};
 
         CREATE TABLE {$messages} (
@@ -85,6 +103,7 @@ class DB
             content TEXT NOT NULL,
             product_ids VARCHAR(255) NOT NULL DEFAULT '',
             no_match TINYINT(1) NOT NULL DEFAULT 0,
+            is_read TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY thread_id (thread_id, id),
@@ -198,6 +217,25 @@ class DB
         )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
     }
 
+    /**
+     * One message outside the question-and-answer turn: a visitor line while
+     * a person is being fetched, the manager's reply, or a system line such
+     * as "X joined". Does not count as a turn. Returns the id, 0 on failure.
+     */
+    public static function add_message(int $thread_id, string $role, string $content, bool $is_read = true): int
+    {
+        global $wpdb;
+        $ok = $wpdb->insert(self::messages_table(), [
+            'thread_id' => $thread_id,
+            'role' => $role,
+            'content' => $content,
+            'is_read' => $is_read ? 1 : 0,
+            'created_at' => current_time('mysql'),
+        ], ['%d', '%s', '%s', '%d', '%s']);
+
+        return $ok ? (int) $wpdb->insert_id : 0;
+    }
+
     public static function mark_added_to_cart(int $thread_id): void
     {
         global $wpdb;
@@ -245,7 +283,7 @@ class DB
             return null;
         }
         $thread['messages'] = $wpdb->get_results($wpdb->prepare(
-            "SELECT role, content, product_ids, created_at FROM {$messages} WHERE thread_id = %d ORDER BY id ASC LIMIT 60",
+            "SELECT id, role, content, product_ids, is_read, created_at FROM {$messages} WHERE thread_id = %d ORDER BY id ASC LIMIT 60",
             $id,
         ), ARRAY_A) ?: [];
 

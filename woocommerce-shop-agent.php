@@ -76,6 +76,7 @@ add_action('plugins_loaded', function (): void {
     require_once WSA_PATH . 'includes/class-wsa-catalog.php';
     require_once WSA_PATH . 'includes/class-wsa-content.php';
     require_once WSA_PATH . 'includes/class-wsa-leads.php';
+    require_once WSA_PATH . 'includes/class-wsa-live.php';
     require_once WSA_PATH . 'includes/class-wsa-index.php';
     require_once WSA_PATH . 'includes/class-wsa-tools.php';
     require_once WSA_PATH . 'includes/class-wsa-prompt.php';
