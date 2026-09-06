@@ -288,7 +288,7 @@ class Rest
             return $thread_id;
         }
 
-        return rest_ensure_response(Live::close($thread_id, get_current_user_id()));
+        return rest_ensure_response(Live::close($thread_id));
     }
 
     /** The visitor's gate, in cost order: live chat on, token verified, poll budget left. Returns the thread id. */
@@ -301,7 +301,7 @@ class Rest
         if ($thread_id === 0) {
             return new WP_Error('wsa_bad_token', __('This conversation could not be verified.', 'woocommerce-shop-agent'), ['status' => 403]);
         }
-        if (! Guards::poll_allowed()) {
+        if (! Guards::poll_allowed($thread_id)) {
             return new WP_Error('wsa_rate_limited', __('Too many requests. Slow down a little.', 'woocommerce-shop-agent'), ['status' => 429]);
         }
 

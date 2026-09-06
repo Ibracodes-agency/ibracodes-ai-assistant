@@ -5,14 +5,18 @@
  * A thread is in one of five states. `ai` is the default. When the visitor
  * asks for a person the thread becomes `waiting` and the live-chat address is
  * emailed once; a manager who claims it makes it `live`; a wait longer than
- * the configured minutes becomes `missed`, which the widget treats as "back to
- * the AI, offer the contact option"; `closed` is a live chat the manager
- * ended. A missed or closed thread can be requested again, and a missed one
- * can still be claimed late, which brings the widget back on its next poll.
+ * the configured minutes, or a request a manager declines, becomes `missed`,
+ * which the widget treats as "back to the AI, offer the contact option";
+ * `closed` is a live chat a manager ended, or one nobody wrote in for
+ * IDLE_MINUTES. A missed or closed thread can be requested again, and a
+ * missed one can still be claimed late, which brings the widget back on its
+ * next poll.
  *
  * Both sides poll: there is no socket, and none is needed at the pace of a
  * shop desk. The visitor is identified by the signed thread token the widget
- * already holds, the manager by the admin capability.
+ * already holds, the manager by the admin capability. Timeouts are applied on
+ * the way in, by the visitor's poll and by the manager list, so a thread
+ * nobody looks at is judged the moment someone does.
  *
  * Every transition is a conditional UPDATE on the current status, so two
  * managers claiming at once, or two requests racing, resolve to one winner
@@ -30,10 +34,19 @@ class Live
     /** Rows the admin list shows; anything else belongs to the AI. */
     private const OPEN_STATUSES = ['waiting', 'live', 'missed'];
 
+    /** A live chat nobody has written in for this long is over. */
+    private const IDLE_MINUTES = 30;
+
     /** Bounds on one message, either side. */
     private const VISITOR_MAX = 1200;
 
     private const MANAGER_MAX = 2000;
+
+    /** Rows the manager list, one poll, and one timeout pass return at most. */
+    private const LIST_LIMIT = 200;
+
+    /** The question in the email is one line of a notification, not the transcript. */
+    private const QUESTION_MAX = 200;
 
     // -----------------------------------------------------------------------
     // Visitor side
@@ -70,7 +83,7 @@ class Live
         if (! in_array(self::state($thread_id), ['waiting', 'live'], true)) {
             return 0;
         }
-        $text = mb_substr(trim(wp_strip_all_tags($text)), 0, self::VISITOR_MAX);
+        $text = mb_substr(trim(sanitize_textarea_field($text)), 0, self::VISITOR_MAX);
         if ($text === '') {
             return 0;
         }
@@ -92,26 +105,19 @@ class Live
      */
     public static function poll_visitor(int $thread_id, int $since_id): array
     {
-        global $wpdb;
-        self::apply_timeout($thread_id);
+        self::apply_timeouts($thread_id);
         $row = self::row($thread_id);
         $status = (string) ($row['status'] ?? 'ai');
-        $manager = self::manager_name((int) ($row['manager_id'] ?? 0));
-        $messages = DB::messages_table();
-
-        $rows = $row ? $wpdb->get_results($wpdb->prepare(
-            "SELECT id, role, content, created_at FROM {$messages}
-             WHERE thread_id = %d AND id > %d AND role IN ('manager', 'system')
-             ORDER BY id ASC LIMIT 100",
-            $thread_id,
-            $since_id,
-        ), ARRAY_A) : []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $manager_id = (int) ($row['manager_id'] ?? 0);
+        $manager = self::manager_name($manager_id);
 
         return [
             'status' => $status === 'closed' || $status === '' ? 'ai' : $status,
             'manager' => $manager,
-            'messages' => array_map([self::class, 'message'], $rows ?: []),
-            'texts' => self::texts($manager),
+            'messages' => $row ? self::messages_since($thread_id, $since_id, ['manager', 'system']) : [],
+            // sent on every poll rather than only when the state changes: four
+            // short strings, and the widget can never miss the one it needs
+            'texts' => self::texts($manager, $manager_id > 0),
         ];
     }
 
@@ -128,29 +134,31 @@ class Live
     // Manager side
     // -----------------------------------------------------------------------
     /**
-     * Threads that need a person: waiting ones first, longest wait on top, then
-     * live ones by the visitor's latest line, then missed ones. `waiting_seconds`
-     * is how long the visitor has been waiting for a waiting or missed thread
-     * and 0 once a person is in.
+     * Threads that need a person, after the timeouts have run over all of
+     * them: waiting ones first, longest wait on top, then live ones by the
+     * visitor's latest line, then missed ones. `waiting_seconds` is how long
+     * the visitor has been waiting for a waiting or missed thread and 0 once a
+     * person is in.
      */
     public static function open_threads(): array
     {
         global $wpdb;
+        self::apply_timeouts();
         $threads = DB::threads_table();
         $messages = DB::messages_table();
-        $in = "'" . implode("', '", self::OPEN_STATUSES) . "'";
+        $slots = implode(', ', array_fill(0, count(self::OPEN_STATUSES), '%s'));
 
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT t.id, t.status, t.first_question, t.requested_at, t.manager_id,
                     (SELECT COUNT(*) FROM {$messages} m WHERE m.thread_id = t.id AND m.is_read = 0) AS unread
              FROM {$threads} t
-             WHERE t.status IN ({$in})
-             ORDER BY FIELD(t.status, {$in}),
+             WHERE t.status IN ({$slots})
+             ORDER BY FIELD(t.status, {$slots}),
                       CASE WHEN t.status = 'waiting' THEN t.requested_at END ASC,
                       t.last_visitor_at DESC,
                       t.requested_at DESC
              LIMIT %d",
-            200,
+            ...[...self::OPEN_STATUSES, ...self::OPEN_STATUSES, self::LIST_LIMIT],
         ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
         $now = time();
@@ -201,15 +209,34 @@ class Live
         ];
     }
 
-    /** The manager's line. Returns the message id, 0 unless the thread is live and the text is not empty. */
+    /**
+     * The manager's line. A different manager than the one who claimed takes
+     * the thread over, and the visitor is told who is talking now before the
+     * line arrives. Returns the message id, 0 unless the thread is live and the
+     * text is not empty.
+     */
     public static function manager_reply(int $thread_id, int $user_id, string $text): int
     {
-        if (self::state($thread_id) !== 'live') {
+        global $wpdb;
+        $row = self::row($thread_id);
+        if (($row['status'] ?? '') !== 'live') {
             return 0;
         }
         $text = mb_substr(trim(sanitize_textarea_field($text)), 0, self::MANAGER_MAX);
         if ($text === '') {
             return 0;
+        }
+        if ((int) $row['manager_id'] !== $user_id) {
+            $threads = DB::threads_table();
+            $changed = (int) $wpdb->query($wpdb->prepare(
+                "UPDATE {$threads} SET manager_id = %d WHERE id = %d AND status = 'live'",
+                $user_id,
+                $thread_id,
+            )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            if ($changed === 0) {
+                return 0; // the chat ended between the read and the write
+            }
+            DB::add_message($thread_id, 'system', self::text('live_text_joined', self::manager_name($user_id)));
         }
         $id = DB::add_message($thread_id, 'manager', $text);
         if ($id > 0) {
@@ -229,48 +256,44 @@ class Live
     public static function poll_manager(int $thread_id, int $since_id): array
     {
         global $wpdb;
-        $messages = DB::messages_table();
         $row = self::row($thread_id);
-
-        $rows = $row ? $wpdb->get_results($wpdb->prepare(
-            "SELECT id, role, content, created_at FROM {$messages}
-             WHERE thread_id = %d AND id > %d
-             ORDER BY id ASC LIMIT 200",
-            $thread_id,
-            $since_id,
-        ), ARRAY_A) : []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $row ? self::messages_since($thread_id, $since_id, []) : [];
 
         if ($row) {
-            $wpdb->update($messages, ['is_read' => 1], ['thread_id' => $thread_id, 'is_read' => 0], ['%d'], ['%d', '%d']);
+            $wpdb->update(DB::messages_table(), ['is_read' => 1], ['thread_id' => $thread_id, 'is_read' => 0], ['%d'], ['%d', '%d']);
         }
 
         return [
             'status' => (string) ($row['status'] ?? ''),
             'manager' => self::manager_name((int) ($row['manager_id'] ?? 0)),
-            'messages' => array_map([self::class, 'message'], $rows ?: []),
+            'messages' => $rows,
         ];
     }
 
     /**
-     * The manager ends the chat and the AI has the thread again. A waiting or
-     * missed request can be closed too, which is how a desk declines one.
+     * The manager ends the chat and the AI has the thread again. A request
+     * nobody joined has no chat to end: closing a waiting one marks it missed,
+     * so the widget falls back to the contact option and lead capture instead
+     * of announcing a chat that never happened; a missed one is left as it is.
      *
      * @return array{status: string}
      */
-    public static function close(int $thread_id, int $user_id): array
+    public static function close(int $thread_id): array
     {
         global $wpdb;
-        $threads = DB::threads_table();
-        $in = "'" . implode("', '", self::OPEN_STATUSES) . "'";
+        $row = self::row($thread_id);
 
-        $changed = (int) $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads} SET status = 'closed', closed_at = %s WHERE id = %d AND status IN ({$in})",
-            current_time('mysql'),
-            $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-
-        if ($changed > 0) {
-            DB::add_message($thread_id, 'system', self::text('live_text_closed', self::manager_name($user_id)));
+        if (($row['status'] ?? '') === 'live') {
+            self::end($thread_id, (int) $row['manager_id']);
+        } else {
+            $threads = DB::threads_table();
+            $changed = (int) $wpdb->query($wpdb->prepare(
+                "UPDATE {$threads} SET status = 'missed' WHERE id = %d AND status = 'waiting'",
+                $thread_id,
+            )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            if ($changed > 0) {
+                DB::add_message($thread_id, 'system', self::text('live_text_missed', ''));
+            }
         }
 
         return ['status' => self::state($thread_id)];
@@ -279,30 +302,76 @@ class Live
     // -----------------------------------------------------------------------
     // Internals
     // -----------------------------------------------------------------------
-    /** A wait past the configured minutes becomes missed. Compares GMT with GMT, see DB::install(). */
-    private static function apply_timeout(int $thread_id): void
+    /**
+     * Judges one thread, or with 0 every thread. A wait past the window is
+     * missed, with no line: the widget shows the missed text on the state
+     * change. A live chat nobody has written in for IDLE_MINUTES is closed
+     * with the closed line. requested_at is GMT and the activity columns are
+     * site-local, see DB::install(), so each rule has its own cutoff.
+     */
+    private static function apply_timeouts(int $thread_id = 0): void
     {
         global $wpdb;
         $threads = DB::threads_table();
-        $minutes = max(1, (int) Settings::get('live_wait_minutes'));
+        $wait = max(1, (int) Settings::get('live_wait_minutes'));
 
         $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads} SET status = 'missed' WHERE id = %d AND status = 'waiting' AND requested_at < %s",
+            "UPDATE {$threads} SET status = 'missed'
+             WHERE status = 'waiting' AND requested_at < %s AND (%d = 0 OR id = %d)",
+            gmdate('Y-m-d H:i:s', time() - $wait * MINUTE_IN_SECONDS),
             $thread_id,
-            gmdate('Y-m-d H:i:s', time() - $minutes * MINUTE_IN_SECONDS),
+            $thread_id,
         )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        $idle = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, manager_id FROM {$threads}
+             WHERE status = 'live'
+               AND GREATEST(COALESCE(last_manager_at, claimed_at), COALESCE(last_visitor_at, claimed_at)) < %s
+               AND (%d = 0 OR id = %d)
+             LIMIT %d",
+            gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - self::IDLE_MINUTES * MINUTE_IN_SECONDS),
+            $thread_id,
+            $thread_id,
+            self::LIST_LIMIT,
+        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        foreach ($idle ?: [] as $row) {
+            self::end((int) $row['id'], (int) $row['manager_id']);
+        }
     }
 
-    /** One email per request, to the live-chat address, with a link straight into the conversation. */
+    /** Ends a chat a person was in, with the line that names them. The manual close and the idle timeout both land here. */
+    private static function end(int $thread_id, int $manager_id): void
+    {
+        global $wpdb;
+        $threads = DB::threads_table();
+
+        $changed = (int) $wpdb->query($wpdb->prepare(
+            "UPDATE {$threads} SET status = 'closed', closed_at = %s WHERE id = %d AND status = 'live'",
+            current_time('mysql'),
+            $thread_id,
+        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        if ($changed > 0) {
+            DB::add_message($thread_id, 'system', self::text('live_text_closed', self::manager_name($manager_id)));
+        }
+    }
+
+    /** One email per request, to the live-chat address, with the link into the conversation on the first line. */
     private static function notify(int $thread_id, int $page_id): void
     {
         $row = self::row($thread_id);
+        if (! $row) {
+            return;
+        }
+        // one plain line: the visitor typed it, so tags and line breaks go
+        $question = mb_substr(sanitize_text_field((string) ($row['first_question'] ?? '')), 0, self::QUESTION_MAX);
         $permalink = $page_id > 0 ? get_permalink($page_id) : false;
         $lines = [
-            sprintf(__('Question: %s', 'woocommerce-shop-agent'), $row['first_question'] ?: '-'),
-            sprintf(__('Page: %s', 'woocommerce-shop-agent'), $permalink ?: '-'),
-            '',
             sprintf(__('Answer here: %s', 'woocommerce-shop-agent'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)),
+            '',
+            sprintf(__('Question: %s', 'woocommerce-shop-agent'), $question !== '' ? $question : '-'),
+            sprintf(__('Page: %s', 'woocommerce-shop-agent'), $permalink ?: '-'),
         ];
 
         wp_mail(
@@ -327,15 +396,26 @@ class Live
         $wpdb->update(DB::threads_table(), [$column => current_time('mysql')], ['id' => $thread_id], ['%s'], ['%d']);
     }
 
-    /** The shape both polls hand to the browser. */
-    private static function message(array $row): array
+    /** Lines after an id, oldest first, restricted to the given roles (none means every role), in the shape both polls hand to the browser. */
+    private static function messages_since(int $thread_id, int $since_id, array $roles): array
     {
-        return [
+        global $wpdb;
+        $messages = DB::messages_table();
+        $filter = $roles ? ' AND role IN (' . implode(', ', array_fill(0, count($roles), '%s')) . ')' : '';
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, role, content, created_at FROM {$messages}
+             WHERE thread_id = %d AND id > %d{$filter}
+             ORDER BY id ASC LIMIT %d",
+            ...[$thread_id, $since_id, ...$roles, self::LIST_LIMIT],
+        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+        return array_map(static fn (array $row): array => [
             'id' => (int) $row['id'],
             'role' => (string) $row['role'],
             'text' => (string) $row['content'],
             'at' => (string) $row['created_at'],
-        ];
+        ], $rows ?: []);
     }
 
     /** Display name, or '' for no manager or a deleted account. Cached: the list asks once per row. */
@@ -359,13 +439,14 @@ class Live
         return str_replace('%s', $manager, (string) Settings::get($key));
     }
 
-    private static function texts(string $manager): array
+    /** The closed text only exists once a person was in the chat; a declined request has nothing to have ended. */
+    private static function texts(string $manager, bool $had_manager): array
     {
         return [
             'waiting' => self::text('live_text_waiting', $manager),
             'joined' => self::text('live_text_joined', $manager),
             'missed' => self::text('live_text_missed', $manager),
-            'closed' => self::text('live_text_closed', $manager),
+            'closed' => $had_manager ? self::text('live_text_closed', $manager) : '',
         ];
     }
 }

@@ -24,8 +24,11 @@ class Guards
     /** Frees itself even if the request dies mid-flight, so a crash cannot leak a slot forever. */
     private const SLOT_TTL = 2 * MINUTE_IN_SECONDS;
 
-    /** Live-chat polls per visitor per minute: the widget's every-few-seconds cadence with room to spare. */
-    private const POLLS_PER_MINUTE = 40;
+    /** Live-chat polls per thread per minute: the widget's every-few-seconds cadence with room to spare. */
+    private const POLLS_PER_THREAD = 40;
+
+    /** Live-chat polls per address per minute, over every thread: one machine cannot poll the whole table. */
+    private const POLLS_PER_ADDRESS = 300;
 
     /**
      * Checks every gate and, when they all pass, claims the caller's share of
@@ -94,20 +97,33 @@ class Guards
      * never eats the chat budget. No upstream call sits behind it, so the
      * budget is about the database, not the bill.
      *
-     * The minute window lives in the stored value rather than in the
+     * Keyed on the thread, not the address: the signed token already binds
+     * the caller to one thread, whereas the proxy headers client_ip_hash()
+     * honours are spoofable on a site that is not behind such a proxy, and a
+     * rotating header would mint a fresh counter per value. A coarse backstop
+     * on REMOTE_ADDR alone bounds one machine polling many threads.
+     */
+    public static function poll_allowed(int $thread_id): bool
+    {
+        return self::within_window('wsa_poll_' . $thread_id, self::POLLS_PER_THREAD)
+            && self::within_window('wsa_pollip_' . self::remote_addr_hash(), self::POLLS_PER_ADDRESS);
+    }
+
+    /**
+     * Counts one call against a fixed one-minute window; false once the limit
+     * is reached. The window lives in the stored value rather than in the
      * transient's expiry: set_transient() pushes the expiry forward on every
      * write, and a widget polling every few seconds would otherwise never see
      * the counter reset and lock itself out after the fortieth poll.
      */
-    public static function poll_allowed(): bool
+    private static function within_window(string $key, int $limit): bool
     {
-        $key = 'wsa_poll_' . self::client_ip_hash();
         $now = time();
         $window = (array) get_transient($key);
         if ((int) ($window['until'] ?? 0) <= $now) {
             $window = ['count' => 0, 'until' => $now + MINUTE_IN_SECONDS];
         }
-        if ((int) ($window['count'] ?? 0) >= self::POLLS_PER_MINUTE) {
+        if ((int) ($window['count'] ?? 0) >= $limit) {
             return false;
         }
         $window['count'] = (int) ($window['count'] ?? 0) + 1;
@@ -170,6 +186,14 @@ class Guards
             }
         }
         $ip = (string) apply_filters('wsa_client_ip', $ip);
+
+        return md5('wsa|' . $ip);
+    }
+
+    /** The connecting address alone, hashed like client_ip_hash(): the one header a caller cannot choose. */
+    private static function remote_addr_hash(): string
+    {
+        $ip = empty($_SERVER['REMOTE_ADDR']) ? '' : sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
 
         return md5('wsa|' . $ip);
     }
