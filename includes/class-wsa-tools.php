@@ -86,10 +86,18 @@ class Tools
             ]];
         }
 
-        // The button the model may point to only exists when the owner set a
-        // destination; without one, the prompt says there is nothing to click
-        // and the tool is not offered at all.
-        if (Prompt::handoff_label() !== '') {
+        // With live chat on, hand_off asks a person to join, whether or not
+        // the owner also set a contact destination. Without it the button the
+        // model may point to only exists when the owner set a destination;
+        // without one, the prompt says there is nothing to click and the tool
+        // is not offered at all.
+        if (Settings::live_ready()) {
+            $tools[] = ['type' => 'function', 'function' => [
+                'name' => 'hand_off',
+                'description' => 'Hand the conversation to a person. Call it when the visitor asks to talk to someone, or when you cannot help. A person will join this chat shortly; tell the visitor that in one short sentence and stop answering. Do not mention a button.',
+                'parameters' => ['type' => 'object', 'properties' => new \stdClass()],
+            ]];
+        } elseif (Prompt::handoff_label() !== '') {
             $tools[] = ['type' => 'function', 'function' => [
                 'name' => 'hand_off',
                 'description' => sprintf(
@@ -109,7 +117,7 @@ class Tools
      * is told never to) paste links or prices into its text.
      *
      * @param array<int, array> $cards collected product cards, keyed by id
-     * @param array{page_id?: int, thread_id?: int} $context the verified thread and the page being read, for the lead
+     * @param array{page_id?: int, thread_id?: int, live?: string} $context the verified thread and the page being read, for the lead and the live request
      */
     public static function run(string $name, array $input, array &$cards, array $context = []): array
     {
@@ -125,12 +133,32 @@ class Tools
                 ? Leads::capture($input, (int) ($context['thread_id'] ?? 0), (int) ($context['page_id'] ?? 0))
                 : ['error' => 'unknown_tool'],
             'search_products' => self::search($input, $cards),
-            'hand_off' => ['shown' => true, 'label' => Prompt::handoff_label()],
+            'hand_off' => self::hand_off($context),
             'get_categories' => ['categories' => Catalog::categories()],
             'get_product_details' => Catalog::product_details((int) ($input['id'] ?? 0))
                 ?? ['error' => 'not_found'],
             default => ['error' => 'unknown_tool'],
         };
+    }
+
+    /**
+     * With live chat on, asks a person to join the verified thread. On the
+     * first turn there is no thread yet, so the request is left pending for
+     * the REST layer to make once the turn is recorded. Without live chat the
+     * result is the contact button.
+     */
+    private static function hand_off(array $context): array
+    {
+        if (! Settings::live_ready()) {
+            return ['shown' => true, 'label' => Prompt::handoff_label()];
+        }
+        $thread_id = (int) ($context['thread_id'] ?? 0);
+        if ($thread_id === 0) {
+            return ['live' => 'pending'];
+        }
+        Live::request($thread_id, (int) ($context['page_id'] ?? 0));
+
+        return ['live' => 'waiting'];
     }
 
     /** One page's text, through the same gate as search: an id the model guessed at gets nothing. */

@@ -43,6 +43,8 @@ class Rest
                 // the post the visitor is reading; the prompt only uses it when the page is public and in scope
                 'page' => ['type' => 'integer', 'required' => false],
                 'thread' => ['type' => 'string', 'required' => false],
+                // the live state the widget last saw; 'missed' changes what the agent is told
+                'live' => ['type' => 'string', 'required' => false],
             ],
         ]);
 
@@ -131,6 +133,26 @@ class Rest
             return new WP_Error('wsa_off', __('The chat is not available right now.', 'woocommerce-shop-agent'), ['status' => 503]);
         }
 
+        // A thread a person owns, or is about to, is not the AI's to answer:
+        // the widget switches to the live routes on this reply. Checked before
+        // the guards so the refusal costs no chat budget.
+        $token = sanitize_text_field((string) $request->get_param('thread'));
+        $thread_id = Threads::id_from_token($token);
+        $page_id = absint($request->get_param('page'));
+        if ($thread_id > 0 && Settings::live_ready()) {
+            $state = Live::state($thread_id);
+            if (in_array($state, ['waiting', 'live'], true)) {
+                // the shape of a WP_Error response, built by hand: WordPress
+                // reads a WP_Error's data.status as the HTTP code, and here
+                // that key has to carry the live state for the widget
+                return new WP_REST_Response([
+                    'code' => 'wsa_live_owned',
+                    'message' => __('A person has this conversation right now.', 'woocommerce-shop-agent'),
+                    'data' => ['status' => $state],
+                ], 409);
+            }
+        }
+
         $gate = Guards::check_and_acquire();
         if ($gate instanceof WP_Error) {
             return $gate;
@@ -139,8 +161,9 @@ class Rest
         try {
             $messages = (array) $request['messages'];
             $context = [
-                'page_id' => absint($request->get_param('page')),
-                'thread_id' => Threads::id_from_token(sanitize_text_field((string) $request->get_param('thread'))),
+                'page_id' => $page_id,
+                'thread_id' => $thread_id,
+                'live' => sanitize_key((string) $request->get_param('live')),
             ];
             $answer = Agent::answer($messages, $context);
             if ($answer instanceof WP_Error) {
@@ -149,12 +172,18 @@ class Rest
 
             $last = end($messages);
             $answer['thread'] = Threads::record(
-                sanitize_text_field((string) $request->get_param('thread')),
+                $token,
                 (string) ($last['text'] ?? ''),
                 $answer,
                 sanitize_key((string) $request->get_param('device')),
             );
             unset($answer['no_match']); // server-side signal, not the customer's business
+
+            // a request made on the first turn had no thread to sit on until the turn was recorded
+            if ($answer['live'] === 'pending') {
+                $new_id = Threads::id_from_token((string) $answer['thread']);
+                $answer['live'] = $new_id > 0 ? Live::request($new_id, $page_id)['status'] : '';
+            }
 
             return rest_ensure_response($answer);
         } finally {

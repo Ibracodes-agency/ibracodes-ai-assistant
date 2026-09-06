@@ -23,7 +23,7 @@ class Agent
     private const MAX_CARDS = 4;
 
     /**
-     * @param array{page_id?: int, thread_id?: int} $context what the widget sent with the message: the page being read, the verified thread
+     * @param array{page_id?: int, thread_id?: int, live?: string} $context what the widget sent with the message: the page being read, the verified thread, the live state the widget last saw
      */
     public static function answer(array $history, array $context = []): array|WP_Error
     {
@@ -38,6 +38,8 @@ class Agent
         $reply = '';
         $no_match = false;
         $handoff = false;
+        // 'waiting' once a person was asked to join, 'pending' when that has to wait for the thread to exist, '' otherwise
+        $live = '';
 
         for ($turn = 0; $turn < self::MAX_TURNS; $turn++) {
             $message = Provider::complete($messages, $tools);
@@ -66,8 +68,13 @@ class Agent
                     if ($name === 'search_products' && empty($result['results'])) {
                         $no_match = true;
                     }
+                    // with live chat the tool asks a person in; without it, it is the contact button
                     if ($name === 'hand_off') {
-                        $handoff = true;
+                        if (isset($result['live'])) {
+                            $live = (string) $result['live'];
+                        } else {
+                            $handoff = true;
+                        }
                     }
                     $messages[] = [
                         'role' => 'tool',
@@ -104,8 +111,10 @@ class Agent
             'products' => $products,
             'chips' => array_values($chips),
             // true only when the model asked for the contact button (or the
-            // fallback above suggested a person); the widget draws it then
-            'handoff' => $handoff && Prompt::handoff_label() !== '',
+            // fallback above suggested a person); the widget draws it then.
+            // Never alongside a live request: a person is on the way
+            'handoff' => $handoff && $live === '' && Prompt::handoff_label() !== '',
+            'live' => $live,
             // the caller records the turn; a search that found nothing counts
             // as unanswered only when nothing was shown in the end
             'no_match' => $no_match && ! $products,

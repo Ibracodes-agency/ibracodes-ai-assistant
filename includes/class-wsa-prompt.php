@@ -32,7 +32,7 @@ class Prompt
     }
 
     /**
-     * @param array{page_id?: int, thread_id?: int} $context what the widget sent with the message
+     * @param array{page_id?: int, thread_id?: int, live?: string} $context what the widget sent with the message
      */
     public static function system_message(array $context = []): array
     {
@@ -88,6 +88,11 @@ class Prompt
             $parts[] = $handoff;
         }
 
+        // the widget reports it once a person was asked for and nobody came
+        if (($context['live'] ?? '') === 'missed') {
+            $parts[] = 'A person was requested but did not join. Apologise once, offer to take the visitor\'s details so the owner calls back (call capture_lead when they agree, if it is available), and offer the contact option. Do not offer a person again in this conversation.';
+        }
+
         if (Settings::get('leads_enabled')) {
             $when = trim((string) Settings::get('leads_when')) ?: 'when the visitor wants a quote, a callback or to be contacted';
             $lead = sprintf('Lead capture: %s, offer once to take their details so the owner can get back to them. Offer only after you have tried to answer, never push, and never offer twice in one conversation. If they agree, ask for their name and a phone number or email in one short message, then call capture_lead. Confirm only after the tool says it was saved.', $when);
@@ -128,6 +133,9 @@ class Prompt
 
     private static function handoff_line(bool $commerce): string
     {
+        if (Settings::live_ready()) {
+            return 'When the visitor asks to talk to a person, or you cannot help, call the hand_off tool. A person will join this chat; say so in one short sentence and stop.';
+        }
         $label = self::handoff_label();
         if ($label === '') {
             return sprintf('There is no contact button in this chat. When the customer asks for a person or you cannot help, say so plainly and suggest the %s\'s contact page in words. Never tell the customer to click, press or tap anything: nothing is shown for it.', $commerce ? 'shop' : 'site');
