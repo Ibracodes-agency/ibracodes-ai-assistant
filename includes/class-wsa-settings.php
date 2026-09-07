@@ -77,8 +77,10 @@ class Settings
             'live_email' => '',
             'live_wait_minutes' => 3,
             'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'ibracodes-ai-assistant'),
+            /* translators: %s: the manager's display name */
             'live_text_joined' => __('%s joined the chat.', 'ibracodes-ai-assistant'),
             'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'ibracodes-ai-assistant'),
+            /* translators: %s: the manager's display name */
             'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'ibracodes-ai-assistant'),
 
             // widget footnote under the input

@@ -31,6 +31,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom tables owned by this plugin; results are small and per-request
+
 class Live
 {
     /** Rows the admin list shows; anything else belongs to the AI. */
@@ -66,12 +68,13 @@ class Live
         $threads = DB::threads_table();
 
         $changed = (int) $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads}
+            "UPDATE %i
              SET status = 'waiting', requested_at = %s, claimed_at = NULL, closed_at = NULL, manager_id = 0
              WHERE id = %d AND status IN ('ai', 'missed', 'closed')",
+            $threads,
             current_time('mysql', true),
             $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
 
         if ($changed > 0) {
             DB::add_message($thread_id, 'system', self::text('live_text_waiting', ''));
@@ -128,9 +131,10 @@ class Live
         $wait = max(1, (int) Settings::get('live_wait_minutes'));
 
         return (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$threads} WHERE status = 'waiting' AND requested_at >= %s",
+            "SELECT COUNT(*) FROM %i WHERE status = 'waiting' AND requested_at >= %s",
+            $threads,
             gmdate('Y-m-d H:i:s', time() - $wait * MINUTE_IN_SECONDS),
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
     }
 
     /** The stored status, or '' when the thread does not exist. */
@@ -139,7 +143,7 @@ class Live
         global $wpdb;
         $threads = DB::threads_table();
 
-        return (string) $wpdb->get_var($wpdb->prepare("SELECT status FROM {$threads} WHERE id = %d", $thread_id)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        return (string) $wpdb->get_var($wpdb->prepare('SELECT status FROM %i WHERE id = %d', $threads, $thread_id));
     }
 
     // -----------------------------------------------------------------------
@@ -160,18 +164,20 @@ class Live
         $messages = DB::messages_table();
         $slots = implode(', ', array_fill(0, count(self::OPEN_STATUSES), '%s'));
 
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- the status lists are one %s per OPEN_STATUSES entry, bound below
         $rows = $wpdb->get_results($wpdb->prepare(
             "SELECT t.id, t.status, t.first_question, t.requested_at, t.manager_id,
-                    (SELECT COUNT(*) FROM {$messages} m WHERE m.thread_id = t.id AND m.is_read = 0) AS unread
-             FROM {$threads} t
+                    (SELECT COUNT(*) FROM %i m WHERE m.thread_id = t.id AND m.is_read = 0) AS unread
+             FROM %i t
              WHERE t.status IN ({$slots})
              ORDER BY FIELD(t.status, {$slots}),
                       CASE WHEN t.status = 'waiting' THEN t.requested_at END ASC,
                       t.last_visitor_at DESC,
                       t.requested_at DESC
              LIMIT %d",
-            ...[...self::OPEN_STATUSES, ...self::OPEN_STATUSES, self::LIST_LIMIT],
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ...[$messages, $threads, ...self::OPEN_STATUSES, ...self::OPEN_STATUSES, self::LIST_LIMIT],
+        ), ARRAY_A);
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 
         $now = time();
 
@@ -201,14 +207,15 @@ class Live
         $now = current_time('mysql');
 
         $changed = (int) $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads}
+            "UPDATE %i
              SET status = 'live', claimed_at = %s, manager_id = %d, last_manager_at = %s
              WHERE id = %d AND status IN ('waiting', 'missed')",
+            $threads,
             $now,
             $user_id,
             $now,
             $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
 
         if ($changed > 0) {
             DB::add_message($thread_id, 'system', self::text('live_text_joined', self::manager_name($user_id)));
@@ -242,11 +249,12 @@ class Live
         if ((int) $row['manager_id'] !== $user_id) {
             $threads = DB::threads_table();
             $changed = (int) $wpdb->query($wpdb->prepare(
-                "UPDATE {$threads} SET manager_id = %d WHERE id = %d AND status = 'live' AND manager_id <> %d",
+                "UPDATE %i SET manager_id = %d WHERE id = %d AND status = 'live' AND manager_id <> %d",
+                $threads,
                 $user_id,
                 $thread_id,
                 $user_id,
-            )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ));
             if ($changed > 0) {
                 DB::add_message($thread_id, 'system', self::text('live_text_joined', self::manager_name($user_id)));
             } elseif (self::state($thread_id) !== 'live') {
@@ -323,30 +331,32 @@ class Live
         $wait = max(1, (int) Settings::get('live_wait_minutes'));
 
         $stale = $wpdb->get_col($wpdb->prepare(
-            "SELECT id FROM {$threads}
+            "SELECT id FROM %i
              WHERE status = 'waiting' AND requested_at < %s AND (%d = 0 OR id = %d)
              LIMIT %d",
+            $threads,
             gmdate('Y-m-d H:i:s', time() - $wait * MINUTE_IN_SECONDS),
             $thread_id,
             $thread_id,
             self::LIST_LIMIT,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
 
         foreach ($stale ?: [] as $id) {
             self::miss((int) $id);
         }
 
         $idle = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, manager_id FROM {$threads}
+            "SELECT id, manager_id FROM %i
              WHERE status = 'live'
                AND GREATEST(COALESCE(last_manager_at, claimed_at), COALESCE(last_visitor_at, claimed_at)) < %s
                AND (%d = 0 OR id = %d)
              LIMIT %d",
+            $threads,
             gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - self::IDLE_MINUTES * MINUTE_IN_SECONDS),
             $thread_id,
             $thread_id,
             self::LIST_LIMIT,
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ), ARRAY_A);
 
         foreach ($idle ?: [] as $row) {
             self::end((int) $row['id'], (int) $row['manager_id']);
@@ -360,9 +370,10 @@ class Live
         $threads = DB::threads_table();
 
         $changed = (int) $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads} SET status = 'missed' WHERE id = %d AND status = 'waiting'",
+            "UPDATE %i SET status = 'missed' WHERE id = %d AND status = 'waiting'",
+            $threads,
             $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
 
         if ($changed > 0) {
             DB::add_message($thread_id, 'system', self::text('live_text_missed', ''));
@@ -376,10 +387,11 @@ class Live
         $threads = DB::threads_table();
 
         $changed = (int) $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads} SET status = 'closed', closed_at = %s WHERE id = %d AND status = 'live'",
+            "UPDATE %i SET status = 'closed', closed_at = %s WHERE id = %d AND status = 'live'",
+            $threads,
             current_time('mysql'),
             $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
 
         if ($changed > 0) {
             DB::add_message($thread_id, 'system', self::text('live_text_closed', self::manager_name($manager_id)));
@@ -397,9 +409,12 @@ class Live
         $question = mb_substr(sanitize_text_field((string) ($row['first_question'] ?? '')), 0, self::QUESTION_MAX);
         $permalink = $page_id > 0 ? get_permalink($page_id) : false;
         $lines = [
+            /* translators: %s: link to the conversation in the WordPress admin */
             sprintf(__('Answer here: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)),
             '',
+            /* translators: %s: the visitor's first question */
             sprintf(__('Question: %s', 'ibracodes-ai-assistant'), $question !== '' ? $question : '-'),
+            /* translators: %s: the URL of the page the visitor was on */
             sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $permalink ?: '-'),
         ];
 
@@ -414,7 +429,7 @@ class Live
     {
         global $wpdb;
         $threads = DB::threads_table();
-        $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$threads} WHERE id = %d", $thread_id), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $row = $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE id = %d', $threads, $thread_id), ARRAY_A);
 
         return $row ?: null;
     }
@@ -432,12 +447,14 @@ class Live
         $messages = DB::messages_table();
         $filter = $roles ? ' AND role IN (' . implode(', ', array_fill(0, count($roles), '%s')) . ')' : '';
 
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter -- the role filter is one %s per role, bound below
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, role, content, created_at FROM {$messages}
+            "SELECT id, role, content, created_at FROM %i
              WHERE thread_id = %d AND id > %d{$filter}
              ORDER BY id ASC LIMIT %d",
-            ...[$thread_id, $since_id, ...$roles, self::LIST_LIMIT],
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ...[$messages, $thread_id, $since_id, ...$roles, self::LIST_LIMIT],
+        ), ARRAY_A);
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
         return array_map(static fn (array $row): array => [
             'id' => (int) $row['id'],
@@ -468,3 +485,5 @@ class Live
         return str_replace('%s', $manager, (string) Settings::get($key));
     }
 }
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

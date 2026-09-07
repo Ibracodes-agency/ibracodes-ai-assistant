@@ -42,7 +42,7 @@ Built by [Ibracodes](https://ibracodes.com).
 
 ## Requirements
 
-PHP 8.1 or later, WordPress 6.0 or later, and an OpenAI API key. WooCommerce is optional: with it
+PHP 8.1 or later, WordPress 6.2 or later, and an OpenAI API key. WooCommerce is optional: with it
 active the assistant gains product search and cart cards, without it the Catalogue tab is simply
 absent.
 

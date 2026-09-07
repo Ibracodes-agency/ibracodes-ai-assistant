@@ -21,6 +21,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom tables owned by this plugin; results are small and per-request
+
 class DB
 {
     public const PURGE_HOOK = 'wsa_purge_threads';
@@ -202,19 +204,19 @@ class DB
             'created_at' => $now,
         ]);
 
-        $threads = self::threads_table();
         $wpdb->query($wpdb->prepare(
-            "UPDATE {$threads}
+            'UPDATE %i
              SET turns = turns + 1,
                  products_shown = products_shown + %d,
                  no_match = GREATEST(no_match, %d),
                  updated_at = %s
-             WHERE id = %d",
+             WHERE id = %d',
+            self::threads_table(),
             count($product_ids),
             $no_match ? 1 : 0,
             $now,
             $thread_id,
-        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ));
     }
 
     /**
@@ -261,14 +263,15 @@ class DB
         $offset = max(0, ($page - 1) * $per_page);
 
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$table} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+            'SELECT * FROM %i ORDER BY created_at DESC LIMIT %d OFFSET %d',
+            $table,
             $per_page,
             $offset,
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ), ARRAY_A);
 
         return [
             'rows' => $rows ?: [],
-            'total' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}"),
+            'total' => (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $table)),
         ];
     }
 
@@ -278,12 +281,13 @@ class DB
         $threads = self::threads_table();
         $messages = self::messages_table();
 
-        $thread = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$threads} WHERE id = %d", $id), ARRAY_A);
+        $thread = $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE id = %d', $threads, $id), ARRAY_A);
         if (! $thread) {
             return null;
         }
         $thread['messages'] = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, role, content, product_ids, is_read, created_at FROM {$messages} WHERE thread_id = %d ORDER BY id ASC LIMIT 60",
+            'SELECT id, role, content, product_ids, is_read, created_at FROM %i WHERE thread_id = %d ORDER BY id ASC LIMIT 60',
+            $messages,
             $id,
         ), ARRAY_A) ?: [];
 
@@ -303,12 +307,13 @@ class DB
 
         return $wpdb->get_results($wpdb->prepare(
             "SELECT thread_id, content AS question, created_at
-             FROM {$messages}
+             FROM %i
              WHERE no_match = 1 AND role = 'user' AND content <> ''
              ORDER BY created_at DESC
              LIMIT %d",
+            $messages,
             $limit,
-        ), ARRAY_A) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ), ARRAY_A) ?: [];
     }
 
     /** Most-recommended products over the window, for the overview panel. */
@@ -319,11 +324,12 @@ class DB
         $since = gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - $days * DAY_IN_SECONDS);
 
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT product_ids FROM {$messages}
+            "SELECT product_ids FROM %i
              WHERE product_ids <> '' AND created_at >= %s
              LIMIT 2000",
+            $messages,
             $since,
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ), ARRAY_A);
 
         $counts = [];
         foreach ($rows ?: [] as $row) {
@@ -346,14 +352,15 @@ class DB
         $since = gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - $days * DAY_IN_SECONDS);
 
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT COUNT(*) AS threads,
+            'SELECT COUNT(*) AS threads,
                     COALESCE(SUM(turns), 0) AS turns,
                     COALESCE(SUM(products_shown), 0) AS products,
                     COALESCE(SUM(no_match), 0) AS no_match,
                     COALESCE(SUM(added_to_cart), 0) AS carts
-             FROM {$table} WHERE created_at >= %s",
+             FROM %i WHERE created_at >= %s',
+            $table,
             $since,
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        ), ARRAY_A);
 
         return [
             'threads' => (int) ($row['threads'] ?? 0),
@@ -386,15 +393,16 @@ class DB
         // chunked so a long-neglected site cannot lock the table for a minute
         for ($i = 0; $i < 20; $i++) {
             $ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT id FROM {$threads} WHERE created_at < %s LIMIT 500",
+                'SELECT id FROM %i WHERE created_at < %s LIMIT 500',
+                $threads,
                 $cutoff,
-            )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ));
             if (! $ids) {
                 break;
             }
-            $in = implode(',', array_map('intval', $ids));
-            $wpdb->query("DELETE FROM {$messages} WHERE thread_id IN ({$in})");
-            $wpdb->query("DELETE FROM {$threads} WHERE id IN ({$in})");
+            $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+            $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE thread_id IN ({$placeholders})", $messages, ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
+            $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE id IN ({$placeholders})", $threads, ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
         }
 
         Leads::purge();
@@ -403,7 +411,9 @@ class DB
     public static function delete_all_threads(): void
     {
         global $wpdb;
-        $wpdb->query('TRUNCATE TABLE ' . self::messages_table());
-        $wpdb->query('TRUNCATE TABLE ' . self::threads_table());
+        $wpdb->query($wpdb->prepare('TRUNCATE TABLE %i', self::messages_table()));
+        $wpdb->query($wpdb->prepare('TRUNCATE TABLE %i', self::threads_table()));
     }
 }
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

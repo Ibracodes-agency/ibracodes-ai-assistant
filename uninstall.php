@@ -11,10 +11,11 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 
 global $wpdb;
 
-$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_messages');
-$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_threads');
-$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_chunks');
-$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_leads');
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- uninstall removes the plugin's own tables, options and transients; nothing to cache
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_messages'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- dropping the plugin's own table
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_threads'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- dropping the plugin's own table
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_chunks'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- dropping the plugin's own table
+$wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'wsa_leads'); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- dropping the plugin's own table
 
 delete_option('wsa_settings');
 delete_option('wsa_db_version');
@@ -36,3 +37,4 @@ $wpdb->query(
      WHERE option_name LIKE '\\_transient\\_wsa\\_%'
         OR option_name LIKE '\\_transient\\_timeout\\_wsa\\_%'"
 );
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

@@ -66,7 +66,7 @@ class Admin
             'wsa-fonts',
             'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
             [],
-            null,
+            WSA_VERSION,
         );
         wp_enqueue_style('wsa-admin', WSA_URL . 'assets/admin.css', ['wsa-fonts'], WSA_VERSION);
         wp_enqueue_script('wsa-admin', WSA_URL . 'assets/admin.js', [], WSA_VERSION, true);
@@ -168,7 +168,7 @@ class Admin
 
     private static function current_tab(): string
     {
-        return self::valid_tab(isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview');
+        return self::valid_tab(isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'overview'); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
     }
 
     /** The tabs this site shows: Catalogue only exists on a shop. */
@@ -346,10 +346,10 @@ class Admin
 
     private static function notices(): void
     {
-        if (isset($_GET['updated'])) {
+        if (isset($_GET['updated'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
             self::alert('good', '&#10003;', __('Settings saved.', 'ibracodes-ai-assistant'));
         }
-        if (isset($_GET['deleted'])) {
+        if (isset($_GET['deleted'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
             self::alert('good', '&#10003;', __('Lead deleted, along with its conversation.', 'ibracodes-ai-assistant'));
         }
 
@@ -995,7 +995,7 @@ class Admin
             return;
         }
         // the email links straight to one conversation; the console script opens it
-        $linked = isset($_GET['thread']) ? absint($_GET['thread']) : 0;
+        $linked = isset($_GET['thread']) ? absint($_GET['thread']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
         ?>
         <div id="wsa-live" class="wsa-console" data-thread="<?php echo esc_attr((string) $linked); ?>">
             <div class="wsa-live-list" id="wsa-live-list">
@@ -1035,8 +1035,8 @@ class Admin
 
     private static function tab_leads(array $s): void
     {
-        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
-        $page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
+        $page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
         $per_page = 20;
         $data = Leads::list($page, $per_page, $search);
         $pages = max(1, (int) ceil($data['total'] / $per_page));
@@ -1172,7 +1172,7 @@ class Admin
     /** Writes the rows behind a byte order mark, which is what makes Excel read Hebrew as Hebrew. */
     private static function csv_write($stream, iterable $rows): void
     {
-        fwrite($stream, "\xEF\xBB\xBF");
+        fwrite($stream, "\xEF\xBB\xBF"); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- writing a CSV download to php://output, not the filesystem
         foreach ($rows as $row) {
             // no escape character: a backslash in a name stays a backslash, and quotes are doubled by the enclosure alone
             fputcsv($stream, $row, ',', '"', '');
@@ -1188,14 +1188,14 @@ class Admin
     // ------------------------------------------------------ tab: conversations
     private static function tab_conversations(array $s): void
     {
-        $thread_id = isset($_GET['thread']) ? absint($_GET['thread']) : 0;
+        $thread_id = isset($_GET['thread']) ? absint($_GET['thread']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
         if ($thread_id) {
             self::render_thread($thread_id);
 
             return;
         }
 
-        $page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+        $page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display parameter, no state change
         $per_page = 20;
         $data = DB::threads($page, $per_page);
         $pages = max(1, (int) ceil($data['total'] / $per_page));

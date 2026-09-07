@@ -12,6 +12,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom tables owned by this plugin; results are small and per-request
+
 class Leads
 {
     public static function capture(array $input, int $thread_id, int $page_id): array
@@ -30,7 +32,7 @@ class Leads
         global $wpdb;
         $table = DB::leads_table();
         // one lead per conversation: a second call corrects the first rather than duplicating it
-        $existing = $thread_id > 0 ? (int) $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE thread_id = %d ORDER BY id DESC LIMIT 1", $thread_id)) : 0; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $existing = $thread_id > 0 ? (int) $wpdb->get_var($wpdb->prepare('SELECT id FROM %i WHERE thread_id = %d ORDER BY id DESC LIMIT 1', $table, $thread_id)) : 0;
         $data = ['name' => $name, 'contact' => $contact, 'request' => $request, 'page_id' => $page_id];
 
         if ($existing) {
@@ -82,17 +84,25 @@ class Leads
         $to = (string) Settings::get('leads_email');
         $subject = sprintf(
             $updated
+                /* translators: %s: the visitor's name */
                 ? __('Updated lead from the AI Assistant: %s', 'ibracodes-ai-assistant')
+                /* translators: %s: the visitor's name */
                 : __('New lead from the AI Assistant: %s', 'ibracodes-ai-assistant'),
             $lead['name'],
         );
         $lines = [
+            /* translators: %s: the visitor's name */
             sprintf(__('Name: %s', 'ibracodes-ai-assistant'), $lead['name']),
+            /* translators: %s: the visitor's phone number or email address */
             sprintf(__('Contact: %s', 'ibracodes-ai-assistant'), $lead['contact']),
+            /* translators: %s: what the visitor asked for */
             sprintf(__('Request: %s', 'ibracodes-ai-assistant'), $lead['request'] ?: '-'),
+            /* translators: %s: the URL of the page the visitor was on */
             sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
             '',
+            /* translators: %s: link to the conversation in the WordPress admin */
             sprintf(__('Conversation: %s', 'ibracodes-ai-assistant'), $lead['thread_id'] ? admin_url('admin.php?page=' . Admin::SLUG . '&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
+            /* translators: %s: link to the leads screen in the WordPress admin */
             sprintf(__('All leads: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=leads')),
         ];
 
@@ -102,7 +112,7 @@ class Leads
     public static function find(int $id): ?array
     {
         global $wpdb;
-        $row = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . DB::leads_table() . ' WHERE id = %d', $id), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $row = $wpdb->get_row($wpdb->prepare('SELECT * FROM %i WHERE id = %d', DB::leads_table(), $id), ARRAY_A);
 
         return $row ?: null;
     }
@@ -120,13 +130,9 @@ class Leads
             $where = ' WHERE name LIKE %s OR contact LIKE %s OR request LIKE %s';
             $args = [$like, $like, $like];
         }
-        $total = (int) $wpdb->get_var($args
-            ? $wpdb->prepare("SELECT COUNT(*) FROM {$table}{$where}", ...$args) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-            : "SELECT COUNT(*) FROM {$table}");
-        $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$table}{$where} ORDER BY id DESC LIMIT %d OFFSET %d",
-            ...[...$args, $per_page, max(0, ($page - 1) * $per_page)],
-        ), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $total = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM %i{$where}", $table, ...$args)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter -- the search clause is a literal with one %s per LIKE, bound from $args
+        $offset = max(0, ($page - 1) * $per_page);
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM %i{$where} ORDER BY id DESC LIMIT %d OFFSET %d", ...[$table, ...$args, $per_page, $offset]), ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, PluginCheck.Security.DirectDB.UnescapedDBParameter -- the search clause is a literal with one %s per LIKE, bound from $args
 
         return ['rows' => $rows ?: [], 'total' => $total];
     }
@@ -152,7 +158,7 @@ class Leads
         $table = DB::leads_table();
         $days = max(1, (int) Settings::get('leads_retention_days'));
         $cutoff = gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - $days * DAY_IN_SECONDS);
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT id, thread_id FROM {$table} WHERE created_at < %s LIMIT 1000", $cutoff), ARRAY_A) ?: []; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare('SELECT id, thread_id FROM %i WHERE created_at < %s LIMIT 1000', $table, $cutoff), ARRAY_A) ?: [];
         if (! $rows) {
             return;
         }
@@ -164,7 +170,7 @@ class Leads
         }
         $ids = array_map('intval', array_column($rows, 'id'));
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE id IN ({$placeholders})", ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE id IN ({$placeholders})", $table, ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
     }
 
     public static function count_since(int $days): int
@@ -172,6 +178,8 @@ class Leads
         global $wpdb;
         $cutoff = gmdate('Y-m-d H:i:s', strtotime(current_time('mysql')) - $days * DAY_IN_SECONDS);
 
-        return (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . DB::leads_table() . ' WHERE created_at >= %s', $cutoff)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        return (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i WHERE created_at >= %s', DB::leads_table(), $cutoff));
     }
 }
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-07T09:01:09+00:00\n"
+"POT-Creation-Date: 2026-09-07T10:00:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ibracodes-ai-assistant\n"
@@ -996,62 +996,72 @@ msgstr ""
 msgid "The chat is busy right now. Try again in a moment."
 msgstr ""
 
-#: includes/class-wsa-index.php:223
+#: includes/class-wsa-index.php:225
 msgid "The embeddings service returned the wrong number of vectors."
 msgstr ""
 
-#: includes/class-wsa-leads.php:85
+#. translators: %s: the visitor's name
+#: includes/class-wsa-leads.php:88
 #, php-format
 msgid "Updated lead from the AI Assistant: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:86
+#. translators: %s: the visitor's name
+#: includes/class-wsa-leads.php:90
 #, php-format
 msgid "New lead from the AI Assistant: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:90
+#. translators: %s: the visitor's name
+#: includes/class-wsa-leads.php:95
 #, php-format
 msgid "Name: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:91
+#. translators: %s: the visitor's phone number or email address
+#: includes/class-wsa-leads.php:97
 #, php-format
 msgid "Contact: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:92
+#. translators: %s: what the visitor asked for
+#: includes/class-wsa-leads.php:99
 #, php-format
 msgid "Request: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:93
-#: includes/class-wsa-live.php:403
+#. translators: %s: the URL of the page the visitor was on
+#: includes/class-wsa-leads.php:101
+#: includes/class-wsa-live.php:418
 #, php-format
 msgid "Page: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:95
+#. translators: %s: link to the conversation in the WordPress admin
+#: includes/class-wsa-leads.php:104
 #, php-format
 msgid "Conversation: %s"
 msgstr ""
 
-#: includes/class-wsa-leads.php:96
+#. translators: %s: link to the leads screen in the WordPress admin
+#: includes/class-wsa-leads.php:106
 #, php-format
 msgid "All leads: %s"
 msgstr ""
 
-#: includes/class-wsa-live.php:400
+#. translators: %s: link to the conversation in the WordPress admin
+#: includes/class-wsa-live.php:413
 #, php-format
 msgid "Answer here: %s"
 msgstr ""
 
-#: includes/class-wsa-live.php:402
+#. translators: %s: the visitor's first question
+#: includes/class-wsa-live.php:416
 #, php-format
 msgid "Question: %s"
 msgstr ""
 
-#: includes/class-wsa-live.php:408
+#: includes/class-wsa-live.php:423
 msgid "A visitor is waiting for a person"
 msgstr ""
 
@@ -1164,29 +1174,31 @@ msgstr ""
 msgid "A person will join this chat shortly. You can keep writing in the meantime."
 msgstr ""
 
-#: includes/class-wsa-settings.php:80
+#. translators: %s: the manager's display name
+#: includes/class-wsa-settings.php:81
 #, php-format
 msgid "%s joined the chat."
 msgstr ""
 
-#: includes/class-wsa-settings.php:81
+#: includes/class-wsa-settings.php:82
 msgid "Nobody is available right now. Leave your details and we will get back to you, or use the contact option below."
 msgstr ""
 
-#: includes/class-wsa-settings.php:82
+#. translators: %s: the manager's display name
+#: includes/class-wsa-settings.php:84
 #, php-format
 msgid "The chat with %s has ended. I can keep helping here."
 msgstr ""
 
-#: includes/class-wsa-settings.php:193
+#: includes/class-wsa-settings.php:195
 msgid "gpt-5-mini (recommended, cheapest)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:194
+#: includes/class-wsa-settings.php:196
 msgid "gpt-5 (best answers, costs more)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:195
+#: includes/class-wsa-settings.php:197
 msgid "gpt-4.1-mini"
 msgstr ""
 

@@ -162,7 +162,7 @@ class Content
             $pages = array_map('intval', (array) Settings::get('content_pages'));
             $args['post__in'] = array_values(array_diff($pages, $excluded)) ?: [0];
         } elseif ($excluded) {
-            $args['post__not_in'] = $excluded;
+            $args['post__not_in'] = $excluded; // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- a short list of ids excluded through the wsa_content_excluded_ids filter
         }
 
         return $args;

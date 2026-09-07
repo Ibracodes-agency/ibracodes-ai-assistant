@@ -4,7 +4,7 @@
  * Plugin URI:        https://ibracodes.com
  * Description:       An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key.
  * Version:           0.2.0
- * Requires at least: 6.0
+ * Requires at least: 6.2
  * Requires PHP:      8.1
  * Author:            Ibracodes
  * Author URI:        https://ibracodes.com
@@ -66,7 +66,10 @@ register_deactivation_hook(__FILE__, function (): void {
 });
 
 add_action('plugins_loaded', function (): void {
-    load_plugin_textdomain('ibracodes-ai-assistant', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    // The Hebrew catalogue ships inside the plugin: WordPress.org only serves a
+    // language pack once a locale is fully translated there, and until then
+    // this call is what loads the bundled files.
+    load_plugin_textdomain('ibracodes-ai-assistant', false, dirname(plugin_basename(__FILE__)) . '/languages'); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- the plugin ships its own he_IL catalogue in /languages
 
     require_once WSA_PATH . 'includes/class-wsa-settings.php';
     require_once WSA_PATH . 'includes/class-wsa-capabilities.php';

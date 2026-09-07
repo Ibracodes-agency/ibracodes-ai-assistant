@@ -12,6 +12,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- custom tables owned by this plugin; results are small and per-request
+
 class Index
 {
     public const HOOK = 'wsa_index_batch';
@@ -60,7 +62,7 @@ class Index
         }
         global $wpdb;
 
-        return (int) $wpdb->get_var('SELECT COUNT(*) FROM ' . DB::chunks_table()) > 0;
+        return (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', DB::chunks_table())) > 0;
     }
 
     public static function status(): array
@@ -78,8 +80,8 @@ class Index
 
         return [
             'pending' => count((array) get_option(self::QUEUE, [])),
-            'posts' => (int) $wpdb->get_var("SELECT COUNT(DISTINCT post_id) FROM {$table}"),
-            'chunks' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$table}"),
+            'posts' => (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(DISTINCT post_id) FROM %i', $table)),
+            'chunks' => (int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM %i', $table)),
             'total' => (int) $scope->found_posts,
         ];
     }
@@ -256,7 +258,7 @@ class Index
     public static function drop(): void
     {
         global $wpdb;
-        $wpdb->query('TRUNCATE TABLE ' . DB::chunks_table());
+        $wpdb->query($wpdb->prepare('TRUNCATE TABLE %i', DB::chunks_table()));
         delete_option(self::QUEUE);
         delete_option(self::BACKOFF);
         delete_option(self::MODEL);
@@ -278,7 +280,7 @@ class Index
         $table = DB::chunks_table();
         $ids = array_map('intval', get_posts(array_merge(Content::scope_args(), ['posts_per_page' => -1, 'fields' => 'ids'])));
         $indexed = array_column(
-            $wpdb->get_results("SELECT post_id, MAX(updated_at) AS updated_at FROM {$table} GROUP BY post_id", ARRAY_A) ?: [],
+            $wpdb->get_results($wpdb->prepare('SELECT post_id, MAX(updated_at) AS updated_at FROM %i GROUP BY post_id', $table), ARRAY_A) ?: [],
             'updated_at',
             'post_id',
         );
@@ -287,7 +289,7 @@ class Index
         foreach (array_chunk($ids, 500) as $slice) {
             $placeholders = implode(',', array_fill(0, count($slice), '%d'));
             $modified += array_column(
-                $wpdb->get_results($wpdb->prepare("SELECT ID, post_modified_gmt FROM {$wpdb->posts} WHERE ID IN ({$placeholders})", ...$slice), ARRAY_A) ?: [], // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+                $wpdb->get_results($wpdb->prepare("SELECT ID, post_modified_gmt FROM {$wpdb->posts} WHERE ID IN ({$placeholders})", ...$slice), ARRAY_A) ?: [], // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- one %d per id, built from the id list at runtime
                 'post_modified_gmt',
                 'ID',
             );
@@ -302,7 +304,7 @@ class Index
         $stale = array_values(array_diff(array_map('intval', array_keys($indexed)), $ids));
         if ($stale) {
             $placeholders = implode(',', array_fill(0, count($stale), '%d'));
-            $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE post_id IN ({$placeholders})", ...$stale)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE post_id IN ({$placeholders})", $table, ...$stale)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
         }
         if ($missing) {
             self::push($missing);
@@ -379,7 +381,7 @@ class Index
 
         global $wpdb;
         $table = DB::chunks_table();
-        $rows = $wpdb->get_results("SELECT id, post_id, embedding FROM {$table}", ARRAY_A);
+        $rows = $wpdb->get_results($wpdb->prepare('SELECT id, post_id, embedding FROM %i', $table), ARRAY_A);
         $best = [];
         foreach ($rows as $row) {
             // unpack() is 1-based; the query vector is 0-based
@@ -417,7 +419,7 @@ class Index
         }
         $placeholders = implode(',', array_fill(0, count($winners), '%d'));
         $passages = array_column(
-            $wpdb->get_results($wpdb->prepare("SELECT id, content FROM {$table} WHERE id IN ({$placeholders})", ...array_values($winners)), ARRAY_A) ?: [], // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->get_results($wpdb->prepare("SELECT id, content FROM %i WHERE id IN ({$placeholders})", $table, ...array_values($winners)), ARRAY_A) ?: [], // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
             'content',
             'id',
         );
@@ -430,3 +432,5 @@ class Index
         return $hits;
     }
 }
+
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

@@ -1,8 +1,8 @@
 === IbraCodes AI Assistant ===
 Contributors: ibracodes
 Tags: ai, chat, assistant, leads, woocommerce
-Requires at least: 6.0
-Tested up to: 7.0
+Requires at least: 6.2
+Tested up to: 7.1
 Requires PHP: 8.1
 Stable tag: 0.2.0
 License: GPLv2 or later

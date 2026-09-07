@@ -123,8 +123,8 @@ class Catalog
         if (count($ids) < $limit) {
             $by_sku = new WP_Query($args + [
                 'posts_per_page' => $limit - count($ids),
-                'post__not_in' => $ids ?: [0],
-                'meta_query' => [['key' => '_sku', 'value' => $query, 'compare' => 'LIKE']],
+                'post__not_in' => $ids ?: [0], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- excludes only the handful of ids the text search already returned
+                'meta_query' => [['key' => '_sku', 'value' => $query, 'compare' => 'LIKE']], // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- WooCommerce product search by SKU; bounded by posts_per_page
             ]);
             $sku_ids = wp_list_pluck($by_sku->posts, 'ID');
             $ids = array_merge($ids, $sku_ids);
@@ -179,7 +179,7 @@ class Catalog
             'post_type' => 'product',
             'post_status' => 'publish',
             'ignore_sticky_posts' => true,
-            'tax_query' => $tax_query,
+            'tax_query' => $tax_query, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- WooCommerce product search by category and visibility; callers bound it with posts_per_page
         ];
 
         if ($on_sale) {
