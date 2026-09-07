@@ -30,7 +30,7 @@ class Agent
         $messages = [Prompt::system_message($context), ...Scrubber::sanitize_history($history)];
 
         if (count($messages) < 2 || end($messages)['role'] !== 'user') {
-            return new WP_Error('wsa_bad_request', __('No message received.', 'woocommerce-shop-agent'), ['status' => 400]);
+            return new WP_Error('wsa_bad_request', __('No message received.', 'ibracodes-ai-assistant'), ['status' => 400]);
         }
 
         $tools = Tools::definitions();
@@ -99,11 +99,11 @@ class Agent
         // made is the answer, and no button goes with it
         if (trim($reply) === '') {
             if ($live !== '') {
-                $reply = __('A person will join this chat shortly.', 'woocommerce-shop-agent');
+                $reply = __('A person will join this chat shortly.', 'ibracodes-ai-assistant');
             } else {
                 $reply = $cards
-                    ? __('Here is what I found that might suit you:', 'woocommerce-shop-agent')
-                    : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'woocommerce-shop-agent');
+                    ? __('Here is what I found that might suit you:', 'ibracodes-ai-assistant')
+                    : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'ibracodes-ai-assistant');
                 $handoff = $handoff || ! $cards;
             }
         }

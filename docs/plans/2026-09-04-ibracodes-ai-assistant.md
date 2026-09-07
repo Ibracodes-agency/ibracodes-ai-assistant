@@ -13,10 +13,10 @@
 ## Ground rules for every task
 
 - Design reference: `docs/plans/2026-09-04-ibracodes-ai-assistant-design.md`. Read it once before starting.
-- Repo: `/Users/ibra/Documents/Projects/woocommerce-shop-agent`, branch `main`. The plugin is symlinked into `/Users/ibra/Documents/Projects/xswitch/web/app/plugins/woocommerce-shop-agent` and active on `http://shop.test`, so PHP changes are live at once. Blade caches are irrelevant here (this is a plugin), but object caches are not used locally.
+- Repo: `/Users/ibra/Documents/Projects/ibracodes-ai-assistant`, branch `main`. The plugin is symlinked into `/Users/ibra/Documents/Projects/xswitch/web/app/plugins/ibracodes-ai-assistant` and active on `http://shop.test`, so PHP changes are live at once. Blade caches are irrelevant here (this is a plugin), but object caches are not used locally.
 - PHP lint on every changed file with the real 8.1 binary: `/opt/homebrew/opt/php@8.1/bin/php -l <file>`. Never use `true` as a standalone return type (8.2 only).
 - PHP tests are scripts under `tests/`, run from the xswitch root:
-  `set -o pipefail; WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/<file>.php 2>&1 | grep -v Deprecated`
+  `set -o pipefail; WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/ibracodes-ai-assistant/tests/<file>.php 2>&1 | grep -v Deprecated`
   Each script ends by printing `PASS <file>` or exits non-zero on the first failed assertion. `pipefail` keeps the script's exit code visible through the grep.
 - Widget tests use `tests/harness/run.mjs` (Task 1) with the Playwright core package from the npx cache:
   `node tests/harness/run.mjs "$(ls -d ~/.npm/_npx/*/node_modules/playwright-core | head -1)" assets`
@@ -26,7 +26,7 @@
   Claude-Session: https://claude.ai/code/session_01FBRFTqtCLLNudnaVs6hAes
   ```
 - No em-dashes anywhere (code comments, strings, docs, commit messages). Use commas or a plain hyphen.
-- Every user-facing string goes through `__()` with the `woocommerce-shop-agent` domain and gets a Hebrew entry in `languages/build-he.php` (Task 18 rebuilds the catalogue; add entries as you go so nothing is forgotten).
+- Every user-facing string goes through `__()` with the `ibracodes-ai-assistant` domain and gets a Hebrew entry in `languages/build-he.php` (Task 18 rebuilds the catalogue; add entries as you go so nothing is forgotten).
 - Escape all output in admin markup (`esc_html`, `esc_attr`, `esc_url`, `esc_textarea`).
 - Do not push until Task 19.
 
@@ -113,14 +113,14 @@ Copy `/private/tmp/claude-501/-Users-ibra-Documents-Projects-xswitch/8fa5329c-6d
 PHP scripts run inside the local xswitch WordPress where the plugin is active:
 
     cd /Users/ibra/Documents/Projects/xswitch
-    WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/test-capabilities.php 2>&1 | grep -v Deprecated
+    WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/ibracodes-ai-assistant/tests/test-capabilities.php 2>&1 | grep -v Deprecated
 
 Each script prints `PASS <file>` or exits 1 at the first failed assertion. They create
 their own posts and delete them at the end.
 
 The widget harness serves `assets/` and a stub chat endpoint, then drives Chrome:
 
-    cd /Users/ibra/Documents/Projects/woocommerce-shop-agent
+    cd /Users/ibra/Documents/Projects/ibracodes-ai-assistant
     node tests/harness/run.mjs "$(ls -d ~/.npm/_npx/*/node_modules/playwright-core | head -1)" assets
 ```
 
@@ -223,7 +223,7 @@ class Capabilities
 ### Task 3: Soft WooCommerce dependency and the new name
 
 **Files:**
-- Modify: `woocommerce-shop-agent.php` (header lines 1-25, functions at 36-58, activation hook 60-78, `plugins_loaded` at 85-119)
+- Modify: `ibracodes-ai-assistant.php` (header lines 1-25, functions at 36-58, activation hook 60-78, `plugins_loaded` at 85-119)
 - Modify: `includes/class-wsa-admin.php:32-42` (menu) and every `current_user_can('manage_woocommerce')` (lines 97 and wherever `grep -n manage_woocommerce includes/` reports, including `class-wsa-rest.php:57`)
 - Modify: `includes/class-wsa-admin.php:184-189` (band eyebrow and h1), `includes/class-wsa-admin.php:198-204` (tab labels: Catalogue only with commerce)
 - Test: `tests/test-bootstrap.php`
@@ -247,7 +247,7 @@ wsa_done(__FILE__);
 
 **Step 3: Implement**
 
-Header: `Plugin Name: IbraCodes AI Assistant`, `Description: An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key.` Remove the `WC requires at least` line. Keep `Text Domain: woocommerce-shop-agent` (slug unchanged by design).
+Header: `Plugin Name: IbraCodes AI Assistant`, `Description: An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key.` Remove the `WC requires at least` line. Keep `Text Domain: woocommerce-shop-agent` for now (the slug is renamed to `ibracodes-ai-assistant` in Task 18, Step 0).
 
 Delete `has_required_woocommerce()` and `woocommerce_missing_notice()`. Activation hook keeps only the PHP version check (text: `IbraCodes AI Assistant requires PHP 8.1 or later.`) and the DB install.
 
@@ -257,7 +257,7 @@ Admin menu:
 ```php
 public static function menu(): void
 {
-    $label = __('AI Assistant', 'woocommerce-shop-agent');
+    $label = __('AI Assistant', 'ibracodes-ai-assistant');
     if (Capabilities::has_commerce()) {
         add_submenu_page('woocommerce', $label, $label, Capabilities::admin_cap(), self::SLUG, [self::class, 'render']);
 
@@ -375,7 +375,7 @@ Note: `'enabled', 'only_in_stock', ...` boolean line already exists; add `leads_
 
 **Files:**
 - Create: `includes/class-wsa-content.php`
-- Modify: `woocommerce-shop-agent.php` (require after catalog)
+- Modify: `ibracodes-ai-assistant.php` (require after catalog)
 - Test: `tests/test-content-text.php`
 
 **Step 1: Write the failing test**
@@ -709,7 +709,7 @@ wsa_done(__FILE__);
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'woocommerce-shop-agent'), ['status' => 503]);
+            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
         $charged = Guards::charge_upstream_call();
         if ($charged instanceof WP_Error) {
@@ -755,7 +755,7 @@ wsa_done(__FILE__);
 **Files:**
 - Create: `includes/class-wsa-index.php`
 - Modify: `includes/class-wsa-db.php:24` (`DB_VERSION = '1.1.0'`), `install()` (add the chunks table), add `chunks_table()`
-- Modify: `woocommerce-shop-agent.php` (require index, register cron hook, `Index::boot()`)
+- Modify: `ibracodes-ai-assistant.php` (require index, register cron hook, `Index::boot()`)
 - Modify: `uninstall.php` (drop `wsa_chunks`, delete `wsa_index_queue` option, clear the cron)
 - Test: `tests/test-index.php`
 
@@ -1349,15 +1349,15 @@ class Leads
             return false;
         }
         $to = (string) Settings::get('leads_email');
-        $subject = sprintf(__('New lead from the AI Assistant: %s', 'woocommerce-shop-agent'), $lead['name']);
+        $subject = sprintf(__('New lead from the AI Assistant: %s', 'ibracodes-ai-assistant'), $lead['name']);
         $lines = [
-            sprintf(__('Name: %s', 'woocommerce-shop-agent'), $lead['name']),
-            sprintf(__('Contact: %s', 'woocommerce-shop-agent'), $lead['contact']),
-            sprintf(__('Request: %s', 'woocommerce-shop-agent'), $lead['request'] ?: '-'),
-            sprintf(__('Page: %s', 'woocommerce-shop-agent'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
+            sprintf(__('Name: %s', 'ibracodes-ai-assistant'), $lead['name']),
+            sprintf(__('Contact: %s', 'ibracodes-ai-assistant'), $lead['contact']),
+            sprintf(__('Request: %s', 'ibracodes-ai-assistant'), $lead['request'] ?: '-'),
+            sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
             '',
-            sprintf(__('Conversation: %s', 'woocommerce-shop-agent'), $lead['thread_id'] ? admin_url('admin.php?page=wsa&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
-            sprintf(__('All leads: %s', 'woocommerce-shop-agent'), admin_url('admin.php?page=wsa&tab=leads')),
+            sprintf(__('Conversation: %s', 'ibracodes-ai-assistant'), $lead['thread_id'] ? admin_url('admin.php?page=wsa&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
+            sprintf(__('All leads: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=wsa&tab=leads')),
         ];
 
         return (bool) wp_mail($to, $subject, implode("\n", $lines));
@@ -1466,7 +1466,7 @@ Widget config additions:
             'privacyNote' => (string) Settings::get('privacy_note'),
             'brand' => [
                 'url' => 'https://ibracodes.com/?utm_source=ai-assistant&utm_medium=widget',
-                'label' => __('Developed by Ibracodes', 'woocommerce-shop-agent'),
+                'label' => __('Developed by Ibracodes', 'ibracodes-ai-assistant'),
                 'logo' => WSA_URL . 'assets/ibracodes.svg',
             ],
 ```
@@ -1593,7 +1593,7 @@ Leads card: toggle `leads_enabled`, text `leads_when` (help: "One line: when sho
 - Modify: `includes/class-wsa-db.php` (`DB_VERSION = '1.3.0'`, thread and message columns, helpers)
 - Modify: `includes/class-wsa-settings.php` (defaults and sanitiser)
 - Create: `includes/class-wsa-live.php`
-- Modify: `woocommerce-shop-agent.php` (require)
+- Modify: `ibracodes-ai-assistant.php` (require)
 - Test: `tests/test-live.php`
 
 **Step 1: Write the failing test**
@@ -1684,10 +1684,10 @@ Settings defaults:
             'live_enabled' => false,
             'live_email' => '',
             'live_wait_minutes' => 3,
-            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'woocommerce-shop-agent'),
-            'live_text_joined' => __('%s joined the chat.', 'woocommerce-shop-agent'),
-            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'woocommerce-shop-agent'),
-            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'woocommerce-shop-agent'),
+            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'ibracodes-ai-assistant'),
+            'live_text_joined' => __('%s joined the chat.', 'ibracodes-ai-assistant'),
+            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'ibracodes-ai-assistant'),
+            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'ibracodes-ai-assistant'),
 ```
 Sanitiser: `live_enabled` bool (and when it is true force `log_threads` true); `live_email` like `leads_email` but falling back to `leads_email` then admin email; `live_wait_minutes` 1 to 60; the four texts `sanitize_text_field`. Add `Settings::live_ready(): bool` = `live_enabled && log_threads`.
 
@@ -1925,7 +1925,7 @@ wsa_done(__FILE__);
 **Files:**
 - Modify: `languages/build-he.php` (every new msgid), regenerate `.pot`, `.po`, `.mo`
 - Modify: `uninstall.php` (already touched in Tasks 8 and 10; confirm `wsa_chunks`, `wsa_leads`, `wsa_index_queue`)
-- Modify: `README.md`, `woocommerce-shop-agent.php` (`Version: 0.2.0`, `WSA_VERSION`)
+- Modify: `README.md`, `ibracodes-ai-assistant.php` (`Version: 0.2.0`, `WSA_VERSION`)
 
 **Step 0: Rename the slug to `ibracodes-ai-assistant` (owner decision, 2026-09-05; directory names starting with a trademarked term are rejected by WordPress.org).**
 - Main file becomes `ibracodes-ai-assistant.php`; `Text Domain: ibracodes-ai-assistant`; `Domain Path: /languages` stays; every `'woocommerce-shop-agent'` text-domain argument becomes `'ibracodes-ai-assistant'` (sed across `includes/`, the main file, `uninstall.php`; then grep to confirm none remain); `languages/` files renamed to `ibracodes-ai-assistant.pot`, `ibracodes-ai-assistant-he_IL.po/.mo` and `build-he.php` updated to the new names; `tests/README.md`, `README.md` and `docs/` references updated.
@@ -1939,7 +1939,7 @@ wsa_done(__FILE__);
 **Step 1: Regenerate the POT and run the build; it must list every missing string**
 
 ```bash
-cd /Users/ibra/Documents/Projects/woocommerce-shop-agent
+cd /Users/ibra/Documents/Projects/ibracodes-ai-assistant
 wp i18n make-pot . languages/ibracodes-ai-assistant.pot --exclude=docs,tests,node_modules
 php languages/build-he.php
 ```
@@ -1960,7 +1960,7 @@ Expected: `MISSING TRANSLATIONS (N)` with the list.
 ```bash
 cd /Users/ibra/Documents/Projects/xswitch
 for t in capabilities bootstrap settings content-text content-search embed index tools-prompt leads admin-render live live-rest live-agent live-admin; do
-  WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/woocommerce-shop-agent/tests/test-$t.php 2>&1 | grep -v Deprecated | tail -1
+  WP_CLI_PHP_ARGS='-d error_reporting=24575' wp eval-file /Users/ibra/Documents/Projects/ibracodes-ai-assistant/tests/test-$t.php 2>&1 | grep -v Deprecated | tail -1
 done
 ```
 Expected: fourteen `PASS` lines.
@@ -1968,8 +1968,8 @@ Expected: fourteen `PASS` lines.
 **Step 2: Lint every PHP file with 8.1**
 
 ```bash
-cd /Users/ibra/Documents/Projects/woocommerce-shop-agent
-for f in woocommerce-shop-agent.php uninstall.php includes/*.php; do /opt/homebrew/opt/php@8.1/bin/php -l "$f" | grep -v 'No syntax errors' ; done; echo lint-done
+cd /Users/ibra/Documents/Projects/ibracodes-ai-assistant
+for f in ibracodes-ai-assistant.php uninstall.php includes/*.php; do /opt/homebrew/opt/php@8.1/bin/php -l "$f" | grep -v 'No syntax errors' ; done; echo lint-done
 ```
 Expected: only `lint-done`.
 

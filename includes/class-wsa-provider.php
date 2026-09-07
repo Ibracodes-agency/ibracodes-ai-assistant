@@ -43,7 +43,7 @@ class Provider
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'woocommerce-shop-agent'), ['status' => 503]);
+            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
 
         $charged = Guards::charge_upstream_call();
@@ -118,7 +118,7 @@ class Provider
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'woocommerce-shop-agent'), ['status' => 503]);
+            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
 
         $charged = Guards::charge_upstream_call();
@@ -199,12 +199,12 @@ class Provider
         $message = (string) ($data['error']['message'] ?? '');
 
         return new WP_Error('wsa_test_failed', match (true) {
-            $code === 401 => __('OpenAI rejected that key.', 'woocommerce-shop-agent'),
-            $code === 429 => __('The key works, but the account is out of quota or rate limited.', 'woocommerce-shop-agent'),
-            $code === 404 => __('The key works, but this account cannot use the selected model.', 'woocommerce-shop-agent'),
+            $code === 401 => __('OpenAI rejected that key.', 'ibracodes-ai-assistant'),
+            $code === 429 => __('The key works, but the account is out of quota or rate limited.', 'ibracodes-ai-assistant'),
+            $code === 404 => __('The key works, but this account cannot use the selected model.', 'ibracodes-ai-assistant'),
             default => $message !== '' ? $message : sprintf(
                 /* translators: %d: HTTP status code */
-                __('OpenAI returned an error (HTTP %d).', 'woocommerce-shop-agent'),
+                __('OpenAI returned an error (HTTP %d).', 'ibracodes-ai-assistant'),
                 $code,
             ),
         });
@@ -238,7 +238,7 @@ class Provider
     {
         return new WP_Error(
             'wsa_upstream',
-            __('The chat is unavailable right now. Please try again.', 'woocommerce-shop-agent'),
+            __('The chat is unavailable right now. Please try again.', 'ibracodes-ai-assistant'),
             ['status' => 502],
         );
     }

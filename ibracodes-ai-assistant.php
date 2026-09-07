@@ -10,7 +10,7 @@
  * Author URI:        https://ibracodes.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       woocommerce-shop-agent
+ * Text Domain:       ibracodes-ai-assistant
  * Domain Path:       /languages
  *
  * The agent is grounded: on a WooCommerce store every product it mentions
@@ -31,7 +31,7 @@ if (! defined('ABSPATH')) {
 // site down. The copy that loaded first wins; this one only leaves a notice.
 if (defined('WSA_VERSION')) {
     add_action('admin_notices', static function (): void {
-        echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'woocommerce-shop-agent') . '</p></div>';
+        echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'ibracodes-ai-assistant') . '</p></div>';
     });
 
     return;
@@ -46,8 +46,8 @@ register_activation_hook(__FILE__, function (): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) {
         deactivate_plugins(plugin_basename(__FILE__));
         wp_die(
-            esc_html__('IbraCodes AI Assistant requires PHP 8.1 or later.', 'woocommerce-shop-agent'),
-            esc_html__('Plugin activation error', 'woocommerce-shop-agent'),
+            esc_html__('IbraCodes AI Assistant requires PHP 8.1 or later.', 'ibracodes-ai-assistant'),
+            esc_html__('Plugin activation error', 'ibracodes-ai-assistant'),
             ['back_link' => true],
         );
     }
@@ -66,7 +66,7 @@ register_deactivation_hook(__FILE__, function (): void {
 });
 
 add_action('plugins_loaded', function (): void {
-    load_plugin_textdomain('woocommerce-shop-agent', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    load_plugin_textdomain('ibracodes-ai-assistant', false, dirname(plugin_basename(__FILE__)) . '/languages');
 
     require_once WSA_PATH . 'includes/class-wsa-settings.php';
     require_once WSA_PATH . 'includes/class-wsa-capabilities.php';

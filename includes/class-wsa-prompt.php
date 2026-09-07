@@ -125,7 +125,7 @@ class Prompt
         }
         $label = trim((string) Settings::get('handoff_label'));
 
-        return $label !== '' ? $label : __('the contact option', 'woocommerce-shop-agent');
+        return $label !== '' ? $label : __('the contact option', 'ibracodes-ai-assistant');
     }
 
     /** After a missed request: what to offer instead of a person, from what the owner switched on. */

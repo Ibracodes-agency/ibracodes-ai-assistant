@@ -8,7 +8,7 @@
 require_once __DIR__ . '/lib.php';
 
 $root = dirname(__DIR__);
-$files = array_merge([$root . '/woocommerce-shop-agent.php', $root . '/uninstall.php'], glob($root . '/includes/*.php'));
+$files = array_merge([$root . '/ibracodes-ai-assistant.php', $root . '/uninstall.php'], glob($root . '/includes/*.php'));
 $call = '/\b(?:wc_[a-z_]+|get_woocommerce_[a-z_]+)\(|\bWC\(\)/';
 $guard = '/Capabilities::has_commerce\(\)|\$commerce\b/';
 $window = 12; // lines above a call in which its commerce check must appear

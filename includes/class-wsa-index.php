@@ -220,7 +220,7 @@ class Index
             return $vectors;
         }
         if (count($vectors) !== count($chunks)) {
-            return new \WP_Error('wsa_embed_shape', __('The embeddings service returned the wrong number of vectors.', 'woocommerce-shop-agent'));
+            return new \WP_Error('wsa_embed_shape', __('The embeddings service returned the wrong number of vectors.', 'ibracodes-ai-assistant'));
         }
         global $wpdb;
         $table = DB::chunks_table();

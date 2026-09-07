@@ -83,6 +83,13 @@ liability the owner would carry:
 - **No embeddings index.** It searches the live catalogue instead, so there is nothing to build,
   nothing to re-sync, and no stale copy of your products.
 
+## Upgrading from 0.1.x
+
+The plugin folder was renamed from `woocommerce-shop-agent` to `ibracodes-ai-assistant` in 0.2.0,
+so an install created before 0.2.0 shows as inactive after the update and has to be activated
+once more on the Plugins screen. Settings, conversations, leads and the content index are kept:
+they live under their own option and table names, which did not change.
+
 ## Conversations and privacy
 
 Threads are stored so the owner can read what customers asked, and deleted automatically after

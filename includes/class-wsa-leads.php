@@ -82,18 +82,18 @@ class Leads
         $to = (string) Settings::get('leads_email');
         $subject = sprintf(
             $updated
-                ? __('Updated lead from the AI Assistant: %s', 'woocommerce-shop-agent')
-                : __('New lead from the AI Assistant: %s', 'woocommerce-shop-agent'),
+                ? __('Updated lead from the AI Assistant: %s', 'ibracodes-ai-assistant')
+                : __('New lead from the AI Assistant: %s', 'ibracodes-ai-assistant'),
             $lead['name'],
         );
         $lines = [
-            sprintf(__('Name: %s', 'woocommerce-shop-agent'), $lead['name']),
-            sprintf(__('Contact: %s', 'woocommerce-shop-agent'), $lead['contact']),
-            sprintf(__('Request: %s', 'woocommerce-shop-agent'), $lead['request'] ?: '-'),
-            sprintf(__('Page: %s', 'woocommerce-shop-agent'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
+            sprintf(__('Name: %s', 'ibracodes-ai-assistant'), $lead['name']),
+            sprintf(__('Contact: %s', 'ibracodes-ai-assistant'), $lead['contact']),
+            sprintf(__('Request: %s', 'ibracodes-ai-assistant'), $lead['request'] ?: '-'),
+            sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
             '',
-            sprintf(__('Conversation: %s', 'woocommerce-shop-agent'), $lead['thread_id'] ? admin_url('admin.php?page=' . Admin::SLUG . '&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
-            sprintf(__('All leads: %s', 'woocommerce-shop-agent'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=leads')),
+            sprintf(__('Conversation: %s', 'ibracodes-ai-assistant'), $lead['thread_id'] ? admin_url('admin.php?page=' . Admin::SLUG . '&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
+            sprintf(__('All leads: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=leads')),
         ];
 
         return (bool) wp_mail($to, $subject, implode("\n", $lines));

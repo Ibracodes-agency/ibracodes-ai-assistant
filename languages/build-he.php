@@ -6,7 +6,7 @@
  * it fails loudly, listing every msgid it has no translation for, so a new
  * string cannot silently ship untranslated.
  *
- *   wp i18n make-pot . languages/woocommerce-shop-agent.pot --exclude=docs
+ *   wp i18n make-pot . languages/ibracodes-ai-assistant.pot --exclude=docs,tests,node_modules
  *   php languages/build-he.php
  *   wp i18n make-mo languages/
  */
@@ -207,7 +207,7 @@ $dict = [
     'Shop Agent requires WooCommerce 8.0 or later. Install and activate WooCommerce first, then reactivate this plugin.' => 'עוזר חנות דורש ווקומרס 8.0 ומעלה. התקינו והפעילו קודם ווקומרס, ואז הפעילו מחדש את התוסף.',
 ];
 
-$pot = __DIR__ . '/woocommerce-shop-agent.pot';
+$pot = __DIR__ . '/ibracodes-ai-assistant.pot';
 $lines = file($pot, FILE_IGNORE_NEW_LINES);
 $msgids = [];
 foreach ($lines as $line) {
@@ -228,7 +228,7 @@ if ($missing) {
 $out = [
     'msgid ""',
     'msgstr ""',
-    '"Project-Id-Version: Shop Agent for WooCommerce\n"',
+    '"Project-Id-Version: IbraCodes AI Assistant\n"',
     '"Language: he_IL\n"',
     '"MIME-Version: 1.0\n"',
     '"Content-Type: text/plain; charset=UTF-8\n"',
@@ -242,5 +242,5 @@ foreach ($msgids as $id) {
     $out[] = '';
 }
 
-file_put_contents(__DIR__ . '/woocommerce-shop-agent-he_IL.po', implode("\n", $out));
+file_put_contents(__DIR__ . '/ibracodes-ai-assistant-he_IL.po', implode("\n", $out));
 echo 'PO written: ' . count($msgids) . " translations\n";

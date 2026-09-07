@@ -40,10 +40,10 @@ class Settings
 
             // widget presentation
             'show_launcher_label' => true,
-            'launcher_label' => __('Ask us anything', 'woocommerce-shop-agent'),
-            'title' => __('Have a question?', 'woocommerce-shop-agent'),
-            'subtitle' => __('Ask me anything', 'woocommerce-shop-agent'),
-            'welcome' => __('Hi, can I help you find a product or answer a question?', 'woocommerce-shop-agent'),
+            'launcher_label' => __('Ask us anything', 'ibracodes-ai-assistant'),
+            'title' => __('Have a question?', 'ibracodes-ai-assistant'),
+            'subtitle' => __('Ask me anything', 'ibracodes-ai-assistant'),
+            'welcome' => __('Hi, can I help you find a product or answer a question?', 'ibracodes-ai-assistant'),
             'chips' => '',
             'accent' => '#111827',
             'position' => 'right',
@@ -76,10 +76,10 @@ class Settings
             'live_enabled' => false,
             'live_email' => '',
             'live_wait_minutes' => 3,
-            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'woocommerce-shop-agent'),
-            'live_text_joined' => __('%s joined the chat.', 'woocommerce-shop-agent'),
-            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'woocommerce-shop-agent'),
-            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'woocommerce-shop-agent'),
+            'live_text_waiting' => __('A person will join this chat shortly. You can keep writing in the meantime.', 'ibracodes-ai-assistant'),
+            'live_text_joined' => __('%s joined the chat.', 'ibracodes-ai-assistant'),
+            'live_text_missed' => __('Nobody is available right now. Leave your details and we will get back to you, or use the contact option below.', 'ibracodes-ai-assistant'),
+            'live_text_closed' => __('The chat with %s has ended. I can keep helping here.', 'ibracodes-ai-assistant'),
 
             // widget footnote under the input
             'privacy_note' => '',
@@ -190,9 +190,9 @@ class Settings
     public static function models(): array
     {
         return apply_filters('wsa_models', [
-            'gpt-5-mini' => __('gpt-5-mini (recommended, cheapest)', 'woocommerce-shop-agent'),
-            'gpt-5' => __('gpt-5 (best answers, costs more)', 'woocommerce-shop-agent'),
-            'gpt-4.1-mini' => __('gpt-4.1-mini', 'woocommerce-shop-agent'),
+            'gpt-5-mini' => __('gpt-5-mini (recommended, cheapest)', 'ibracodes-ai-assistant'),
+            'gpt-5' => __('gpt-5 (best answers, costs more)', 'ibracodes-ai-assistant'),
+            'gpt-4.1-mini' => __('gpt-4.1-mini', 'ibracodes-ai-assistant'),
         ]);
     }
 

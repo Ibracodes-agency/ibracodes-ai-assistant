@@ -41,19 +41,19 @@ class Guards
         $day_key = 'wsa_rld_' . $ip;
 
         if ((int) get_transient($burst_key) >= (int) Settings::get('limit_ip_burst')) {
-            return self::busy(__('That is a lot of messages at once. Try again in a few minutes.', 'woocommerce-shop-agent'));
+            return self::busy(__('That is a lot of messages at once. Try again in a few minutes.', 'ibracodes-ai-assistant'));
         }
         if ((int) get_transient($day_key) >= (int) Settings::get('limit_ip_day')) {
-            return self::busy(__('You have reached today\'s chat limit. Try again tomorrow, or use the contact page.', 'woocommerce-shop-agent'));
+            return self::busy(__('You have reached today\'s chat limit. Try again tomorrow, or use the contact page.', 'ibracodes-ai-assistant'));
         }
         if (self::store_day_count() >= (int) Settings::get('limit_store_day')) {
-            return self::busy(__('The chat is busy right now. Please try again later.', 'woocommerce-shop-agent'));
+            return self::busy(__('The chat is busy right now. Please try again later.', 'ibracodes-ai-assistant'));
         }
         if (self::month_count() >= (int) Settings::get('limit_month')) {
-            return self::busy(__('The chat is unavailable right now. Please use the contact page.', 'woocommerce-shop-agent'));
+            return self::busy(__('The chat is unavailable right now. Please use the contact page.', 'ibracodes-ai-assistant'));
         }
         if ((int) get_transient('wsa_busy') >= (int) Settings::get('limit_concurrent')) {
-            return self::busy(__('The chat is busy right now. Try again in a moment.', 'woocommerce-shop-agent'));
+            return self::busy(__('The chat is busy right now. Try again in a moment.', 'ibracodes-ai-assistant'));
         }
 
         // Counters are get-then-set rather than atomic. The concurrency cap
@@ -80,10 +80,10 @@ class Guards
     public static function charge_upstream_call(): ?WP_Error
     {
         if (self::store_day_count() >= (int) Settings::get('limit_store_day')) {
-            return self::busy(__('The chat is busy right now. Please try again later.', 'woocommerce-shop-agent'));
+            return self::busy(__('The chat is busy right now. Please try again later.', 'ibracodes-ai-assistant'));
         }
         if (self::month_count() >= (int) Settings::get('limit_month')) {
-            return self::busy(__('The chat is unavailable right now. Please use the contact page.', 'woocommerce-shop-agent'));
+            return self::busy(__('The chat is unavailable right now. Please use the contact page.', 'ibracodes-ai-assistant'));
         }
 
         set_transient(self::day_key(), self::store_day_count() + 1, DAY_IN_SECONDS);

@@ -397,15 +397,15 @@ class Live
         $question = mb_substr(sanitize_text_field((string) ($row['first_question'] ?? '')), 0, self::QUESTION_MAX);
         $permalink = $page_id > 0 ? get_permalink($page_id) : false;
         $lines = [
-            sprintf(__('Answer here: %s', 'woocommerce-shop-agent'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)),
+            sprintf(__('Answer here: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)),
             '',
-            sprintf(__('Question: %s', 'woocommerce-shop-agent'), $question !== '' ? $question : '-'),
-            sprintf(__('Page: %s', 'woocommerce-shop-agent'), $permalink ?: '-'),
+            sprintf(__('Question: %s', 'ibracodes-ai-assistant'), $question !== '' ? $question : '-'),
+            sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $permalink ?: '-'),
         ];
 
         wp_mail(
             Settings::live_email(),
-            __('A visitor is waiting for a person', 'woocommerce-shop-agent'),
+            __('A visitor is waiting for a person', 'ibracodes-ai-assistant'),
             implode("\n", $lines),
         );
     }

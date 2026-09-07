@@ -67,7 +67,7 @@ class Scrubber
         // digits with any grouping or decimal separator the store might use
         $amount = '\d[\d\s.,\x{00A0}\x{2009}]*\d|\d';
         $allowed = self::facts_amounts();
-        $mask = __('(price is on the card below)', 'woocommerce-shop-agent');
+        $mask = __('(price is on the card below)', 'ibracodes-ai-assistant');
 
         $keep_or_mask = static function (array $m) use ($allowed, $mask): string {
             // A figure the owner wrote into the store facts is theirs to state:
