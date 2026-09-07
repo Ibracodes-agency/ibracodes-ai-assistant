@@ -20,7 +20,7 @@ class Admin
     /** Public: the lead email links to the conversation and the leads tab. */
     public const SLUG = 'shop-agent';
 
-    private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations', 'leads'];
+    private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations', 'live', 'leads'];
 
     /** Hook suffix of our page, wherever the menu put it, so assets() recognises the screen. */
     private static string $hook = '';
@@ -78,6 +78,64 @@ class Admin
             'rebuilding' => __('Rebuilding…', 'woocommerce-shop-agent'),
             'failed' => __('Request failed.', 'woocommerce-shop-agent'),
         ]);
+
+        // the console script only where the console is
+        if (self::current_tab() === 'live' && Settings::live_ready()) {
+            wp_enqueue_script('wsa-live', WSA_URL . 'assets/live.js', [], WSA_VERSION, true);
+            wp_localize_script('wsa-live', 'wsaLive', [
+                'open' => esc_url_raw(rest_url('wsa/v1/live/open')),
+                'poll' => esc_url_raw(rest_url('wsa/v1/live/poll')),
+                'claim' => esc_url_raw(rest_url('wsa/v1/live/claim')),
+                'reply' => esc_url_raw(rest_url('wsa/v1/live/reply')),
+                'close' => esc_url_raw(rest_url('wsa/v1/live/close')),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'interval' => 3000,
+                'me' => wp_get_current_user()->display_name,
+                'i18n' => [
+                    'states' => self::live_states(),
+                    'empty' => __('No one is waiting.', 'woocommerce-shop-agent'),
+                    'noQuestion' => __('(no question recorded)', 'woocommerce-shop-agent'),
+                    'justNow' => __('Waiting under a minute', 'woocommerce-shop-agent'),
+                    /* translators: %s: number of minutes */
+                    'waited' => __('Waiting %s min', 'woocommerce-shop-agent'),
+                    'claim' => __('Claim', 'woocommerce-shop-agent'),
+                    'close' => __('Close chat', 'woocommerce-shop-agent'),
+                    'send' => __('Send', 'woocommerce-shop-agent'),
+                    'reply' => __('Write a reply', 'woocommerce-shop-agent'),
+                    'claimFirst' => __('Claim the chat to reply', 'woocommerce-shop-agent'),
+                    /* translators: %s: the name of the manager who has the chat now */
+                    'takeOver' => __('Replying takes over from %s', 'woocommerce-shop-agent'),
+                    'visitor' => __('Visitor', 'woocommerce-shop-agent'),
+                    'assistant' => __('Assistant', 'woocommerce-shop-agent'),
+                    'loading' => __('Loading…', 'woocommerce-shop-agent'),
+                    'failed' => __('Request failed.', 'woocommerce-shop-agent'),
+                ],
+            ]);
+        }
+    }
+
+    /** The state names the list and the pane show. */
+    private static function live_states(): array
+    {
+        return [
+            'waiting' => __('Waiting', 'woocommerce-shop-agent'),
+            'live' => __('Live', 'woocommerce-shop-agent'),
+            'missed' => __('Missed', 'woocommerce-shop-agent'),
+            'closed' => __('Closed', 'woocommerce-shop-agent'),
+            'ai' => __('AI', 'woocommerce-shop-agent'),
+        ];
+    }
+
+    /** How long a visitor has been waiting, in the words the console script uses too, so its first refresh changes nothing. */
+    private static function waited(int $seconds): string
+    {
+        $minutes = intdiv($seconds, MINUTE_IN_SECONDS);
+        if ($minutes < 1) {
+            return __('Waiting under a minute', 'woocommerce-shop-agent');
+        }
+
+        /* translators: %s: number of minutes */
+        return sprintf(__('Waiting %s min', 'woocommerce-shop-agent'), number_format_i18n($minutes));
     }
 
     private static function url(string $tab = '', array $extra = []): string
@@ -147,7 +205,7 @@ class Admin
         // would silently switch off everything on the Agent tab.
         $toggles = [
             'appearance' => ['show_launcher_label', 'show_credit'],
-            'agent' => ['enabled', 'ask_first', 'leads_enabled'],
+            'agent' => ['enabled', 'ask_first', 'leads_enabled', 'live_enabled'],
             'catalogue' => ['only_in_stock'],
             'conversations' => ['log_threads'],
         ];
@@ -186,9 +244,12 @@ class Admin
         $tab = self::current_tab();
         $s = Settings::all();
         $leads_month = Leads::count_since(30);
+        // read once: the band counts the waiting ones and the live tab lists them all
+        $open = Settings::live_ready() ? Live::open_threads() : [];
+        $waiting = count(array_filter($open, static fn (array $row): bool => $row['status'] === 'waiting'));
         ?>
         <div class="wsa-admin">
-            <?php self::band($tab, $leads_month); ?>
+            <?php self::band($tab, $leads_month, $waiting); ?>
             <div class="wsa-page">
                 <?php
                 self::notices();
@@ -197,6 +258,7 @@ class Admin
                     'agent' => self::tab_agent($s),
                     'catalogue' => self::tab_catalogue($s),
                     'conversations' => self::tab_conversations($s),
+                    'live' => self::tab_live($open),
                     'leads' => self::tab_leads($s),
                     default => self::tab_overview($s, $leads_month),
                 };
@@ -206,7 +268,7 @@ class Admin
         <?php
     }
 
-    private static function band(string $tab, int $leads_month): void
+    private static function band(string $tab, int $leads_month, int $waiting): void
     {
         $ready = Settings::ready();
         $threads = DB::stats(30);
@@ -241,6 +303,7 @@ class Admin
                     'agent' => [__('Agent', 'woocommerce-shop-agent'), $ready ? '' : __('Setup', 'woocommerce-shop-agent')],
                     'catalogue' => [__('Catalogue', 'woocommerce-shop-agent'), number_format_i18n($catalogue)],
                     'conversations' => [__('Conversations', 'woocommerce-shop-agent'), $threads['threads'] ? number_format_i18n($threads['threads']) : ''],
+                    'live' => [__('Live chats', 'woocommerce-shop-agent'), $waiting ? number_format_i18n($waiting) : ''],
                     'leads' => [__('Leads', 'woocommerce-shop-agent'), $leads_month ? number_format_i18n($leads_month) : ''],
                 ];
                 $labels = array_intersect_key($labels, array_flip(self::tabs()));
@@ -774,6 +837,34 @@ class Admin
             <div class="wsa-card">
                 <div class="wsa-card-head">
                     <div>
+                        <h2 class="wsa-card-title"><?php esc_html_e('Live chat', 'woocommerce-shop-agent'); ?></h2>
+                        <p class="wsa-card-sub"><?php esc_html_e('A visitor who asks for a person waits for you in the Live chats tab. The AI pauses until you answer or the wait runs out.', 'woocommerce-shop-agent'); ?></p>
+                    </div>
+                </div>
+                <?php self::toggle('live_enabled', (bool) $s['live_enabled'], __('Let visitors ask for a person', 'woocommerce-shop-agent'), __('Turning it on also turns conversation logging on: a live chat lives on the conversation record.', 'woocommerce-shop-agent')); ?>
+                <div style="margin-top:16px;">
+                    <?php
+                    // the address is resolved on save; until then, show where a request would go
+                    $live_email = is_email((string) $s['live_email']) ? (string) $s['live_email'] : (is_email((string) $s['leads_email']) ? (string) $s['leads_email'] : (string) get_option('admin_email'));
+                    self::text_field('live_email', __('Send requests to', 'woocommerce-shop-agent'), $live_email, __('One email per request, with a link to the conversation.', 'woocommerce-shop-agent'), 'email');
+                    ?>
+                </div>
+                <div class="wsa-field">
+                    <label class="wsa-label" for="wsa-live-wait-minutes"><?php esc_html_e('Wait for a person (minutes)', 'woocommerce-shop-agent'); ?></label>
+                    <input class="fld" style="max-width:110px;" type="number" min="1" max="60" id="wsa-live-wait-minutes" name="live_wait_minutes" value="<?php echo esc_attr((string) $s['live_wait_minutes']); ?>">
+                    <p class="wsa-help"><?php esc_html_e('If nobody joins in time, the visitor is offered lead capture and the contact option. The request stays in the list, so you can still answer later.', 'woocommerce-shop-agent'); ?></p>
+                </div>
+                <?php
+                self::text_field('live_text_waiting', __('Waiting text', 'woocommerce-shop-agent'), $s['live_text_waiting']);
+                self::text_field('live_text_joined', __('Joined text', 'woocommerce-shop-agent'), $s['live_text_joined']);
+                self::text_field('live_text_missed', __('Missed text', 'woocommerce-shop-agent'), $s['live_text_missed']);
+                self::text_field('live_text_closed', __('Closed text', 'woocommerce-shop-agent'), $s['live_text_closed'], __('In the joined and closed texts, %s becomes the name of the person who joined.', 'woocommerce-shop-agent'));
+                ?>
+            </div>
+
+            <div class="wsa-card">
+                <div class="wsa-card-head">
+                    <div>
                         <h2 class="wsa-card-title"><?php esc_html_e('Spending limits', 'woocommerce-shop-agent'); ?></h2>
                         <p class="wsa-card-sub"><?php esc_html_e('Every conversation costs you money at OpenAI. These caps are what stands between a bored bot and a large invoice. One reply can use two or three calls.', 'woocommerce-shop-agent'); ?></p>
                     </div>
@@ -851,6 +942,67 @@ class Admin
     }
 
     // -------------------------------------------------------------- tab: leads
+    // --------------------------------------------------------------- tab: live
+    /**
+     * The console: the open threads on one side, one conversation on the
+     * other. The list is rendered here so the page is useful before the
+     * script runs; the script rebuilds it from the same data and fills the
+     * pane. Without live chat there is nothing to list, only the way to it.
+     */
+    private static function tab_live(array $open): void
+    {
+        if (! Settings::live_ready()) {
+            ?>
+            <div class="wsa-card" id="wsa-live-off">
+                <div class="wsa-card-head">
+                    <div>
+                        <h2 class="wsa-card-title"><?php esc_html_e('Live chats', 'woocommerce-shop-agent'); ?></h2>
+                        <p class="wsa-card-sub"><?php esc_html_e('Live chat is off. With it on, a visitor who asks for a person waits here for you to answer, and the AI pauses until you do.', 'woocommerce-shop-agent'); ?></p>
+                    </div>
+                </div>
+                <a class="wsa-btn" href="<?php echo esc_url(self::url('agent')); ?>"><?php esc_html_e('Turn it on in the Agent tab', 'woocommerce-shop-agent'); ?></a>
+            </div>
+            <?php
+            return;
+        }
+        // the email links straight to one conversation; the console script opens it
+        $linked = isset($_GET['thread']) ? absint($_GET['thread']) : 0;
+        ?>
+        <div id="wsa-live" class="wsa-console" data-thread="<?php echo esc_attr((string) $linked); ?>">
+            <div class="wsa-live-list" id="wsa-live-list">
+                <?php if (! $open) : ?>
+                    <div class="wsa-empty"><?php esc_html_e('No one is waiting.', 'woocommerce-shop-agent'); ?></div>
+                <?php else : ?>
+                    <?php foreach ($open as $row) : ?>
+                        <?php self::live_item($row); ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <div class="wsa-live-pane" id="wsa-live-pane">
+                <div class="wsa-empty"><?php esc_html_e('Pick a conversation from the list.', 'woocommerce-shop-agent'); ?></div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /** One row of the list; the console script builds the same markup when it refreshes. */
+    private static function live_item(array $row): void
+    {
+        $states = self::live_states();
+        ?>
+        <button type="button" class="wsa-live-item" data-thread="<?php echo esc_attr((string) (int) $row['id']); ?>">
+            <span class="wsa-live-item-top">
+                <span class="wsa-pill is-<?php echo esc_attr($row['status']); ?>"><?php echo esc_html($states[$row['status']] ?? $row['status']); ?></span>
+                <?php if ((int) $row['unread'] > 0) : ?>
+                    <span class="wsa-live-unread"><?php echo esc_html(number_format_i18n((int) $row['unread'])); ?></span>
+                <?php endif; ?>
+            </span>
+            <span class="wsa-live-item-q"><?php echo esc_html($row['first_question'] ?: __('(no question recorded)', 'woocommerce-shop-agent')); ?></span>
+            <span class="wsa-live-item-meta"><?php echo esc_html($row['status'] === 'live' ? (string) $row['manager'] : self::waited((int) $row['waiting_seconds'])); ?></span>
+        </button>
+        <?php
+    }
+
     private static function tab_leads(array $s): void
     {
         $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
@@ -1141,10 +1293,14 @@ class Admin
                         </div>
                     </div>
                     <div class="wsa-thread">
-                        <?php foreach ($thread['messages'] as $message) : ?>
-                            <div class="wsa-bubble is-<?php echo esc_attr($message['role'] === 'user' ? 'user' : 'assistant'); ?>">
-                                <?php echo esc_html($message['content']); ?>
-                            </div>
+                        <?php
+                        // the last person on the thread names every manager row; a deleted account gets the generic label
+                        $manager = (int) ($thread['manager_id'] ?? 0) > 0 ? get_userdata((int) $thread['manager_id']) : false;
+                        $manager_name = $manager ? (string) $manager->display_name : __('Manager', 'woocommerce-shop-agent');
+                        foreach ($thread['messages'] as $message) :
+                            $role = in_array($message['role'], ['user', 'manager', 'system'], true) ? $message['role'] : 'assistant';
+                            ?>
+                            <div class="wsa-bubble is-<?php echo esc_attr($role); ?>"><?php if ($role === 'manager') : ?><span class="wsa-bubble-name"><?php echo esc_html($manager_name); ?></span><?php endif; ?><?php echo esc_html($message['content']); ?></div>
                             <?php
                             $ids = array_filter(array_map('absint', explode(',', (string) $message['product_ids'])));
                             if ($ids) :
