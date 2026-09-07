@@ -1,17 +1,18 @@
 # Everything here is development-only and must never reach the plugin zip.
-/.git
-/.github
-/.wordpress-org
-/bin
-/docs
-/tests
-/node_modules
-/.gitignore
-/.distignore
-/.DS_Store
-/README.md
+# Patterns are unanchored so both wp dist-archive and the deploy action's rsync read them alike.
+.git
+.github
+.wordpress-org
+bin
+docs
+tests
+node_modules
+.gitignore
+.distignore
+.DS_Store
+README.md
 # translation sources stay in the repo; the compiled he_IL .mo ships until
 # translate.wordpress.org carries the plugin
-/languages/build-he.php
-/languages/*.po
-/languages/*.pot
+languages/build-he.php
+languages/*.po
+languages/*.pot
