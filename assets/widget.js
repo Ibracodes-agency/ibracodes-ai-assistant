@@ -435,6 +435,7 @@
 	function applyPoll( data ) {
 		live.manager = data.manager ? String( data.manager ) : '';
 		var arrived = false;
+		var lastSystem = null;
 		( data.messages || [] ).forEach( function ( m ) {
 			var id = parseInt( m.id, 10 ) || 0;
 			if ( id <= live.since || ( m.role !== 'manager' && m.role !== 'system' ) ) {
@@ -448,12 +449,21 @@
 					addManager( live.manager, m.text );
 				}
 			} else {
-				history.push( { role: 'system', text: m.text } );
+				lastSystem = { role: 'system', text: m.text };
+				history.push( lastSystem );
 				if ( opened ) {
 					addSystem( m.text );
 				}
 			}
 		} );
+		// nobody came: the missed line points at the contact option, so the
+		// chip goes right under it, and replays with it
+		if ( data.status === 'missed' && lastSystem ) {
+			lastSystem.handoff = true;
+			if ( opened ) {
+				addHandoff();
+			}
+		}
 		if ( arrived && ! root.classList.contains( 'is-open' ) ) {
 			showDot();
 		}
@@ -467,8 +477,8 @@
 			persist();
 		} else {
 			// the chat ended, or nobody came: the line saying so came with this
-			// poll, and the AI answers again from here. A missed thread gets the
-			// contact option with each of its answers, from the server
+			// poll, and the AI answers again from here. A missed thread also
+			// gets the contact option with each of its answers, from the server
 			leaveLive();
 		}
 	}
@@ -615,6 +625,9 @@
 			}
 			if ( m.role === 'system' ) {
 				addSystem( m.text );
+				if ( m.handoff ) {
+					addHandoff();
+				}
 				return;
 			}
 			addMessage( m.role, m.text );

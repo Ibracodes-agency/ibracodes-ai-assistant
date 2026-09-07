@@ -8,7 +8,7 @@
  */
 
 /* ============================================================
-   SHOP AGENT WIDGET — lift everything below into the plugin.
+   SHOP AGENT WIDGET. Everything below is lifted from the design file.
    Self-contained. No framework, no webfont, no !important.
    ============================================================ */
 
@@ -70,7 +70,7 @@
   box-shadow:var(--wsa-shadow);
   transition:transform .18s ease, box-shadow .18s ease;
 }
-/* with a label it becomes a pill — reads as an invitation, not a mystery button */
+/* with a label it becomes a pill: it reads as an invitation, not a mystery button */
 .wsa-launcher:has(.wsa-launcher-label){inline-size:auto;padding-inline:19px 22px;}
 .wsa-launcher-label{
   margin:0;padding:0;

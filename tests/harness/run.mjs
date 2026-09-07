@@ -56,6 +56,7 @@ const server = http.createServer(async (req, res) => {
     if (b.action === 'claim') { state.status = 'live'; state.manager = 'Dana'; line('system', fill('joined')); }
     if (b.action === 'reply') line('manager', b.text);
     if (b.action === 'close') { state.status = 'closed'; line('system', fill('closed')); }
+    if (b.action === 'missed') { state.status = 'missed'; state.manager = ''; line('system', fill('missed')); }
     return json(res, 200, { status: state.status });
   }
   const file = url.pathname.startsWith('/widget.') || url.pathname === '/ibracodes.svg' ? path.join(assets, url.pathname) : path.join(here, 'page.html');
@@ -162,6 +163,20 @@ const modelHistoryClean = sentAfterLive.every((m) => (m.role === 'user' || m.rol
 console.log('closed line shown: ' + closedShown + ' | placeholder restored: ' + placeholderRestored + ' | next message went to /chat: ' + backToAi + ' | no manager or system text in it: ' + modelHistoryClean);
 await page.screenshot({ path: shot('closed') });
 
+// ---- nobody comes: the missed line, the contact chip right under it, the AI again; line and chip replay
+await say('אפשר לדבר עם נציג?');
+await until(() => state.status === 'waiting');
+const pollsBeforeMissed = state.polls;
+await until(() => state.polls > pollsBeforeMissed); // the waiting line is in before the wait runs out
+await manager('missed');
+const missedShown = await page.waitForFunction((t) => Array.prototype.some.call(document.querySelectorAll('.wsa-system'), (n) => n.textContent === t), TEXTS.missed, { timeout: 6000 }).then(() => true, () => false);
+const chipUnderMissed = (t) => { const row = Array.prototype.find.call(document.querySelectorAll('.wsa-system'), (n) => n.textContent === t); const next = row && row.nextElementSibling; return !!(next && next.querySelector('.wsa-chip.is-handoff')); };
+const chipOnMissed = await page.evaluate(chipUnderMissed, TEXTS.missed);
+const placeholderAfterMissed = await placeholderIs(page, 'כתבו את השאלה');
+await page.reload(); await open(); await page.waitForTimeout(200);
+const chipReplayedOnMissed = await page.evaluate(chipUnderMissed, TEXTS.missed);
+console.log('missed: line shown: ' + missedShown + ' | contact chip under it: ' + chipOnMissed + ' | placeholder restored: ' + placeholderAfterMissed + ' | chip replayed: ' + chipReplayedOnMissed);
+
 // ---- bare page: no credit, no note
 await page.goto(base + '/page.html?bare=1'); await open(); await page.waitForTimeout(200);
 const bareFoot = await page.locator('.wsa-foot').count();
@@ -174,7 +189,8 @@ const ok = after.user === 1 && after.assistant === 2 && after.cards === 1 && aft
   && managerShown && managerName === 'Dana' && writeTo
   && resumed && dotShown && dotGone && replayedManager === 2 && replayedSystem === 2 && writeToAfterReload
   && rerouted && writeToAfter409
-  && closedShown && placeholderRestored && backToAi && modelHistoryClean;
-console.log(ok ? 'PASS: conversation survives navigation, footer right, live mode polls, replays and returns to the AI' : 'FAIL: see the lines above');
+  && closedShown && placeholderRestored && backToAi && modelHistoryClean
+  && missedShown && chipOnMissed && placeholderAfterMissed && chipReplayedOnMissed;
+console.log(ok ? 'PASS: conversation survives navigation, footer right, live mode polls, replays, returns to the AI, and a missed request offers the contact chip' : 'FAIL: see the lines above');
 process.exitCode = ok ? 0 : 1;
 await browser.close(); server.close();

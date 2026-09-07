@@ -155,9 +155,10 @@
 		} );
 	}
 
-	/** Rebuilds the list from the server's rows, in the markup the page rendered, and keeps the keyboard where it was. */
+	/** Rebuilds the list from the server's rows, in the markup the page rendered, and keeps the keyboard and the scroll where they were. */
 	function renderList( rows ) {
 		var focused = document.activeElement && list.contains( document.activeElement ) ? document.activeElement.getAttribute( 'data-thread' ) : null;
+		var scrolled = list.scrollTop;
 		list.textContent = '';
 		if ( ! rows.length ) {
 			list.appendChild( el( 'div', 'wsa-empty', t.empty ) );
@@ -179,10 +180,11 @@
 			list.appendChild( item );
 		} );
 		markActive();
+		list.scrollTop = scrolled;
 		if ( focused ) {
 			var again = list.querySelector( '.wsa-live-item[data-thread="' + focused + '"]' );
 			if ( again ) {
-				again.focus();
+				again.focus( { preventScroll: true } );
 			}
 		}
 	}
