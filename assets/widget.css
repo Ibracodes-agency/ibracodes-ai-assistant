@@ -208,6 +208,37 @@
   box-shadow:none;
 }
 
+/* ---------- live chat: a person's line, and the system lines between states ---------- */
+/* the manager's bubble sits on the surface like the assistant's, told apart by an
+   accent-tinted edge and the name above it; the column layout stacks the two */
+.wsa-msg.is-manager{flex-direction:column;align-items:flex-start;gap:3px;}
+.wsa-msg.is-manager .wsa-msg-text{
+  border:1px solid var(--wsa-line);
+  border-color:color-mix(in srgb, var(--wsa-accent) 35%, transparent);
+  border-start-start-radius:5px;
+}
+.wsa-msg-name{
+  margin:0;
+  padding:0 4px;
+  font-size:11px;
+  font-weight:600;
+  line-height:1.3;
+  color:var(--wsa-ink-2);
+  text-align:start;
+}
+/* joined, missed, closed: one muted centred line, tighter than a turn */
+.wsa-system{
+  margin:0;
+  padding:0 8px;
+  font-size:12px;
+  line-height:1.4;
+  color:var(--wsa-ink-2);
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+.wsa-body > .wsa-system,
+.wsa-body > .wsa-system + *{margin-block-start:8px;}
+
 /* typing */
 .wsa-typing .wsa-msg-text{display:flex;align-items:center;gap:4px;padding:14px 15px;}
 .wsa-typing span{

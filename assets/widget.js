@@ -11,6 +11,11 @@
  * under the wsa- prefix, and assumes nothing about the host theme. Product text
  * is written with textContent; the only innerHTML is WooCommerce's own price
  * markup and our own inline icons.
+ *
+ * Live mode: once a person is asked for, the AI is off and the thread is
+ * polled for the person's lines. Every line the widget shows in that mode,
+ * the system lines included, comes from the server; nothing is synthesised
+ * here, so the owner's texts are the only texts.
  */
 ( function () {
 	'use strict';
@@ -25,9 +30,15 @@
 	var thread = '';
 	var busy = false;
 	var opened = false;
+	// who has the thread: ai, waiting (a person was asked for), live (one is
+	// in), missed (nobody came; the next AI turn is told so)
+	var live = { status: 'ai', manager: '', since: 0 };
+	var pollTimer = null;
+	var polling = null;
 	var SEEN_KEY = 'wsa-seen';
 	var STORE_KEY = 'wsa-chat';
 	var KEEP = 16;
+	var POLL = parseInt( cfg.livePoll, 10 ) || 4000;
 
 	var ICON = {
 		chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4.1-3.8 7.4-8.5 7.4-1 0-2-.15-2.9-.42L4.4 20.5l1.1-3.3C4.1 15.85 3.5 14 3.5 12c0-4.1 3.8-7.4 8.5-7.4s8.5 3.3 8.5 7.4Z"></path><path d="M8.8 11.9h.01M12 11.9h.01M15.2 11.9h.01"></path></svg>',
@@ -76,13 +87,16 @@
 			if ( saved && Array.isArray( saved.messages ) ) {
 				history = saved.messages;
 				thread = typeof saved.thread === 'string' ? saved.thread : '';
+				if ( saved.live && typeof saved.live.status === 'string' ) {
+					live = { status: saved.live.status, manager: String( saved.live.manager || '' ), since: parseInt( saved.live.since, 10 ) || 0 };
+				}
 			}
 		} catch ( e ) {}
 	}
 
 	function persist() {
 		try {
-			window.sessionStorage.setItem( STORE_KEY, JSON.stringify( { thread: thread, messages: history.slice( -KEEP ) } ) );
+			window.sessionStorage.setItem( STORE_KEY, JSON.stringify( { thread: thread, messages: history.slice( -KEEP ), live: live } ) );
 		} catch ( e ) {}
 	}
 
@@ -285,11 +299,168 @@
 		scrollDown();
 	}
 
+	/** A person's line, their name above it. */
+	function addManager( name, text ) {
+		var wrap = el( 'div', 'wsa-msg is-manager' );
+		if ( name ) {
+			wrap.appendChild( el( 'div', 'wsa-msg-name', name ) );
+		}
+		wrap.appendChild( el( 'div', 'wsa-msg-text', text ) );
+		body.appendChild( wrap );
+		scrollDown();
+	}
+
+	/** One muted line between states: waiting, joined, missed, closed. */
+	function addSystem( text ) {
+		body.appendChild( el( 'div', 'wsa-system', text ) );
+		scrollDown();
+	}
+
+	function setPlaceholder( text ) {
+		input.placeholder = text;
+		input.setAttribute( 'aria-label', text );
+	}
+
+	// ------------------------------------------------------------------- live
+	function inLive() {
+		return live.status === 'waiting' || live.status === 'live';
+	}
+
+	function liveAvailable() {
+		return !! ( cfg.liveEndpoint && cfg.liveMessageEndpoint );
+	}
+
+	/** A person is expected or present: the AI is off, the input stays open, the thread is polled. */
+	function enterLive( status ) {
+		live.status = status === 'live' ? 'live' : 'waiting';
+		persist();
+		startPolling();
+	}
+
+	/** The AI has the thread again; the manager and the placeholder go with the mode. */
+	function leaveLive( status ) {
+		stopPolling();
+		live.status = status === 'missed' ? 'missed' : 'ai';
+		live.manager = '';
+		setPlaceholder( t.placeholder );
+		persist();
+	}
+
+	function stopPolling() {
+		if ( pollTimer ) {
+			clearTimeout( pollTimer );
+			pollTimer = null;
+		}
+	}
+
+	function schedule( delay ) {
+		stopPolling();
+		pollTimer = setTimeout( poll, delay );
+	}
+
+	function startPolling() {
+		if ( ! pollTimer && liveAvailable() && thread && inLive() ) {
+			schedule( 0 );
+		}
+	}
+
+	/**
+	 * One request for the lines since the last one. Shared by the loop and by
+	 * a refused visitor line, and never in flight twice, so no row is appended
+	 * twice. Resolves to what happened: ok, slow (rate limited), gone (the
+	 * route refused: live chat is off or the token failed) or retry (network).
+	 */
+	function fetchPoll() {
+		if ( polling ) {
+			return polling;
+		}
+		var url = cfg.liveEndpoint + ( cfg.liveEndpoint.indexOf( '?' ) > -1 ? '&' : '?' ) + 'thread=' + encodeURIComponent( thread ) + '&since=' + live.since;
+		polling = fetch( url, { method: 'GET' } )
+			.then( function ( res ) {
+				return res.json().then( function ( data ) {
+					if ( res.ok ) {
+						applyPoll( data );
+						return 'ok';
+					}
+					return res.status === 429 ? 'slow' : 'gone';
+				} );
+			} )
+			.catch( function () {
+				return 'retry';
+			} )
+			.finally( function () {
+				polling = null;
+			} );
+		return polling;
+	}
+
+	/** The loop: every POLL ms, three times that after a 429, paused while the tab is hidden and resumed on visibilitychange. */
+	function poll() {
+		pollTimer = null;
+		if ( ! inLive() || ! thread || document.hidden ) {
+			return;
+		}
+		fetchPoll().then( function ( outcome ) {
+			if ( outcome === 'gone' ) {
+				leaveLive( 'ai' );
+				return;
+			}
+			if ( inLive() ) {
+				schedule( outcome === 'slow' ? POLL * 3 : POLL );
+			}
+		} );
+	}
+
+	/** Appends the lines a poll returned, into the log and the history, then follows the state it reports. */
+	function applyPoll( data ) {
+		live.manager = data.manager ? String( data.manager ) : '';
+		( data.messages || [] ).forEach( function ( m ) {
+			var id = parseInt( m.id, 10 ) || 0;
+			if ( id > live.since ) {
+				live.since = id;
+			}
+			if ( m.role === 'manager' ) {
+				addManager( live.manager, m.text );
+				history.push( { role: 'manager', name: live.manager, text: m.text } );
+			} else if ( m.role === 'system' ) {
+				addSystem( m.text );
+				history.push( { role: 'system', text: m.text } );
+			}
+		} );
+		if ( data.status === 'live' ) {
+			live.status = 'live';
+			setPlaceholder( ( t.writeTo || '%s' ).replace( '%s', live.manager ) );
+			persist();
+		} else if ( data.status === 'waiting' ) {
+			live.status = 'waiting';
+			setPlaceholder( t.placeholder );
+			persist();
+		} else if ( data.status === 'missed' ) {
+			// the missed line came with this poll; the contact option is the fallback
+			leaveLive( 'missed' );
+			addHandoff();
+		} else {
+			leaveLive( 'ai' );
+		}
+	}
+
+	document.addEventListener( 'visibilitychange', function () {
+		if ( ! document.hidden ) {
+			startPolling();
+		}
+	} );
+
 	// ------------------------------------------------------------------- send
 	function setBusy( state ) {
 		busy = state;
 		root.classList.toggle( 'is-busy', state );
 		send.disabled = state;
+	}
+
+	function parse( res ) {
+		return res.json().then( function ( data ) {
+			return { ok: res.ok, status: res.status, data: data };
+		} );
 	}
 
 	function ask( text ) {
@@ -302,28 +473,47 @@
 		history.push( { role: 'user', text: text } );
 		persist();
 
-		var typing = addTyping();
+		( inLive() ? sendLive( text, false ) : askAi( text, false ) ).finally( function () {
+			setBusy( false );
+			input.focus();
+		} );
+	}
 
-		fetch( cfg.endpoint, {
+	/**
+	 * The AI's turn. A 409 with wsa_live_owned means a person has the thread:
+	 * the widget switches modes and hands them the line instead, once.
+	 */
+	function askAi( text, retried ) {
+		var typing = addTyping();
+		var payload = {
+			// a person's lines and the system lines are not the model's conversation
+			messages: history.filter( function ( m ) {
+				return m.role === 'user' || m.role === 'assistant';
+			} ).slice( -10 ).map( function ( m ) {
+				return { role: m.role, text: m.text };
+			} ),
+			thread: thread,
+			page: parseInt( cfg.pageId, 10 ) || 0,
+			device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
+		};
+		// a person was asked for and nobody came: the server tells the agent so, for this one reply
+		if ( live.status === 'missed' ) {
+			payload.live = 'missed';
+		}
+
+		return fetch( cfg.endpoint, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify( {
-				messages: history.slice( -10 ).map( function ( m ) {
-					return { role: m.role, text: m.text };
-				} ),
-				thread: thread,
-				page: parseInt( cfg.pageId, 10 ) || 0,
-				device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
-			} ),
+			body: JSON.stringify( payload ),
 		} )
-			.then( function ( res ) {
-				return res.json().then( function ( data ) {
-					return { ok: res.ok, data: data };
-				} );
-			} )
+			.then( parse )
 			.then( function ( result ) {
 				typing.remove();
 				if ( ! result.ok ) {
+					if ( result.status === 409 && result.data && result.data.code === 'wsa_live_owned' && liveAvailable() && ! retried ) {
+						enterLive( result.data.data && result.data.data.status );
+						return sendLive( text, true );
+					}
 					// the server's message is the useful one (rate limited,
 					// unavailable); fall back only if it sent none
 					addMessage( 'assistant', ( result.data && result.data.message ) || t.error );
@@ -334,6 +524,9 @@
 				if ( data.thread ) {
 					thread = data.thread;
 				}
+				if ( live.status === 'missed' ) {
+					live.status = 'ai';
+				}
 				addMessage( 'assistant', data.reply );
 				history.push( { role: 'assistant', text: data.reply, products: data.products || [], chips: data.chips || [], handoff: !! data.handoff } );
 				persist();
@@ -341,23 +534,61 @@
 				if ( data.handoff ) {
 					addHandoff();
 				}
+				if ( data.live === 'waiting' && liveAvailable() ) {
+					// the waiting line arrives with the first poll; nothing is written here
+					enterLive( 'waiting' );
+				}
 				addChips( data.chips, ask );
 			} )
 			.catch( function () {
 				typing.remove();
 				addMessage( 'assistant', t.error );
 				addHandoff();
+			} );
+	}
+
+	/**
+	 * A line to the person on the thread. No typing indicator: nobody is
+	 * composing on the AI's behalf. A 409 means the AI has the thread again
+	 * (the chat ended between two polls): one poll picks up the closing line
+	 * and the state, then the line goes wherever the state says, once.
+	 */
+	function sendLive( text, retried ) {
+		return fetch( cfg.liveMessageEndpoint, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify( { thread: thread, text: text } ),
+		} )
+			.then( parse )
+			.then( function ( result ) {
+				if ( result.ok ) {
+					startPolling();
+					return;
+				}
+				if ( result.status === 409 && ! retried ) {
+					return fetchPoll().then( function () {
+						return inLive() ? sendLive( text, true ) : askAi( text, true );
+					} );
+				}
+				addMessage( 'assistant', ( result.data && result.data.message ) || t.error );
 			} )
-			.finally( function () {
-				setBusy( false );
-				input.focus();
+			.catch( function () {
+				addMessage( 'assistant', t.error );
 			} );
 	}
 
 	// ------------------------------------------------------------------ open
-	/** Rebuilds a restored conversation; only the last answer's chips are still open offers. */
+	/** Rebuilds a restored conversation; only the last answer's chips are still open offers. Live mode picks up where it was. */
 	function replay() {
 		history.forEach( function ( m, i ) {
+			if ( m.role === 'manager' ) {
+				addManager( m.name, m.text );
+				return;
+			}
+			if ( m.role === 'system' ) {
+				addSystem( m.text );
+				return;
+			}
 			addMessage( m.role, m.text );
 			if ( m.role === 'assistant' ) {
 				addProducts( m.products );
@@ -369,6 +600,12 @@
 				}
 			}
 		} );
+		if ( live.status === 'live' ) {
+			setPlaceholder( ( t.writeTo || '%s' ).replace( '%s', live.manager ) );
+		} else if ( live.status === 'missed' ) {
+			addHandoff();
+		}
+		startPolling();
 	}
 
 	function open() {

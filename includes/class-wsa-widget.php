@@ -48,7 +48,7 @@ class Widget
 
     public static function config(): array
     {
-        return [
+        $config = [
             'endpoint' => esc_url_raw(rest_url('wsa/v1/chat')),
             'cartEndpoint' => Settings::get('log_threads') ? esc_url_raw(rest_url('wsa/v1/cart-event')) : '',
             'accent' => (string) Settings::get('accent'),
@@ -83,7 +83,18 @@ class Widget
                 'onSale' => __('Sale', 'woocommerce-shop-agent'),
                 'error' => __('Something went wrong. Please try again.', 'woocommerce-shop-agent'),
                 'conversation' => __('Chat conversation', 'woocommerce-shop-agent'),
+                /* translators: %s: the name of the person who joined the chat */
+                'writeTo' => __('Write to %s', 'woocommerce-shop-agent'),
             ],
         ];
+
+        // the live routes only exist for the widget when a person can actually be asked for
+        if (Settings::live_ready()) {
+            $config['liveEndpoint'] = esc_url_raw(rest_url('wsa/v1/live/thread'));
+            $config['liveMessageEndpoint'] = esc_url_raw(rest_url('wsa/v1/live/thread/message'));
+            $config['livePoll'] = 4000;
+        }
+
+        return $config;
     }
 }
