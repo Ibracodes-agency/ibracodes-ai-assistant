@@ -60,15 +60,10 @@ class Admin
         if (self::$hook === '' || $hook !== self::$hook) {
             return;
         }
-        // Heebo covers Latin and Hebrew from one family, which this admin needs
-        // because a shop's own language decides what the owner types in here.
-        wp_enqueue_style(
-            'wsa-fonts',
-            'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
-            [],
-            WSA_VERSION,
-        );
-        wp_enqueue_style('wsa-admin', WSA_URL . 'assets/admin.css', ['wsa-fonts'], WSA_VERSION);
+        // No remote fonts: the admin uses the site's system font stack (a
+        // WordPress.org privacy expectation) and admin.css lists Heebo first for
+        // sites that have it installed.
+        wp_enqueue_style('wsa-admin', WSA_URL . 'assets/admin.css', [], WSA_VERSION);
         wp_enqueue_script('wsa-admin', WSA_URL . 'assets/admin.js', [], WSA_VERSION, true);
         wp_localize_script('wsa-admin', 'wsaAdmin', [
             'endpoint' => esc_url_raw(rest_url('wsa/v1/test-key')),
