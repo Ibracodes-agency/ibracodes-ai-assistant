@@ -41,7 +41,9 @@ class Prompt
         $facts = trim((string) Settings::get('store_facts'));
         $rules = trim((string) Settings::get('style_rules')) ?: Settings::default_style_rules();
         $commerce = Capabilities::has_commerce();
-        $handoff = self::handoff_line($commerce);
+        // a person was asked for and nobody came: the thread's own state says so, and that turn gets different orders
+        $missed = ($context['live'] ?? '') === 'missed' && Settings::live_ready();
+        $handoff = $missed ? self::missed_line() : self::handoff_line($commerce);
         // the word for the place the model must stay inside
         $place = $commerce ? 'shop' : 'site';
 
@@ -88,11 +90,6 @@ class Prompt
             $parts[] = $handoff;
         }
 
-        // the widget reports it once a person was asked for and nobody came
-        if (($context['live'] ?? '') === 'missed') {
-            $parts[] = 'A person was requested but did not join. Apologise once, offer to take the visitor\'s details so the owner calls back (call capture_lead when they agree, if it is available), and offer the contact option. Do not offer a person again in this conversation.';
-        }
-
         if (Settings::get('leads_enabled')) {
             $when = trim((string) Settings::get('leads_when')) ?: 'when the visitor wants a quote, a callback or to be contacted';
             $lead = sprintf('Lead capture: %s, offer once to take their details so the owner can get back to them. Offer only after you have tried to answer, never push, and never offer twice in one conversation. If they agree, ask for their name and a phone number or email in one short message, then call capture_lead. Confirm only after the tool says it was saved.', $when);
@@ -129,6 +126,21 @@ class Prompt
         $label = trim((string) Settings::get('handoff_label'));
 
         return $label !== '' ? $label : __('the contact option', 'woocommerce-shop-agent');
+    }
+
+    /** After a missed request: what to offer instead of a person, from what the owner switched on. */
+    private static function missed_line(): string
+    {
+        $line = 'A person was requested but did not join. Apologise once.';
+        if (Settings::get('leads_enabled')) {
+            $line .= ' Offer to take the visitor\'s details so the owner calls back, and call capture_lead when they agree.';
+        }
+        $label = self::handoff_label();
+        $line .= $label !== ''
+            ? sprintf(' Offer the contact option, %s, which is shown as a button below your answer.', $label)
+            : ' Say the owner can be reached through the site\'s contact page.';
+
+        return $line . ' Do not offer a person again; call hand_off only if the visitor explicitly insists on talking to a person.';
     }
 
     private static function handoff_line(bool $commerce): string

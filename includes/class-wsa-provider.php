@@ -35,6 +35,12 @@ class Provider
      */
     public static function complete(array $messages, array $tools): array|WP_Error
     {
+        // tests hand a message back here, so nothing touches the network or the budget
+        $pre = apply_filters('wsa_pre_complete', null, $messages, $tools);
+        if (is_array($pre) || $pre instanceof WP_Error) {
+            return $pre;
+        }
+
         $key = Settings::api_key();
         if ($key === '') {
             return new WP_Error('wsa_no_key', __('The chat is not configured.', 'woocommerce-shop-agent'), ['status' => 503]);

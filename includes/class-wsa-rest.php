@@ -43,7 +43,7 @@ class Rest
                 // the post the visitor is reading; the prompt only uses it when the page is public and in scope
                 'page' => ['type' => 'integer', 'required' => false],
                 'thread' => ['type' => 'string', 'required' => false],
-                // the live state the widget last saw; 'missed' changes what the agent is told
+                // accepted for older widgets, never trusted: the live state comes from the thread itself
                 'live' => ['type' => 'string', 'required' => false],
             ],
         ]);
@@ -139,6 +139,7 @@ class Rest
         $token = sanitize_text_field((string) $request->get_param('thread'));
         $thread_id = Threads::id_from_token($token);
         $page_id = absint($request->get_param('page'));
+        $state = '';
         if ($thread_id > 0 && Settings::live_ready()) {
             $state = Live::state($thread_id);
             if (in_array($state, ['waiting', 'live'], true)) {
@@ -163,7 +164,8 @@ class Rest
             $context = [
                 'page_id' => $page_id,
                 'thread_id' => $thread_id,
-                'live' => sanitize_key((string) $request->get_param('live')),
+                // a missed request changes what the agent is told, and the thread is the only word on that
+                'live' => $state === 'missed' ? 'missed' : '',
             ];
             $answer = Agent::answer($messages, $context);
             if ($answer instanceof WP_Error) {
@@ -179,10 +181,12 @@ class Rest
             );
             unset($answer['no_match']); // server-side signal, not the customer's business
 
-            // a request made on the first turn had no thread to sit on until the turn was recorded
+            // The one place a person is asked for: after the turn is recorded,
+            // so the waiting line follows the question and the answer on the
+            // thread, and a first turn has a thread to sit on by then.
             if ($answer['live'] === 'pending') {
-                $new_id = Threads::id_from_token((string) $answer['thread']);
-                $answer['live'] = $new_id > 0 ? Live::request($new_id, $page_id)['status'] : '';
+                $live_id = Threads::id_from_token((string) $answer['thread']);
+                $answer['live'] = $live_id > 0 ? Live::request($live_id, $page_id)['status'] : '';
             }
 
             return rest_ensure_response($answer);

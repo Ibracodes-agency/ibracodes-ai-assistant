@@ -152,7 +152,11 @@ const placeholderRestored = await placeholderIs(page, 'כתבו את השאלה'
 await say('עוד שאלה על אינטרקום');
 const backToAi = await until(() => posted.length === chatsBeforeClose + 1);
 await page.waitForSelector('.wsa-card');
-console.log('closed line shown: ' + closedShown + ' | placeholder restored: ' + placeholderRestored + ' | next message went to /chat: ' + backToAi);
+// the model's conversation is the visitor's and the AI's: the person's lines and the system lines stay out of it
+const sentAfterLive = posted[posted.length - 1].messages;
+const liveTexts = state.messages.filter((m) => m.role !== 'user').map((m) => m.text);
+const modelHistoryClean = sentAfterLive.every((m) => (m.role === 'user' || m.role === 'assistant') && !liveTexts.includes(m.text));
+console.log('closed line shown: ' + closedShown + ' | placeholder restored: ' + placeholderRestored + ' | next message went to /chat: ' + backToAi + ' | no manager or system text in it: ' + modelHistoryClean);
 await page.screenshot({ path: shot('closed') });
 
 // ---- bare page: no credit, no note
@@ -167,7 +171,7 @@ const ok = after.user === 1 && after.assistant === 2 && after.cards === 1 && aft
   && managerShown && managerName === 'Dana' && writeTo
   && replayedManager === 1 && replayedSystem === 2 && resumed && writeToAfterReload
   && rerouted && writeToAfter409
-  && closedShown && placeholderRestored && backToAi;
+  && closedShown && placeholderRestored && backToAi && modelHistoryClean;
 console.log(ok ? 'PASS: conversation survives navigation, footer right, live mode polls, replays and returns to the AI' : 'FAIL: see the lines above');
 process.exitCode = ok ? 0 : 1;
 await browser.close(); server.close();

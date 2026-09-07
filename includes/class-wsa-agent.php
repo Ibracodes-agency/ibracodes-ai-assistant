@@ -95,12 +95,17 @@ class Agent
         $chips = array_map([Scrubber::class, 'scrub_prices'], $chips);
 
         // the loop can run out of turns with tool calls but no text; never hand
-        // back an empty bubble
+        // back an empty bubble. During a live request the promise the tool
+        // made is the answer, and no button goes with it
         if (trim($reply) === '') {
-            $reply = $cards
-                ? __('Here is what I found that might suit you:', 'woocommerce-shop-agent')
-                : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'woocommerce-shop-agent');
-            $handoff = $handoff || ! $cards;
+            if ($live !== '') {
+                $reply = __('A person will join this chat shortly.', 'woocommerce-shop-agent');
+            } else {
+                $reply = $cards
+                    ? __('Here is what I found that might suit you:', 'woocommerce-shop-agent')
+                    : __('I could not answer that one. Try rephrasing, or get in touch and a person will help.', 'woocommerce-shop-agent');
+                $handoff = $handoff || ! $cards;
+            }
         }
 
         $max = min(self::MAX_CARDS, max(1, (int) Settings::get('max_products')));

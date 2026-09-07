@@ -117,7 +117,7 @@ class Tools
      * is told never to) paste links or prices into its text.
      *
      * @param array<int, array> $cards collected product cards, keyed by id
-     * @param array{page_id?: int, thread_id?: int, live?: string} $context the verified thread and the page being read, for the lead and the live request
+     * @param array{page_id?: int, thread_id?: int, live?: string} $context the verified thread and the page being read, for the lead
      */
     public static function run(string $name, array $input, array &$cards, array $context = []): array
     {
@@ -142,23 +142,18 @@ class Tools
     }
 
     /**
-     * With live chat on, asks a person to join the verified thread. On the
-     * first turn there is no thread yet, so the request is left pending for
-     * the REST layer to make once the turn is recorded. Without live chat the
-     * result is the contact button.
+     * With live chat on, the request for a person is left pending: the REST
+     * layer makes it once the turn is recorded, so the model loop has no side
+     * effect on the thread and a first turn has a thread by then. Without
+     * live chat the result is the contact button.
      */
     private static function hand_off(array $context): array
     {
         if (! Settings::live_ready()) {
             return ['shown' => true, 'label' => Prompt::handoff_label()];
         }
-        $thread_id = (int) ($context['thread_id'] ?? 0);
-        if ($thread_id === 0) {
-            return ['live' => 'pending'];
-        }
-        Live::request($thread_id, (int) ($context['page_id'] ?? 0));
 
-        return ['live' => 'waiting'];
+        return ['live' => 'pending'];
     }
 
     /** One page's text, through the same gate as search: an id the model guessed at gets nothing. */
