@@ -3,7 +3,7 @@
  * Plugin Name:       IbraCodes AI Assistant
  * Plugin URI:        https://ibracodes.com
  * Description:       An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key.
- * Version:           0.1.2
+ * Version:           0.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.1
  * Author:            Ibracodes
@@ -37,7 +37,7 @@ if (defined('WSA_VERSION')) {
     return;
 }
 
-define('WSA_VERSION', '0.1.2');
+define('WSA_VERSION', '0.2.0');
 define('WSA_FILE', __FILE__);
 define('WSA_PATH', plugin_dir_path(__FILE__));
 define('WSA_URL', plugin_dir_url(__FILE__));

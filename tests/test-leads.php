@@ -65,13 +65,14 @@ wsa_assert_same(1, (int) $row['email_sent'], 'email_sent set once the owner was 
 wsa_assert_same(1, count($sent), 'owner emailed once');
 wsa_assert_same('owner@example.com', $sent[0]['to'], 'email goes to the configured address');
 wsa_assert(str_contains($sent[0]['message'], 'Dana Levi'), 'email carries the name');
-wsa_assert(str_starts_with($sent[0]['subject'], 'New lead'), 'a first capture is announced as new');
+// the site locale may be Hebrew: the subject is compared with its translation
+wsa_assert_same(sprintf(__('New lead from the AI Assistant: %s', 'ibracodes-ai-assistant'), 'Dana Levi'), $sent[0]['subject'], 'a first capture is announced as new');
 
 $again = $own(Leads::capture(['name' => 'Dana Levi', 'contact' => 'dana@example.com', 'request' => 'updated'], 77, 0));
 wsa_assert_same((int) $ok['id'], (int) $again['id'], 'second capture on the same thread updates the first');
 wsa_assert_same('dana@example.com', Leads::find((int) $ok['id'])['contact'], 'update applied');
 wsa_assert_same(2, count($sent), 'owner emailed again on update');
-wsa_assert(str_starts_with($sent[1]['subject'], 'Updated lead'), 'a corrected lead is announced as updated');
+wsa_assert_same(sprintf(__('Updated lead from the AI Assistant: %s', 'ibracodes-ai-assistant'), 'Dana Levi'), $sent[1]['subject'], 'a corrected lead is announced as updated');
 
 $rows = Leads::list(1, 20);
 wsa_assert($rows['total'] >= 1, 'listing works');

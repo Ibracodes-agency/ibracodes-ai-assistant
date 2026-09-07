@@ -23,6 +23,7 @@ delete_option('wsa_last_failure');
 delete_option('wsa_index_queue');
 delete_option('wsa_index_backoff');
 delete_option('wsa_index_model');
+wp_unschedule_hook('wsa_purge_threads');
 wp_unschedule_hook('wsa_index_batch');
 wp_unschedule_hook('wsa_index_reconcile');
 

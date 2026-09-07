@@ -1,26 +1,35 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Shop Agent for WooCommerce\n"
+"Project-Id-Version: IbraCodes AI Assistant\n"
 "Language: he_IL\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Shop Agent for WooCommerce"
-msgstr "Shop Agent for WooCommerce"
+msgid "IbraCodes AI Assistant"
+msgstr "IbraCodes AI Assistant"
 
 msgid "https://ibracodes.com"
 msgstr "https://ibracodes.com"
 
-msgid "An AI shop assistant for the storefront. It searches the real catalog, recommends products the customer can add to cart, and answers store questions from facts you write. Uses your own OpenAI key."
-msgstr "עוזר חנות חכם לאתר. מחפש מוצרים אמיתיים בקטלוג, ממליץ על מוצרים שהלקוח יכול להוסיף לסל, ועונה על שאלות מתוך עובדות שאתם כותבים. עובד עם מפתח OpenAI שלכם."
+msgid "An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key."
+msgstr "עוזר AI לכל אתר וורדפרס. עונה מתוך העמודים והפוסטים שלכם ומתוך עובדות שאתם כותבים, אוסף לידים, ובחנויות ווקומרס ממליץ על מוצרים שהלקוח יכול להוסיף לסל. עובד עם מפתח OpenAI שלכם."
 
 msgid "Ibracodes"
 msgstr "Ibracodes"
 
-msgid "Shop Agent"
-msgstr "עוזר חנות"
+msgid "Another copy of IbraCodes AI Assistant is already active. Deactivate one of them."
+msgstr "עותק נוסף של IbraCodes AI Assistant כבר פעיל. כבו אחד מהם."
+
+msgid "IbraCodes AI Assistant requires PHP 8.1 or later."
+msgstr "IbraCodes AI Assistant דורש PHP 8.1 ומעלה."
+
+msgid "Plugin activation error"
+msgstr "שגיאה בהפעלת התוסף"
+
+msgid "AI Assistant"
+msgstr "עוזר AI"
 
 msgid "Settings"
 msgstr "הגדרות"
@@ -28,8 +37,80 @@ msgstr "הגדרות"
 msgid "Testing…"
 msgstr "בודק…"
 
-msgid "Test connection"
-msgstr "בדיקת חיבור"
+msgid "Rebuilding…"
+msgstr "בונה מחדש…"
+
+msgid "Request failed."
+msgstr "הבקשה נכשלה."
+
+msgid "No one is waiting."
+msgstr "אף אחד לא ממתין."
+
+msgid "(no question recorded)"
+msgstr "(לא נרשמה שאלה)"
+
+msgid "Waiting under a minute"
+msgstr "ממתין פחות מדקה"
+
+msgid "Waiting %s min"
+msgstr "ממתין %s דק׳"
+
+msgid "Waiting %s h"
+msgstr "ממתין %s שע׳"
+
+msgid "Waiting %s d"
+msgstr "ממתין %s ימים"
+
+msgid "%s unread"
+msgstr "%s שלא נקראו"
+
+msgid "Session expired. Reload the page."
+msgstr "פג תוקף ההתחברות. טענו את העמוד מחדש."
+
+msgid "That conversation no longer exists."
+msgstr "השיחה הזו כבר לא קיימת."
+
+msgid "Claim"
+msgstr "הצטרפות לשיחה"
+
+msgid "Close chat"
+msgstr "סגירת הצ׳אט"
+
+msgid "Send"
+msgstr "שליחה"
+
+msgid "Write a reply"
+msgstr "כתבו תשובה"
+
+msgid "Claim the chat to reply"
+msgstr "הצטרפו לשיחה כדי לענות"
+
+msgid "Replying takes over from %s"
+msgstr "תשובה תעביר את השיחה מ-%s אליכם"
+
+msgid "Visitor"
+msgstr "מבקר"
+
+msgid "Assistant"
+msgstr "העוזר"
+
+msgid "Loading…"
+msgstr "טוען…"
+
+msgid "Waiting"
+msgstr "בהמתנה"
+
+msgid "Live"
+msgstr "לייב"
+
+msgid "Missed"
+msgstr "לא נענתה"
+
+msgid "Closed"
+msgstr "נסגרה"
+
+msgid "AI"
+msgstr "AI"
 
 msgid "You are not allowed to do that."
 msgstr "אין לכם הרשאה לפעולה הזו."
@@ -58,8 +139,17 @@ msgstr "קטלוג"
 msgid "Conversations"
 msgstr "שיחות"
 
+msgid "Live chats"
+msgstr "צ׳אטים חיים"
+
+msgid "Leads"
+msgstr "לידים"
+
 msgid "Settings saved."
 msgstr "ההגדרות נשמרו."
+
+msgid "Lead deleted, along with its conversation."
+msgstr "הליד נמחק, יחד עם השיחה שלו."
 
 msgid "The agent is off because no API key is connected. Customers see nothing until you add one."
 msgstr "הסוכן כבוי כי לא חובר מפתח API. הלקוחות לא רואים כלום עד שתוסיפו מפתח."
@@ -93,6 +183,12 @@ msgstr "נוסף לסל"
 
 msgid "chats that led to a cart"
 msgstr "שיחות שהובילו לסל"
+
+msgid "Leads, 30 days"
+msgstr "לידים, 30 יום"
+
+msgid "visitors who left their details"
+msgstr "מבקרים שהשאירו פרטים"
 
 msgid "Questions the agent could not answer"
 msgstr "שאלות שהסוכן לא ידע לענות עליהן"
@@ -175,6 +271,12 @@ msgstr "שאלות מוצעות"
 msgid "One per line, up to four. Shown as buttons under the opening message."
 msgstr "אחת בכל שורה, עד ארבע. מוצגות ככפתורים מתחת להודעת הפתיחה."
 
+msgid "Show \"Developed by Ibracodes\" under the chat"
+msgstr "הצגת \"פותח על ידי Ibracodes\" מתחת לצ׳אט"
+
+msgid "A small credit line linking to ibracodes.com. Off by default."
+msgstr "שורת קרדיט קטנה עם קישור ל-ibracodes.com. כבויה כברירת מחדל."
+
 msgid "Changes go live on the storefront as soon as you save."
 msgstr "השינויים עולים לאתר ברגע השמירה."
 
@@ -202,6 +304,9 @@ msgstr "הקבוע WSA_OPENAI_KEY מוגדר, ולכן הוא גובר והשד�
 msgid "Stored in this site's database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead."
 msgstr "נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת WSA_OPENAI_KEY ב-wp-config.php."
 
+msgid "Test connection"
+msgstr "בדיקת חיבור"
+
 msgid "Model"
 msgstr "מודל"
 
@@ -222,6 +327,75 @@ msgstr "משלוח חינם מעל 399 ש\"ח. החזרות תוך 14 יום. א
 
 msgid "The only non-product information the agent may state as fact. Anything not written here, it will say it does not know."
 msgstr "המידע היחיד שאינו על מוצרים שהסוכן רשאי למסור כעובדה. כל מה שלא כתוב כאן, הוא יגיד שאינו יודע."
+
+msgid "Content"
+msgstr "תוכן"
+
+msgid "The pages and posts the assistant may read and answer from. Drafts, private and password-protected content are never included."
+msgstr "העמודים והפוסטים שהעוזר רשאי לקרוא ולענות מתוכם. טיוטות, תוכן פרטי ותוכן מוגן בסיסמה לעולם לא נכללים."
+
+msgid "Content types"
+msgstr "סוגי תוכן"
+
+msgid "Which pages"
+msgstr "אילו עמודים"
+
+msgid "All published pages and posts"
+msgstr "כל העמודים והפוסטים שפורסמו"
+
+msgid "Only the pages listed below"
+msgstr "רק העמודים שברשימה למטה"
+
+msgid "Pages"
+msgstr "עמודים"
+
+msgid "Page ids, comma separated. The id is in the address bar when you edit a page."
+msgstr "מזהי עמודים, מופרדים בפסיקים. המזהה מופיע בשורת הכתובת כשעורכים עמוד."
+
+msgid "How the assistant finds content"
+msgstr "איך העוזר מוצא תוכן"
+
+msgid "WordPress search (free)"
+msgstr "חיפוש וורדפרס (חינם)"
+
+msgid "Embeddings index (better answers)"
+msgstr "אינדקס embeddings (תשובות טובות יותר)"
+
+msgid "Building the index costs about one cent per hundred pages once, then a fraction of that per question. It uses your OpenAI key and counts against your daily and monthly limits."
+msgstr "בניית האינדקס עולה בערך סנט אחד לכל מאה עמודים, פעם אחת, ואחר כך שבריר מזה לכל שאלה. היא משתמשת במפתח OpenAI שלכם ונספרת במגבלות היומיות והחודשיות."
+
+msgid "Indexed %1$s of %2$s pages, %3$s waiting."
+msgstr "באינדקס %1$s מתוך %2$s עמודים, %3$s ממתינים."
+
+msgid "Rebuild index"
+msgstr "בנייה מחדש של האינדקס"
+
+msgid "Offer to take the visitor's details"
+msgstr "הצעה לקחת את פרטי המבקר"
+
+msgid "The assistant asks for a name and a phone or email, saves the lead and emails you."
+msgstr "העוזר מבקש שם וטלפון או אימייל, שומר את הליד ושולח לכם אימייל."
+
+msgid "When to offer"
+msgstr "מתי להציע"
+
+msgid "One line, for example: when someone wants a quote or a callback."
+msgstr "שורה אחת, למשל: כשמישהו רוצה הצעת מחיר או שיחה חוזרת."
+
+msgid "Send leads to"
+msgstr "לשלוח לידים אל"
+
+msgid "Keep leads for (days)"
+msgstr "לשמור לידים למשך (ימים)"
+
+msgid "Older leads are deleted once a day, along with the conversation they came from."
+msgstr "לידים ישנים נמחקים פעם ביום, יחד עם השיחה שממנה הגיעו."
+
+msgid "Note under the chat input"
+msgstr "הערה מתחת לשדה הכתיבה בצ׳אט"
+
+msgid "Say that details typed here are passed to the site owner and kept with the conversation."
+msgstr "ציינו שפרטים שנכתבים כאן מועברים לבעל האתר ונשמרים יחד עם השיחה."
 
 msgid "Behaviour"
 msgstr "התנהגות"
@@ -270,6 +444,45 @@ msgstr "יעד"
 
 msgid "Your contact page, or a wa.me link for WhatsApp."
 msgstr "עמוד יצירת הקשר שלכם, או קישור wa.me לוואטסאפ."
+
+msgid "Live chat"
+msgstr "צ׳אט חי"
+
+msgid "A visitor who asks for a person waits for you in the Live chats tab. The AI pauses until you answer or the wait runs out."
+msgstr "מבקר שמבקש נציג ממתין לכם בלשונית צ׳אטים חיים. ה-AI עוצר עד שתענו או עד שזמן ההמתנה ייגמר."
+
+msgid "Let visitors ask for a person"
+msgstr "לאפשר למבקרים לבקש נציג"
+
+msgid "Turning it on also turns conversation logging on: a live chat lives on the conversation record."
+msgstr "הפעלה שלו מפעילה גם את תיעוד השיחות: צ׳אט חי נשמר על רשומת השיחה."
+
+msgid "Send requests to"
+msgstr "לשלוח בקשות אל"
+
+msgid "One email per request, with a link to the conversation."
+msgstr "אימייל אחד לכל בקשה, עם קישור לשיחה."
+
+msgid "Wait for a person (minutes)"
+msgstr "המתנה לנציג (דקות)"
+
+msgid "If nobody joins in time, the visitor is offered lead capture and the contact option. The request stays in the list, so you can still answer later."
+msgstr "אם אף אחד לא מצטרף בזמן, המבקר מקבל הצעה להשאיר פרטים ואת אפשרות יצירת הקשר. הבקשה נשארת ברשימה, כך שעדיין אפשר לענות מאוחר יותר."
+
+msgid "Waiting text"
+msgstr "טקסט המתנה"
+
+msgid "Joined text"
+msgstr "טקסט הצטרפות"
+
+msgid "Missed text"
+msgstr "טקסט אי-מענה"
+
+msgid "Closed text"
+msgstr "טקסט סיום"
+
+msgid "In the joined and closed texts, %s becomes the name of the person who joined."
+msgstr "בטקסטים של ההצטרפות והסיום, %s הופך לשם של מי שהצטרף."
 
 msgid "Spending limits"
 msgstr "מגבלות הוצאה"
@@ -328,6 +541,72 @@ msgstr "איך הסוכן מחפש"
 msgid "It searches your live catalogue on every question: product titles, descriptions and SKUs. There is no index to build and nothing to keep in sync, so a product you publish is findable immediately, and one you unpublish disappears the same second."
 msgstr "הוא מחפש בקטלוג החי שלכם בכל שאלה: שמות מוצרים, תיאורים ומק\"טים. אין אינדקס לבנות ואין מה לסנכרן, כך שמוצר שתפרסמו יימצא מיד, ומוצר שתורידו ייעלם באותו רגע."
 
+msgid "Live chat is off. With it on, a visitor who asks for a person waits here for you to answer, and the AI pauses until you do."
+msgstr "צ׳אט חי כבוי. כשהוא פעיל, מבקר שמבקש נציג ממתין כאן שתענו, וה-AI עוצר עד שתעשו זאת."
+
+msgid "Turn it on in the Agent tab"
+msgstr "הפעילו אותו בלשונית הסוכן"
+
+msgid "Pick a conversation from the list."
+msgstr "בחרו שיחה מהרשימה."
+
+msgid "Leads are kept %s days, then deleted along with the conversation they came from."
+msgstr "לידים נשמרים %s ימים ואז נמחקים יחד עם השיחה שממנה הגיעו."
+
+msgid "Search leads"
+msgstr "חיפוש לידים"
+
+msgid "Search"
+msgstr "חיפוש"
+
+msgid "Export CSV"
+msgstr "ייצוא CSV"
+
+msgid "No leads yet. Turn on lead capture on the Agent tab."
+msgstr "עדיין אין לידים. הפעילו איסוף לידים בלשונית הסוכן."
+
+msgid "No leads match that search."
+msgstr "אין לידים שמתאימים לחיפוש."
+
+msgid "When"
+msgstr "מתי"
+
+msgid "Name"
+msgstr "שם"
+
+msgid "Contact"
+msgstr "פרטי קשר"
+
+msgid "Request"
+msgstr "בקשה"
+
+msgid "Page"
+msgstr "עמוד"
+
+msgid "Email"
+msgstr "אימייל"
+
+msgid "Sent"
+msgstr "נשלח"
+
+msgid "Failed"
+msgstr "נכשל"
+
+msgid "Delete this lead and the conversation it came from?"
+msgstr "למחוק את הליד הזה ואת השיחה שממנה הגיע?"
+
+msgid "Delete"
+msgstr "מחיקה"
+
+msgid "Previous"
+msgstr "הקודם"
+
+msgid "Page %1$s of %2$s"
+msgstr "עמוד %1$s מתוך %2$s"
+
+msgid "Next"
+msgstr "הבא"
+
 msgid "Threads are kept %s days, then deleted. No email, name or payment detail is stored: only the messages and the product ids the agent showed."
 msgstr "שיחות נשמרות %s ימים ואז נמחקות. לא נשמרים אימייל, שם או פרטי תשלום: רק ההודעות ומזהי המוצרים שהוצגו."
 
@@ -336,9 +615,6 @@ msgstr "עדיין אין שיחות."
 
 msgid "First question"
 msgstr "שאלה ראשונה"
-
-msgid "When"
-msgstr "מתי"
 
 msgid "Turns"
 msgstr "סבבים"
@@ -349,9 +625,6 @@ msgstr "הוצגו"
 msgid "Outcome"
 msgstr "תוצאה"
 
-msgid "(no question recorded)"
-msgstr "(לא נרשמה שאלה)"
-
 msgid "No match"
 msgstr "אין התאמה"
 
@@ -360,15 +633,6 @@ msgstr "ניתנה המלצה"
 
 msgid "Answered"
 msgstr "נענתה"
-
-msgid "Previous"
-msgstr "הקודם"
-
-msgid "Page %1$s of %2$s"
-msgstr "עמוד %1$s מתוך %2$s"
-
-msgid "Next"
-msgstr "הבא"
 
 msgid "Recording"
 msgstr "תיעוד"
@@ -400,11 +664,17 @@ msgstr "שיחה"
 msgid "%1$s · %2$s turns"
 msgstr "%1$s · %2$s סבבים"
 
+msgid "Manager"
+msgstr "נציג"
+
 msgid "(deleted product)"
 msgstr "(מוצר שנמחק)"
 
 msgid "No message received."
 msgstr "לא התקבלה הודעה."
+
+msgid "A person will join this chat shortly."
+msgstr "נציג יצטרף לשיחה בקרוב."
 
 msgid "Here is what I found that might suit you:"
 msgstr "הנה מה שמצאתי שיכול להתאים:"
@@ -426,6 +696,42 @@ msgstr "הצ׳אט לא זמין כרגע. פנו אלינו דרך עמוד י�
 
 msgid "The chat is busy right now. Try again in a moment."
 msgstr "הצ׳אט עמוס כרגע. נסו שוב בעוד רגע."
+
+msgid "The embeddings service returned the wrong number of vectors."
+msgstr "שירות ה-embeddings החזיר מספר וקטורים שגוי."
+
+msgid "Updated lead from the AI Assistant: %s"
+msgstr "ליד מעודכן מעוזר ה-AI: %s"
+
+msgid "New lead from the AI Assistant: %s"
+msgstr "ליד חדש מעוזר ה-AI: %s"
+
+msgid "Name: %s"
+msgstr "שם: %s"
+
+msgid "Contact: %s"
+msgstr "פרטי קשר: %s"
+
+msgid "Request: %s"
+msgstr "בקשה: %s"
+
+msgid "Page: %s"
+msgstr "עמוד: %s"
+
+msgid "Conversation: %s"
+msgstr "שיחה: %s"
+
+msgid "All leads: %s"
+msgstr "כל הלידים: %s"
+
+msgid "Answer here: %s"
+msgstr "לענות כאן: %s"
+
+msgid "Question: %s"
+msgstr "שאלה: %s"
+
+msgid "A visitor is waiting for a person"
+msgstr "מבקר ממתין לנציג"
 
 msgid "the contact option"
 msgstr "עמוד יצירת הקשר"
@@ -451,6 +757,36 @@ msgstr "הצ׳אט לא זמין כרגע. נסו שוב."
 msgid "The chat is not available right now."
 msgstr "הצ׳אט לא זמין כרגע."
 
+msgid "A person has this conversation right now."
+msgstr "נציג מטפל בשיחה הזו כרגע."
+
+msgid "Switch retrieval to the embeddings index first."
+msgstr "קודם העבירו את החיפוש לאינדקס ה-embeddings."
+
+msgid "Add an OpenAI key first."
+msgstr "הוסיפו קודם מפתח OpenAI."
+
+msgid "Rebuilding, %s pages queued."
+msgstr "בונה מחדש, %s עמודים בתור."
+
+msgid "No person is on this chat right now."
+msgstr "אין נציג בשיחה הזו כרגע."
+
+msgid "Claim the chat before replying."
+msgstr "הצטרפו לשיחה לפני שעונים."
+
+msgid "This conversation could not be verified."
+msgstr "לא ניתן היה לאמת את השיחה הזו."
+
+msgid "Too many requests. Slow down a little."
+msgstr "יותר מדי בקשות. האטו קצת."
+
+msgid "Live chat is not available right now."
+msgstr "צ׳אט חי לא זמין כרגע."
+
+msgid "Write something first."
+msgstr "כתבו משהו קודם."
+
 msgid "Add a key first."
 msgstr "הוסיפו קודם מפתח."
 
@@ -472,6 +808,18 @@ msgstr "אפשר לשאול אותי הכל"
 msgid "Hi, can I help you find a product or answer a question?"
 msgstr "היי, אפשר לעזור למצוא מוצר או לענות על שאלה?"
 
+msgid "A person will join this chat shortly. You can keep writing in the meantime."
+msgstr "נציג יצטרף לשיחה בקרוב. אפשר להמשיך לכתוב בינתיים."
+
+msgid "%s joined the chat."
+msgstr "%s הצטרף/ה לשיחה."
+
+msgid "Nobody is available right now. Leave your details and we will get back to you, or use the contact option below."
+msgstr "אף אחד לא זמין כרגע. השאירו פרטים ונחזור אליכם, או השתמשו באפשרות יצירת הקשר למטה."
+
+msgid "The chat with %s has ended. I can keep helping here."
+msgstr "השיחה עם %s הסתיימה. אפשר להמשיך לשאול אותי כאן."
+
 msgid "gpt-5-mini (recommended, cheapest)"
 msgstr "gpt-5-mini (מומלץ, הזול ביותר)"
 
@@ -484,17 +832,14 @@ msgstr "gpt-4.1-mini"
 msgid "Contact us"
 msgstr "דברו איתנו"
 
+msgid "Developed by Ibracodes"
+msgstr "פותח על ידי Ibracodes"
+
 msgid "Open chat"
 msgstr "פתיחת הצ׳אט"
 
-msgid "Close chat"
-msgstr "סגירת הצ׳אט"
-
 msgid "Type your question"
 msgstr "כתבו את השאלה"
-
-msgid "Send"
-msgstr "שליחה"
 
 msgid "Typing"
 msgstr "מקליד"
@@ -517,14 +862,5 @@ msgstr "משהו השתבש. נסו שוב."
 msgid "Chat conversation"
 msgstr "שיחת צ׳אט"
 
-msgid "Shop Agent requires WooCommerce 8.0 or later to be installed and active. The plugin has been deactivated."
-msgstr "עוזר חנות דורש ווקומרס 8.0 ומעלה מותקן ופעיל. התוסף כובה."
-
-msgid "Shop Agent requires PHP 8.1 or later."
-msgstr "עוזר חנות דורש PHP 8.1 ומעלה."
-
-msgid "Plugin activation error"
-msgstr "שגיאה בהפעלת התוסף"
-
-msgid "Shop Agent requires WooCommerce 8.0 or later. Install and activate WooCommerce first, then reactivate this plugin."
-msgstr "עוזר חנות דורש ווקומרס 8.0 ומעלה. התקינו והפעילו קודם ווקומרס, ואז הפעילו מחדש את התוסף."
+msgid "Write to %s"
+msgstr "כתבו ל-%s"

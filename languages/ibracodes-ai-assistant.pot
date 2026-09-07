@@ -2,646 +2,1141 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Shop Agent for WooCommerce 0.1.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/woocommerce-shop-agent\n"
+"Project-Id-Version: IbraCodes AI Assistant 0.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ibracodes-ai-assistant\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-26T15:14:52+00:00\n"
+"POT-Creation-Date: 2026-09-07T09:01:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: woocommerce-shop-agent\n"
+"X-Domain: ibracodes-ai-assistant\n"
 
 #. Plugin Name of the plugin
-#: woocommerce-shop-agent.php
-msgid "Shop Agent for WooCommerce"
+#: ibracodes-ai-assistant.php
+msgid "IbraCodes AI Assistant"
 msgstr ""
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
-#: woocommerce-shop-agent.php
+#: ibracodes-ai-assistant.php
 msgid "https://ibracodes.com"
 msgstr ""
 
 #. Description of the plugin
-#: woocommerce-shop-agent.php
-msgid "An AI shop assistant for the storefront. It searches the real catalog, recommends products the customer can add to cart, and answers store questions from facts you write. Uses your own OpenAI key."
+#: ibracodes-ai-assistant.php
+msgid "An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key."
 msgstr ""
 
 #. Author of the plugin
-#: woocommerce-shop-agent.php
+#: ibracodes-ai-assistant.php
 msgid "Ibracodes"
 msgstr ""
 
-#: includes/class-wsa-admin.php:36
-#: includes/class-wsa-admin.php:37
-#: includes/class-wsa-admin.php:188
-msgid "Shop Agent"
+#: ibracodes-ai-assistant.php:34
+msgid "Another copy of IbraCodes AI Assistant is already active. Deactivate one of them."
 msgstr ""
 
-#: includes/class-wsa-admin.php:49
+#: ibracodes-ai-assistant.php:49
+msgid "IbraCodes AI Assistant requires PHP 8.1 or later."
+msgstr ""
+
+#: ibracodes-ai-assistant.php:50
+msgid "Plugin activation error"
+msgstr ""
+
+#: includes/class-wsa-admin.php:38
+#: includes/class-wsa-admin.php:312
+msgid "AI Assistant"
+msgstr ""
+
+#: includes/class-wsa-admin.php:52
 msgid "Settings"
 msgstr ""
 
-#: includes/class-wsa-admin.php:73
+#: includes/class-wsa-admin.php:77
 msgid "Testing…"
 msgstr ""
 
-#: includes/class-wsa-admin.php:74
-#: includes/class-wsa-admin.php:532
-msgid "Test connection"
+#: includes/class-wsa-admin.php:78
+msgid "Rebuilding…"
+msgstr ""
+
+#: includes/class-wsa-admin.php:79
+#: includes/class-wsa-admin.php:119
+msgid "Request failed."
+msgstr ""
+
+#: includes/class-wsa-admin.php:96
+#: includes/class-wsa-admin.php:1003
+msgid "No one is waiting."
+msgstr ""
+
+#: includes/class-wsa-admin.php:97
+#: includes/class-wsa-admin.php:1030
+#: includes/class-wsa-admin.php:1235
+msgid "(no question recorded)"
 msgstr ""
 
 #: includes/class-wsa-admin.php:98
+#: includes/class-wsa-admin.php:146
+msgid "Waiting under a minute"
+msgstr ""
+
+#. translators: %s: number of minutes
+#: includes/class-wsa-admin.php:100
+#: includes/class-wsa-admin.php:150
+#, php-format
+msgid "Waiting %s min"
+msgstr ""
+
+#. translators: %s: number of hours
+#: includes/class-wsa-admin.php:102
+#: includes/class-wsa-admin.php:155
+#, php-format
+msgid "Waiting %s h"
+msgstr ""
+
+#. translators: %s: number of days
+#: includes/class-wsa-admin.php:104
+#: includes/class-wsa-admin.php:159
+#, php-format
+msgid "Waiting %s d"
+msgstr ""
+
+#. translators: %s: number of unread visitor messages
+#: includes/class-wsa-admin.php:106
+#: includes/class-wsa-admin.php:1027
+#, php-format
+msgid "%s unread"
+msgstr ""
+
+#: includes/class-wsa-admin.php:107
+msgid "Session expired. Reload the page."
+msgstr ""
+
+#: includes/class-wsa-admin.php:108
+#: includes/class-wsa-rest.php:355
+msgid "That conversation no longer exists."
+msgstr ""
+
+#: includes/class-wsa-admin.php:109
+msgid "Claim"
+msgstr ""
+
+#: includes/class-wsa-admin.php:110
+#: includes/class-wsa-widget.php:76
+msgid "Close chat"
+msgstr ""
+
+#: includes/class-wsa-admin.php:111
+#: includes/class-wsa-widget.php:78
+msgid "Send"
+msgstr ""
+
+#: includes/class-wsa-admin.php:112
+msgid "Write a reply"
+msgstr ""
+
+#: includes/class-wsa-admin.php:113
+msgid "Claim the chat to reply"
+msgstr ""
+
+#. translators: %s: the name of the manager who has the chat now
+#: includes/class-wsa-admin.php:115
+#, php-format
+msgid "Replying takes over from %s"
+msgstr ""
+
+#: includes/class-wsa-admin.php:116
+msgid "Visitor"
+msgstr ""
+
+#: includes/class-wsa-admin.php:117
+msgid "Assistant"
+msgstr ""
+
+#: includes/class-wsa-admin.php:118
+msgid "Loading…"
+msgstr ""
+
+#: includes/class-wsa-admin.php:129
+msgid "Waiting"
+msgstr ""
+
+#: includes/class-wsa-admin.php:130
+msgid "Live"
+msgstr ""
+
+#: includes/class-wsa-admin.php:131
+msgid "Missed"
+msgstr ""
+
+#: includes/class-wsa-admin.php:132
+msgid "Closed"
+msgstr ""
+
+#: includes/class-wsa-admin.php:133
+msgid "AI"
+msgstr ""
+
+#: includes/class-wsa-admin.php:192
 msgid "You are not allowed to do that."
 msgstr ""
 
-#: includes/class-wsa-admin.php:194
+#: includes/class-wsa-admin.php:318
 msgid "Live on the storefront"
 msgstr ""
 
-#: includes/class-wsa-admin.php:194
+#: includes/class-wsa-admin.php:318
 msgid "Not live"
 msgstr ""
 
-#: includes/class-wsa-admin.php:201
+#: includes/class-wsa-admin.php:325
 msgid "Overview"
 msgstr ""
 
-#: includes/class-wsa-admin.php:202
+#: includes/class-wsa-admin.php:326
 msgid "Appearance"
 msgstr ""
 
-#: includes/class-wsa-admin.php:203
+#: includes/class-wsa-admin.php:327
 msgid "Agent"
 msgstr ""
 
-#: includes/class-wsa-admin.php:203
+#: includes/class-wsa-admin.php:327
 msgid "Setup"
 msgstr ""
 
-#: includes/class-wsa-admin.php:204
+#: includes/class-wsa-admin.php:328
 msgid "Catalogue"
 msgstr ""
 
-#: includes/class-wsa-admin.php:205
-#: includes/class-wsa-admin.php:310
-#: includes/class-wsa-admin.php:710
+#: includes/class-wsa-admin.php:329
+#: includes/class-wsa-admin.php:441
+#: includes/class-wsa-admin.php:1207
 msgid "Conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:223
+#: includes/class-wsa-admin.php:330
+#: includes/class-wsa-admin.php:988
+msgid "Live chats"
+msgstr ""
+
+#: includes/class-wsa-admin.php:331
+#: includes/class-wsa-admin.php:797
+#: includes/class-wsa-admin.php:1050
+msgid "Leads"
+msgstr ""
+
+#: includes/class-wsa-admin.php:350
 msgid "Settings saved."
 msgstr ""
 
-#: includes/class-wsa-admin.php:228
+#: includes/class-wsa-admin.php:353
+msgid "Lead deleted, along with its conversation."
+msgstr ""
+
+#: includes/class-wsa-admin.php:358
 msgid "The agent is off because no API key is connected. Customers see nothing until you add one."
 msgstr ""
 
-#: includes/class-wsa-admin.php:229
+#: includes/class-wsa-admin.php:359
 msgid "The agent is switched off. Customers see nothing until you turn it on."
 msgstr ""
 
-#: includes/class-wsa-admin.php:230
+#: includes/class-wsa-admin.php:360
 msgid "Connect now"
 msgstr ""
 
 #. translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time
-#: includes/class-wsa-admin.php:237
+#: includes/class-wsa-admin.php:367
 #, php-format
 msgid "The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:273
+#: includes/class-wsa-admin.php:403
 msgid "Save settings"
 msgstr ""
 
-#: includes/class-wsa-admin.php:310
-#: includes/class-wsa-admin.php:311
+#: includes/class-wsa-admin.php:441
+#: includes/class-wsa-admin.php:442
 msgid "last 30 days"
 msgstr ""
 
-#: includes/class-wsa-admin.php:311
+#: includes/class-wsa-admin.php:442
 msgid "Replies sent"
 msgstr ""
 
-#: includes/class-wsa-admin.php:312
+#: includes/class-wsa-admin.php:445
 msgid "Products shown"
 msgstr ""
 
-#: includes/class-wsa-admin.php:312
+#: includes/class-wsa-admin.php:445
 msgid "recommendations made"
 msgstr ""
 
-#: includes/class-wsa-admin.php:313
-#: includes/class-wsa-admin.php:746
+#: includes/class-wsa-admin.php:446
+#: includes/class-wsa-admin.php:1243
 msgid "Added to cart"
 msgstr ""
 
-#: includes/class-wsa-admin.php:313
+#: includes/class-wsa-admin.php:446
 msgid "chats that led to a cart"
 msgstr ""
 
-#: includes/class-wsa-admin.php:328
+#: includes/class-wsa-admin.php:448
+msgid "Leads, 30 days"
+msgstr ""
+
+#: includes/class-wsa-admin.php:448
+msgid "visitors who left their details"
+msgstr ""
+
+#: includes/class-wsa-admin.php:462
 msgid "Questions the agent could not answer"
 msgstr ""
 
-#: includes/class-wsa-admin.php:329
+#: includes/class-wsa-admin.php:463
 msgid "The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use."
 msgstr ""
 
-#: includes/class-wsa-admin.php:333
+#: includes/class-wsa-admin.php:467
 msgid "Nothing yet. Unanswered questions show up here as customers ask them."
 msgstr ""
 
-#: includes/class-wsa-admin.php:352
+#: includes/class-wsa-admin.php:486
 msgid "Monthly usage"
 msgstr ""
 
 #. translators: %s: the monthly cap on API calls
-#: includes/class-wsa-admin.php:358
+#: includes/class-wsa-admin.php:492
 #, php-format
 msgid "of %s API calls"
 msgstr ""
 
 #. translators: 1: calls used today, 2: daily cap, 3: projected month total
-#: includes/class-wsa-admin.php:370
+#: includes/class-wsa-admin.php:504
 #, php-format
 msgid "%1$s today of %2$s. At this pace the month ends near %3$s calls."
 msgstr ""
 
-#: includes/class-wsa-admin.php:380
+#: includes/class-wsa-admin.php:515
 msgid "Top products shown"
 msgstr ""
 
-#: includes/class-wsa-admin.php:382
+#: includes/class-wsa-admin.php:517
 msgid "No recommendations yet."
 msgstr ""
 
 #. translators: %s: human readable time difference
-#: includes/class-wsa-admin.php:418
+#: includes/class-wsa-admin.php:554
 #, php-format
 msgid "%s ago"
 msgstr ""
 
-#: includes/class-wsa-admin.php:432
+#: includes/class-wsa-admin.php:568
 msgid "Launcher"
 msgstr ""
 
-#: includes/class-wsa-admin.php:433
+#: includes/class-wsa-admin.php:569
 msgid "How the closed widget appears on the storefront."
 msgstr ""
 
-#: includes/class-wsa-admin.php:438
+#: includes/class-wsa-admin.php:574
 msgid "Corner"
 msgstr ""
 
-#: includes/class-wsa-admin.php:441
+#: includes/class-wsa-admin.php:577
 msgid "Bottom right"
 msgstr ""
 
-#: includes/class-wsa-admin.php:442
+#: includes/class-wsa-admin.php:578
 msgid "Bottom left"
 msgstr ""
 
-#: includes/class-wsa-admin.php:447
+#: includes/class-wsa-admin.php:583
 msgid "side of the screen"
 msgstr ""
 
-#: includes/class-wsa-admin.php:453
+#: includes/class-wsa-admin.php:589
 msgid "Show a label next to the icon"
 msgstr ""
 
-#: includes/class-wsa-admin.php:453
+#: includes/class-wsa-admin.php:589
 msgid "A labelled pill gets noticed more than a bare bubble. It collapses to a circle on phones either way."
 msgstr ""
 
-#: includes/class-wsa-admin.php:456
+#: includes/class-wsa-admin.php:592
 msgid "Label"
 msgstr ""
 
-#: includes/class-wsa-admin.php:461
+#: includes/class-wsa-admin.php:597
 msgid "Accent colour"
 msgstr ""
 
-#: includes/class-wsa-admin.php:463
+#: includes/class-wsa-admin.php:599
 msgid "Used for the launcher, the customer's own messages and the add-to-cart button."
 msgstr ""
 
-#: includes/class-wsa-admin.php:470
+#: includes/class-wsa-admin.php:606
 msgid "Copy"
 msgstr ""
 
-#: includes/class-wsa-admin.php:471
+#: includes/class-wsa-admin.php:607
 msgid "Write these in your store's language. The agent replies in it automatically."
 msgstr ""
 
-#: includes/class-wsa-admin.php:475
+#: includes/class-wsa-admin.php:611
 msgid "Header title"
 msgstr ""
 
-#: includes/class-wsa-admin.php:476
+#: includes/class-wsa-admin.php:612
 msgid "Header subtitle"
 msgstr ""
 
-#: includes/class-wsa-admin.php:479
+#: includes/class-wsa-admin.php:615
 msgid "Opening message"
 msgstr ""
 
-#: includes/class-wsa-admin.php:483
+#: includes/class-wsa-admin.php:619
 msgid "Opening chips"
 msgstr ""
 
-#: includes/class-wsa-admin.php:485
+#: includes/class-wsa-admin.php:621
 msgid "One per line, up to four. Shown as buttons under the opening message."
 msgstr ""
 
-#: includes/class-wsa-admin.php:490
+#: includes/class-wsa-admin.php:624
+msgid "Show \"Developed by Ibracodes\" under the chat"
+msgstr ""
+
+#: includes/class-wsa-admin.php:624
+msgid "A small credit line linking to ibracodes.com. Off by default."
+msgstr ""
+
+#: includes/class-wsa-admin.php:629
 msgid "Changes go live on the storefront as soon as you save."
 msgstr ""
 
-#: includes/class-wsa-admin.php:514
+#: includes/class-wsa-admin.php:653
 msgid "Connection"
 msgstr ""
 
-#: includes/class-wsa-admin.php:515
+#: includes/class-wsa-admin.php:654
 msgid "The store uses its own OpenAI account and pays OpenAI directly for what the chat uses."
 msgstr ""
 
-#: includes/class-wsa-admin.php:519
+#: includes/class-wsa-admin.php:658
 msgid "Show the chat to customers"
 msgstr ""
 
-#: includes/class-wsa-admin.php:519
+#: includes/class-wsa-admin.php:658
 msgid "It only appears once a working key is saved."
 msgstr ""
 
-#: includes/class-wsa-admin.php:522
+#: includes/class-wsa-admin.php:661
 msgid "OpenAI API key"
 msgstr ""
 
-#: includes/class-wsa-admin.php:524
+#: includes/class-wsa-admin.php:663
 msgid "Set in wp-config.php"
 msgstr ""
 
-#: includes/class-wsa-admin.php:525
+#: includes/class-wsa-admin.php:664
 msgid "WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden."
 msgstr ""
 
-#: includes/class-wsa-admin.php:529
+#: includes/class-wsa-admin.php:668
 msgid "Stored in this site's database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead."
 msgstr ""
 
-#: includes/class-wsa-admin.php:538
+#: includes/class-wsa-admin.php:671
+msgid "Test connection"
+msgstr ""
+
+#: includes/class-wsa-admin.php:677
 msgid "Model"
 msgstr ""
 
-#: includes/class-wsa-admin.php:548
+#: includes/class-wsa-admin.php:687
 msgid "Shop questions rarely need the expensive model. Start cheap and move up only if answers disappoint."
 msgstr ""
 
-#: includes/class-wsa-admin.php:555
-#: includes/class-wsa-admin.php:560
+#: includes/class-wsa-admin.php:694
+#: includes/class-wsa-admin.php:699
 msgid "House rules"
 msgstr ""
 
-#: includes/class-wsa-admin.php:556
+#: includes/class-wsa-admin.php:695
 msgid "Plain sentences work better than a wall of instructions. Sent with every conversation."
 msgstr ""
 
-#: includes/class-wsa-admin.php:563
+#: includes/class-wsa-admin.php:702
 msgid "Store facts"
 msgstr ""
 
-#: includes/class-wsa-admin.php:564
+#: includes/class-wsa-admin.php:703
 msgid "Free shipping over 50. Returns within 14 days. One year warranty."
 msgstr ""
 
-#: includes/class-wsa-admin.php:565
+#: includes/class-wsa-admin.php:704
 msgid "The only non-product information the agent may state as fact. Anything not written here, it will say it does not know."
 msgstr ""
 
-#: includes/class-wsa-admin.php:571
-msgid "Behaviour"
+#: includes/class-wsa-admin.php:711
+msgid "Content"
 msgstr ""
 
-#: includes/class-wsa-admin.php:574
-msgid "Products per reply"
+#: includes/class-wsa-admin.php:712
+msgid "The pages and posts the assistant may read and answer from. Drafts, private and password-protected content are never included."
 msgstr ""
 
-#: includes/class-wsa-admin.php:576
-msgid "Three or fewer keeps a reply readable on a phone."
+#: includes/class-wsa-admin.php:717
+msgid "Content types"
 msgstr ""
 
-#: includes/class-wsa-admin.php:579
-msgid "Ask one question before recommending"
+#: includes/class-wsa-admin.php:733
+msgid "Which pages"
 msgstr ""
 
-#: includes/class-wsa-admin.php:579
-msgid "On a vague request the agent asks a single clarifying question first. Better matches, one extra exchange."
+#: includes/class-wsa-admin.php:736
+msgid "All published pages and posts"
 msgstr ""
 
-#: includes/class-wsa-admin.php:582
-msgid "Prices in the reply text"
-msgstr ""
-
-#: includes/class-wsa-admin.php:586
-msgid "Card only"
-msgstr ""
-
-#: includes/class-wsa-admin.php:587
-msgid "recommended"
-msgstr ""
-
-#: includes/class-wsa-admin.php:591
-msgid "Allow in text"
-msgstr ""
-
-#: includes/class-wsa-admin.php:592
-msgid "may go stale"
-msgstr ""
-
-#: includes/class-wsa-admin.php:595
-msgid "The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed."
-msgstr ""
-
-#: includes/class-wsa-admin.php:602
-msgid "Handoff to a person"
-msgstr ""
-
-#: includes/class-wsa-admin.php:603
-msgid "Offered as a button when the agent cannot help."
-msgstr ""
-
-#: includes/class-wsa-admin.php:607
-msgid "Chip label"
-msgstr ""
-
-#: includes/class-wsa-admin.php:608
-msgid "Destination"
-msgstr ""
-
-#: includes/class-wsa-admin.php:608
-msgid "Your contact page, or a wa.me link for WhatsApp."
-msgstr ""
-
-#: includes/class-wsa-admin.php:615
-msgid "Spending limits"
-msgstr ""
-
-#: includes/class-wsa-admin.php:616
-msgid "Every conversation costs you money at OpenAI. These caps are what stands between a bored bot and a large invoice. One reply can use two or three calls."
-msgstr ""
-
-#: includes/class-wsa-admin.php:622
-msgid "Messages per visitor, per 10 minutes"
-msgstr ""
-
-#: includes/class-wsa-admin.php:623
-msgid "Messages per visitor, per day"
-msgstr ""
-
-#: includes/class-wsa-admin.php:623
-msgid "Stops one person using up the store's budget."
-msgstr ""
-
-#: includes/class-wsa-admin.php:624
-msgid "API calls for the whole store, per day"
-msgstr ""
-
-#: includes/class-wsa-admin.php:624
-msgid "The hard daily cost bound."
-msgstr ""
-
-#: includes/class-wsa-admin.php:625
-msgid "API calls for the whole store, per month"
-msgstr ""
-
-#: includes/class-wsa-admin.php:626
-msgid "Requests at the same time"
-msgstr ""
-
-#: includes/class-wsa-admin.php:626
-msgid "Protects your server rather than your wallet."
-msgstr ""
-
-#: includes/class-wsa-admin.php:654
-msgid "Which products the agent may recommend"
-msgstr ""
-
-#: includes/class-wsa-admin.php:655
-msgid "Exclude anything you do not want a bot selling unattended. Excluded categories are invisible to the agent: it cannot find them, mention them or link to them."
-msgstr ""
-
-#: includes/class-wsa-admin.php:659
-msgid "Only recommend products in stock"
-msgstr ""
-
-#: includes/class-wsa-admin.php:659
-msgid "Off means the agent may show out-of-stock products, marked as such on the card."
-msgstr ""
-
-#: includes/class-wsa-admin.php:662
-msgid "Excluded categories"
-msgstr ""
-
-#: includes/class-wsa-admin.php:664
-msgid "This store has no product categories yet."
-msgstr ""
-
-#: includes/class-wsa-admin.php:675
-msgid "Child categories are excluded along with their parent."
-msgstr ""
-
-#: includes/class-wsa-admin.php:681
-msgid "How the agent searches"
-msgstr ""
-
-#: includes/class-wsa-admin.php:683
-msgid "It searches your live catalogue on every question: product titles, descriptions and SKUs. There is no index to build and nothing to keep in sync, so a product you publish is findable immediately, and one you unpublish disappears the same second."
-msgstr ""
-
-#. translators: %s: number of days threads are kept
-#: includes/class-wsa-admin.php:715
-#, php-format
-msgid "Threads are kept %s days, then deleted. No email, name or payment detail is stored: only the messages and the product ids the agent showed."
-msgstr ""
-
-#: includes/class-wsa-admin.php:724
-msgid "No conversations yet."
-msgstr ""
-
-#: includes/class-wsa-admin.php:728
-msgid "First question"
-msgstr ""
-
-#: includes/class-wsa-admin.php:729
-msgid "When"
-msgstr ""
-
-#: includes/class-wsa-admin.php:730
-msgid "Turns"
-msgstr ""
-
-#: includes/class-wsa-admin.php:731
-msgid "Shown"
-msgstr ""
-
-#: includes/class-wsa-admin.php:732
-msgid "Outcome"
-msgstr ""
-
-#: includes/class-wsa-admin.php:738
-msgid "(no question recorded)"
-msgstr ""
-
-#: includes/class-wsa-admin.php:748
-msgid "No match"
+#: includes/class-wsa-admin.php:737
+msgid "Only the pages listed below"
 msgstr ""
 
 #: includes/class-wsa-admin.php:750
-msgid "Recommended"
+msgid "Pages"
 msgstr ""
 
 #: includes/class-wsa-admin.php:752
-msgid "Answered"
+msgid "Page ids, comma separated. The id is in the address bar when you edit a page."
 msgstr ""
 
-#: includes/class-wsa-admin.php:762
+#: includes/class-wsa-admin.php:757
+msgid "How the assistant finds content"
+msgstr ""
+
+#: includes/class-wsa-admin.php:760
+msgid "WordPress search (free)"
+msgstr ""
+
+#: includes/class-wsa-admin.php:761
+msgid "Embeddings index (better answers)"
+msgstr ""
+
+#: includes/class-wsa-admin.php:769
+msgid "Building the index costs about one cent per hundred pages once, then a fraction of that per question. It uses your OpenAI key and counts against your daily and monthly limits."
+msgstr ""
+
+#. translators: 1: pages indexed, 2: pages in scope, 3: pages waiting in the queue
+#: includes/class-wsa-admin.php:780
+#, php-format
+msgid "Indexed %1$s of %2$s pages, %3$s waiting."
+msgstr ""
+
+#: includes/class-wsa-admin.php:788
+msgid "Rebuild index"
+msgstr ""
+
+#: includes/class-wsa-admin.php:799
+msgid "Offer to take the visitor's details"
+msgstr ""
+
+#: includes/class-wsa-admin.php:799
+msgid "The assistant asks for a name and a phone or email, saves the lead and emails you."
+msgstr ""
+
+#: includes/class-wsa-admin.php:801
+msgid "When to offer"
+msgstr ""
+
+#: includes/class-wsa-admin.php:803
+msgid "One line, for example: when someone wants a quote or a callback."
+msgstr ""
+
+#: includes/class-wsa-admin.php:805
+msgid "Send leads to"
+msgstr ""
+
+#: includes/class-wsa-admin.php:807
+msgid "Keep leads for (days)"
+msgstr ""
+
+#: includes/class-wsa-admin.php:809
+msgid "Older leads are deleted once a day, along with the conversation they came from."
+msgstr ""
+
+#: includes/class-wsa-admin.php:812
+msgid "Note under the chat input"
+msgstr ""
+
+#: includes/class-wsa-admin.php:814
+msgid "Say that details typed here are passed to the site owner and kept with the conversation."
+msgstr ""
+
+#: includes/class-wsa-admin.php:820
+msgid "Behaviour"
+msgstr ""
+
+#: includes/class-wsa-admin.php:823
+msgid "Products per reply"
+msgstr ""
+
+#: includes/class-wsa-admin.php:825
+msgid "Three or fewer keeps a reply readable on a phone."
+msgstr ""
+
+#: includes/class-wsa-admin.php:828
+msgid "Ask one question before recommending"
+msgstr ""
+
+#: includes/class-wsa-admin.php:828
+msgid "On a vague request the agent asks a single clarifying question first. Better matches, one extra exchange."
+msgstr ""
+
+#: includes/class-wsa-admin.php:831
+msgid "Prices in the reply text"
+msgstr ""
+
+#: includes/class-wsa-admin.php:835
+msgid "Card only"
+msgstr ""
+
+#: includes/class-wsa-admin.php:836
+msgid "recommended"
+msgstr ""
+
+#: includes/class-wsa-admin.php:840
+msgid "Allow in text"
+msgstr ""
+
+#: includes/class-wsa-admin.php:841
+msgid "may go stale"
+msgstr ""
+
+#: includes/class-wsa-admin.php:844
+msgid "The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed."
+msgstr ""
+
+#: includes/class-wsa-admin.php:851
+msgid "Handoff to a person"
+msgstr ""
+
+#: includes/class-wsa-admin.php:852
+msgid "Offered as a button when the agent cannot help."
+msgstr ""
+
+#: includes/class-wsa-admin.php:856
+msgid "Chip label"
+msgstr ""
+
+#: includes/class-wsa-admin.php:857
+msgid "Destination"
+msgstr ""
+
+#: includes/class-wsa-admin.php:857
+msgid "Your contact page, or a wa.me link for WhatsApp."
+msgstr ""
+
+#: includes/class-wsa-admin.php:864
+msgid "Live chat"
+msgstr ""
+
+#: includes/class-wsa-admin.php:865
+msgid "A visitor who asks for a person waits for you in the Live chats tab. The AI pauses until you answer or the wait runs out."
+msgstr ""
+
+#: includes/class-wsa-admin.php:868
+msgid "Let visitors ask for a person"
+msgstr ""
+
+#: includes/class-wsa-admin.php:868
+msgid "Turning it on also turns conversation logging on: a live chat lives on the conversation record."
+msgstr ""
+
+#: includes/class-wsa-admin.php:872
+msgid "Send requests to"
+msgstr ""
+
+#: includes/class-wsa-admin.php:872
+msgid "One email per request, with a link to the conversation."
+msgstr ""
+
+#: includes/class-wsa-admin.php:876
+msgid "Wait for a person (minutes)"
+msgstr ""
+
+#: includes/class-wsa-admin.php:878
+msgid "If nobody joins in time, the visitor is offered lead capture and the contact option. The request stays in the list, so you can still answer later."
+msgstr ""
+
+#: includes/class-wsa-admin.php:881
+msgid "Waiting text"
+msgstr ""
+
+#: includes/class-wsa-admin.php:882
+msgid "Joined text"
+msgstr ""
+
+#: includes/class-wsa-admin.php:883
+msgid "Missed text"
+msgstr ""
+
+#: includes/class-wsa-admin.php:886
+msgid "Closed text"
+msgstr ""
+
+#. translators: %s is literal here: the placeholder the owner writes into the joined and closed texts
+#: includes/class-wsa-admin.php:889
+#, php-format
+msgid "In the joined and closed texts, %s becomes the name of the person who joined."
+msgstr ""
+
+#: includes/class-wsa-admin.php:897
+msgid "Spending limits"
+msgstr ""
+
+#: includes/class-wsa-admin.php:898
+msgid "Every conversation costs you money at OpenAI. These caps are what stands between a bored bot and a large invoice. One reply can use two or three calls."
+msgstr ""
+
+#: includes/class-wsa-admin.php:904
+msgid "Messages per visitor, per 10 minutes"
+msgstr ""
+
+#: includes/class-wsa-admin.php:905
+msgid "Messages per visitor, per day"
+msgstr ""
+
+#: includes/class-wsa-admin.php:905
+msgid "Stops one person using up the store's budget."
+msgstr ""
+
+#: includes/class-wsa-admin.php:906
+msgid "API calls for the whole store, per day"
+msgstr ""
+
+#: includes/class-wsa-admin.php:906
+msgid "The hard daily cost bound."
+msgstr ""
+
+#: includes/class-wsa-admin.php:907
+msgid "API calls for the whole store, per month"
+msgstr ""
+
+#: includes/class-wsa-admin.php:908
+msgid "Requests at the same time"
+msgstr ""
+
+#: includes/class-wsa-admin.php:908
+msgid "Protects your server rather than your wallet."
+msgstr ""
+
+#: includes/class-wsa-admin.php:936
+msgid "Which products the agent may recommend"
+msgstr ""
+
+#: includes/class-wsa-admin.php:937
+msgid "Exclude anything you do not want a bot selling unattended. Excluded categories are invisible to the agent: it cannot find them, mention them or link to them."
+msgstr ""
+
+#: includes/class-wsa-admin.php:941
+msgid "Only recommend products in stock"
+msgstr ""
+
+#: includes/class-wsa-admin.php:941
+msgid "Off means the agent may show out-of-stock products, marked as such on the card."
+msgstr ""
+
+#: includes/class-wsa-admin.php:944
+msgid "Excluded categories"
+msgstr ""
+
+#: includes/class-wsa-admin.php:946
+msgid "This store has no product categories yet."
+msgstr ""
+
+#: includes/class-wsa-admin.php:957
+msgid "Child categories are excluded along with their parent."
+msgstr ""
+
+#: includes/class-wsa-admin.php:963
+msgid "How the agent searches"
+msgstr ""
+
+#: includes/class-wsa-admin.php:965
+msgid "It searches your live catalogue on every question: product titles, descriptions and SKUs. There is no index to build and nothing to keep in sync, so a product you publish is findable immediately, and one you unpublish disappears the same second."
+msgstr ""
+
+#: includes/class-wsa-admin.php:989
+msgid "Live chat is off. With it on, a visitor who asks for a person waits here for you to answer, and the AI pauses until you do."
+msgstr ""
+
+#: includes/class-wsa-admin.php:992
+msgid "Turn it on in the Agent tab"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1011
+msgid "Pick a conversation from the list."
+msgstr ""
+
+#. translators: %s: number of days leads are kept
+#: includes/class-wsa-admin.php:1055
+#, php-format
+msgid "Leads are kept %s days, then deleted along with the conversation they came from."
+msgstr ""
+
+#: includes/class-wsa-admin.php:1065
+msgid "Search leads"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1066
+msgid "Search"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1069
+msgid "Export CSV"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1076
+msgid "No leads yet. Turn on lead capture on the Agent tab."
+msgstr ""
+
+#: includes/class-wsa-admin.php:1076
+msgid "No leads match that search."
+msgstr ""
+
+#: includes/class-wsa-admin.php:1081
+#: includes/class-wsa-admin.php:1226
+msgid "When"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1082
+msgid "Name"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1083
+msgid "Contact"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1084
+msgid "Request"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1085
+msgid "Page"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1086
+msgid "Email"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1111
+msgid "Sent"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1113
+msgid "Failed"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1118
+msgid "Delete this lead and the conversation it came from?"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1118
+msgid "Delete"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1128
+#: includes/class-wsa-admin.php:1259
 msgid "Previous"
 msgstr ""
 
 #. translators: 1: current page, 2: total pages
-#: includes/class-wsa-admin.php:768
+#: includes/class-wsa-admin.php:1134
+#: includes/class-wsa-admin.php:1265
 #, php-format
 msgid "Page %1$s of %2$s"
 msgstr ""
 
-#: includes/class-wsa-admin.php:775
+#: includes/class-wsa-admin.php:1141
+#: includes/class-wsa-admin.php:1272
 msgid "Next"
 msgstr ""
 
-#: includes/class-wsa-admin.php:784
+#. translators: %s: number of days threads are kept
+#: includes/class-wsa-admin.php:1212
+#, php-format
+msgid "Threads are kept %s days, then deleted. No email, name or payment detail is stored: only the messages and the product ids the agent showed."
+msgstr ""
+
+#: includes/class-wsa-admin.php:1221
+msgid "No conversations yet."
+msgstr ""
+
+#: includes/class-wsa-admin.php:1225
+msgid "First question"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1227
+msgid "Turns"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1228
+msgid "Shown"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1229
+msgid "Outcome"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1245
+msgid "No match"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1247
+msgid "Recommended"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1249
+msgid "Answered"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1281
 msgid "Recording"
 msgstr ""
 
-#: includes/class-wsa-admin.php:785
+#: includes/class-wsa-admin.php:1282
 msgid "Keep a record of conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:785
+#: includes/class-wsa-admin.php:1282
 msgid "Off means nothing is written at all. You lose the reports on the overview."
 msgstr ""
 
-#: includes/class-wsa-admin.php:787
+#: includes/class-wsa-admin.php:1284
 msgid "Keep for (days)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:789
+#: includes/class-wsa-admin.php:1286
 msgid "Older threads are deleted automatically once a day."
 msgstr ""
 
-#: includes/class-wsa-admin.php:793
+#: includes/class-wsa-admin.php:1290
 msgid "Delete every stored conversation when I save"
 msgstr ""
 
-#: includes/class-wsa-admin.php:806
+#: includes/class-wsa-admin.php:1304
 msgid "All conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:808
+#: includes/class-wsa-admin.php:1306
 msgid "That conversation is gone. It may have passed the retention window."
 msgstr ""
 
-#: includes/class-wsa-admin.php:813
+#: includes/class-wsa-admin.php:1311
 msgid "Conversation"
 msgstr ""
 
 #. translators: 1: relative time, 2: number of turns
-#: includes/class-wsa-admin.php:818
+#: includes/class-wsa-admin.php:1316
 #, php-format
 msgid "%1$s · %2$s turns"
 msgstr ""
 
-#: includes/class-wsa-admin.php:853
+#: includes/class-wsa-admin.php:1329
+msgid "Manager"
+msgstr ""
+
+#: includes/class-wsa-admin.php:1356
 msgid "(deleted product)"
 msgstr ""
 
-#: includes/class-wsa-agent.php:30
+#: includes/class-wsa-agent.php:33
 msgid "No message received."
 msgstr ""
 
-#: includes/class-wsa-agent.php:86
+#: includes/class-wsa-agent.php:102
+msgid "A person will join this chat shortly."
+msgstr ""
+
+#: includes/class-wsa-agent.php:105
 msgid "Here is what I found that might suit you:"
 msgstr ""
 
-#: includes/class-wsa-agent.php:87
+#: includes/class-wsa-agent.php:106
 msgid "I could not answer that one. Try rephrasing, or get in touch and a person will help."
 msgstr ""
 
-#: includes/class-wsa-guards.php:38
+#: includes/class-wsa-guards.php:44
 msgid "That is a lot of messages at once. Try again in a few minutes."
 msgstr ""
 
-#: includes/class-wsa-guards.php:41
+#: includes/class-wsa-guards.php:47
 msgid "You have reached today's chat limit. Try again tomorrow, or use the contact page."
 msgstr ""
 
-#: includes/class-wsa-guards.php:44
-#: includes/class-wsa-guards.php:77
+#: includes/class-wsa-guards.php:50
+#: includes/class-wsa-guards.php:83
 msgid "The chat is busy right now. Please try again later."
 msgstr ""
 
-#: includes/class-wsa-guards.php:47
-#: includes/class-wsa-guards.php:80
+#: includes/class-wsa-guards.php:53
+#: includes/class-wsa-guards.php:86
 msgid "The chat is unavailable right now. Please use the contact page."
 msgstr ""
 
-#: includes/class-wsa-guards.php:50
+#: includes/class-wsa-guards.php:56
 msgid "The chat is busy right now. Try again in a moment."
 msgstr ""
 
-#: includes/class-wsa-prompt.php:89
+#: includes/class-wsa-index.php:223
+msgid "The embeddings service returned the wrong number of vectors."
+msgstr ""
+
+#: includes/class-wsa-leads.php:85
+#, php-format
+msgid "Updated lead from the AI Assistant: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:86
+#, php-format
+msgid "New lead from the AI Assistant: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:90
+#, php-format
+msgid "Name: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:91
+#, php-format
+msgid "Contact: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:92
+#, php-format
+msgid "Request: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:93
+#: includes/class-wsa-live.php:403
+#, php-format
+msgid "Page: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:95
+#, php-format
+msgid "Conversation: %s"
+msgstr ""
+
+#: includes/class-wsa-leads.php:96
+#, php-format
+msgid "All leads: %s"
+msgstr ""
+
+#: includes/class-wsa-live.php:400
+#, php-format
+msgid "Answer here: %s"
+msgstr ""
+
+#: includes/class-wsa-live.php:402
+#, php-format
+msgid "Question: %s"
+msgstr ""
+
+#: includes/class-wsa-live.php:408
+msgid "A visitor is waiting for a person"
+msgstr ""
+
+#: includes/class-wsa-prompt.php:128
 msgid "the contact option"
 msgstr ""
 
-#: includes/class-wsa-provider.php:32
+#: includes/class-wsa-provider.php:46
+#: includes/class-wsa-provider.php:121
 msgid "The chat is not configured."
 msgstr ""
 
-#: includes/class-wsa-provider.php:118
+#: includes/class-wsa-provider.php:202
 msgid "OpenAI rejected that key."
 msgstr ""
 
-#: includes/class-wsa-provider.php:119
+#: includes/class-wsa-provider.php:203
 msgid "The key works, but the account is out of quota or rate limited."
 msgstr ""
 
-#: includes/class-wsa-provider.php:120
+#: includes/class-wsa-provider.php:204
 msgid "The key works, but this account cannot use the selected model."
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/class-wsa-provider.php:123
+#: includes/class-wsa-provider.php:207
 #, php-format
 msgid "OpenAI returned an error (HTTP %d)."
 msgstr ""
 
-#: includes/class-wsa-provider.php:157
+#: includes/class-wsa-provider.php:241
 msgid "The chat is unavailable right now. Please try again."
 msgstr ""
 
-#: includes/class-wsa-rest.php:65
+#: includes/class-wsa-rest.php:131
 msgid "The chat is not available right now."
 msgstr ""
 
-#: includes/class-wsa-rest.php:119
+#: includes/class-wsa-rest.php:149
+msgid "A person has this conversation right now."
+msgstr ""
+
+#: includes/class-wsa-rest.php:218
+msgid "Switch retrieval to the embeddings index first."
+msgstr ""
+
+#: includes/class-wsa-rest.php:221
+msgid "Add an OpenAI key first."
+msgstr ""
+
+#. translators: %s: number of pages waiting to be indexed
+#: includes/class-wsa-rest.php:234
+#, php-format
+msgid "Rebuilding, %s pages queued."
+msgstr ""
+
+#: includes/class-wsa-rest.php:261
+msgid "No person is on this chat right now."
+msgstr ""
+
+#: includes/class-wsa-rest.php:310
+msgid "Claim the chat before replying."
+msgstr ""
+
+#: includes/class-wsa-rest.php:338
+msgid "This conversation could not be verified."
+msgstr ""
+
+#: includes/class-wsa-rest.php:341
+msgid "Too many requests. Slow down a little."
+msgstr ""
+
+#: includes/class-wsa-rest.php:363
+msgid "Live chat is not available right now."
+msgstr ""
+
+#: includes/class-wsa-rest.php:368
+msgid "Write something first."
+msgstr ""
+
+#: includes/class-wsa-rest.php:381
 msgid "Add a key first."
 msgstr ""
 
-#: includes/class-wsa-rest.php:127
+#: includes/class-wsa-rest.php:389
 msgid "Connected. The key works and the model is available."
 msgstr ""
 
@@ -665,79 +1160,82 @@ msgstr ""
 msgid "Hi, can I help you find a product or answer a question?"
 msgstr ""
 
-#: includes/class-wsa-settings.php:138
+#: includes/class-wsa-settings.php:79
+msgid "A person will join this chat shortly. You can keep writing in the meantime."
+msgstr ""
+
+#: includes/class-wsa-settings.php:80
+#, php-format
+msgid "%s joined the chat."
+msgstr ""
+
+#: includes/class-wsa-settings.php:81
+msgid "Nobody is available right now. Leave your details and we will get back to you, or use the contact option below."
+msgstr ""
+
+#: includes/class-wsa-settings.php:82
+#, php-format
+msgid "The chat with %s has ended. I can keep helping here."
+msgstr ""
+
+#: includes/class-wsa-settings.php:193
 msgid "gpt-5-mini (recommended, cheapest)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:139
+#: includes/class-wsa-settings.php:194
 msgid "gpt-5 (best answers, costs more)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:140
+#: includes/class-wsa-settings.php:195
 msgid "gpt-4.1-mini"
 msgstr ""
 
-#: includes/class-wsa-widget.php:62
+#: includes/class-wsa-widget.php:64
 msgid "Contact us"
 msgstr ""
 
-#: includes/class-wsa-widget.php:65
-msgid "Open chat"
-msgstr ""
-
-#: includes/class-wsa-widget.php:66
-msgid "Close chat"
-msgstr ""
-
-#: includes/class-wsa-widget.php:67
-msgid "Type your question"
-msgstr ""
-
-#: includes/class-wsa-widget.php:68
-msgid "Send"
-msgstr ""
-
-#: includes/class-wsa-widget.php:69
-msgid "Typing"
-msgstr ""
-
-#: includes/class-wsa-widget.php:70
-msgid "Add to cart"
-msgstr ""
-
 #: includes/class-wsa-widget.php:71
-msgid "View product"
-msgstr ""
-
-#: includes/class-wsa-widget.php:72
-msgid "Out of stock"
-msgstr ""
-
-#: includes/class-wsa-widget.php:73
-msgid "Sale"
-msgstr ""
-
-#: includes/class-wsa-widget.php:74
-msgid "Something went wrong. Please try again."
+msgid "Developed by Ibracodes"
 msgstr ""
 
 #: includes/class-wsa-widget.php:75
+msgid "Open chat"
+msgstr ""
+
+#: includes/class-wsa-widget.php:77
+msgid "Type your question"
+msgstr ""
+
+#: includes/class-wsa-widget.php:79
+msgid "Typing"
+msgstr ""
+
+#: includes/class-wsa-widget.php:80
+msgid "Add to cart"
+msgstr ""
+
+#: includes/class-wsa-widget.php:81
+msgid "View product"
+msgstr ""
+
+#: includes/class-wsa-widget.php:82
+msgid "Out of stock"
+msgstr ""
+
+#: includes/class-wsa-widget.php:83
+msgid "Sale"
+msgstr ""
+
+#: includes/class-wsa-widget.php:84
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: includes/class-wsa-widget.php:85
 msgid "Chat conversation"
 msgstr ""
 
-#: woocommerce-shop-agent.php:52
-msgid "Shop Agent requires WooCommerce 8.0 or later to be installed and active. The plugin has been deactivated."
-msgstr ""
-
-#: woocommerce-shop-agent.php:61
-msgid "Shop Agent requires PHP 8.1 or later."
-msgstr ""
-
-#: woocommerce-shop-agent.php:62
-#: woocommerce-shop-agent.php:70
-msgid "Plugin activation error"
-msgstr ""
-
-#: woocommerce-shop-agent.php:69
-msgid "Shop Agent requires WooCommerce 8.0 or later. Install and activate WooCommerce first, then reactivate this plugin."
+#. translators: %s: the name of the person who joined the chat
+#: includes/class-wsa-widget.php:87
+#, php-format
+msgid "Write to %s"
 msgstr ""

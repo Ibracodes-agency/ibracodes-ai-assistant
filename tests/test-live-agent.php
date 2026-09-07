@@ -164,7 +164,8 @@ add_filter('wsa_pre_complete', $broken, 10, 3);
 [$code, $data] = $call(['messages' => [['role' => 'user', 'text' => 'Person, please']]]);
 remove_filter('wsa_pre_complete', $broken, 10);
 wsa_assert_same(200, $code, 'a failed second call still answers');
-wsa_assert_same('A person will join this chat shortly.', $data['reply'] ?? '', 'with the live fallback reply');
+// the site locale may be Hebrew: the reply is compared with its translation
+wsa_assert_same(__('A person will join this chat shortly.', 'ibracodes-ai-assistant'), $data['reply'] ?? '', 'with the live fallback reply');
 wsa_assert_same('waiting', $data['live'] ?? '', 'and the request is made');
 wsa_assert_same(false, $data['handoff'], 'without the contact button');
 $GLOBALS['wsa_test_threads'][] = Threads::id_from_token((string) ($data['thread'] ?? ''));
