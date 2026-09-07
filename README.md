@@ -167,6 +167,27 @@ goes to Ibracodes.
 **Appearance** has an off-by-default switch that shows "Developed by Ibracodes" with a small
 mark under the chat input, linking to ibracodes.com. Nothing is shown unless you turn it on.
 
+## Releasing
+
+Publishing is automated; a tag is the release:
+
+    # 1. bump the version in three places (all must agree)
+    #    ibracodes-ai-assistant.php: Version: and define('WSA_VERSION', ...)
+    #    readme.txt: Stable tag: and a changelog entry
+    # 2. verify locally
+    bin/check-version.sh
+    # 3. release
+    git tag 0.2.0 && git push origin main --tags
+
+The `deploy` workflow rejects the release if those versions disagree, then builds the plugin
+(honouring `.distignore`), commits it to SVN trunk, creates the matching SVN tag, and uploads
+the banners, icon and screenshots from `.wordpress-org/`. Changes to those files or to
+`readme.txt` alone run the `assets` workflow on push to `main`, no release needed.
+
+One-time setup after WordPress.org approves the plugin: add the repository secrets
+`SVN_USERNAME` and `SVN_PASSWORD` (the wordpress.org login) under Settings, Secrets and
+variables, Actions. Details in `docs/wordpress-org-submission.md`.
+
 ## Tests
 
 PHP scripts that run inside a local WordPress through WP-CLI, and a Playwright harness that

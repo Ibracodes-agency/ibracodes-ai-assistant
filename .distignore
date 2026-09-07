@@ -1,12 +1,17 @@
-.git
-.gitignore
-.distignore
-.DS_Store
-node_modules
-tests
-docs
-languages/build-he.php
-README.md
-languages/*.po
-languages/*.pot
-bin
+# Everything here is development-only and must never reach the plugin zip.
+/.git
+/.github
+/.wordpress-org
+/bin
+/docs
+/tests
+/node_modules
+/.gitignore
+/.distignore
+/.DS_Store
+/README.md
+# translation sources stay in the repo; the compiled he_IL .mo ships until
+# translate.wordpress.org carries the plugin
+/languages/build-he.php
+/languages/*.po
+/languages/*.pot

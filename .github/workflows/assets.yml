@@ -1,0 +1,29 @@
+name: Update directory assets and readme
+
+# Banners, icons, screenshots and readme.txt live outside the released code:
+# updating them should not need a version bump. Runs on main whenever one of
+# those files changes, and can be started by hand.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.wordpress-org/**'
+      - 'readme.txt'
+  workflow_dispatch:
+
+jobs:
+  assets:
+    name: Push assets and readme to SVN
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update the listing
+        uses: 10up/action-wordpress-plugin-asset-update@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: ibracodes-ai-assistant
+          ASSETS_DIR: .wordpress-org

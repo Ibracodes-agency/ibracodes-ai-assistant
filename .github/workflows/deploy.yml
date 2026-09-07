@@ -1,0 +1,30 @@
+name: Deploy to WordPress.org
+
+# Publishing is a tag: `git tag 0.2.0 && git push --tags` builds the plugin,
+# commits it to SVN trunk, creates the matching SVN tag and uploads the
+# directory art from .wordpress-org/. Nothing is published on a normal push.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  deploy:
+    name: Publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A tag that disagrees with the plugin header or the readme would ship a
+      # release WordPress never serves. Stop before touching SVN.
+      - name: Verify the version is consistent
+        run: bash bin/check-version.sh "${{ github.ref_name }}"
+
+      - name: Deploy to the plugin directory
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: ibracodes-ai-assistant
+          ASSETS_DIR: .wordpress-org
