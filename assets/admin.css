@@ -24,6 +24,8 @@
 	--warn-bg: #fdf6e3;
 	--warn-ink: #7a5a00;
 	--bad: #d63638;
+	--bad-bg: #fdeaea;
+	--bad-ink: #8a2224;
 	--radius: 16px;
 	--pill: 980px;
 
@@ -357,6 +359,7 @@
 	background: var(--card);
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
+	/* the viewport less the admin bar, the band with its tabs and the page padding above the console */
 	max-height: calc(100vh - 250px);
 	overflow-y: auto;
 }
@@ -396,7 +399,7 @@
 .wsa-live-item-meta { font-size: 12px; color: var(--muted); }
 .wsa-pill.is-waiting { background: var(--warn-bg); color: var(--warn-ink); }
 .wsa-pill.is-live { background: var(--good-bg); color: var(--good-ink); }
-.wsa-pill.is-missed { background: #fdeaea; color: #8a2224; }
+.wsa-pill.is-missed { background: var(--bad-bg); color: var(--bad-ink); }
 
 .wsa-live-pane {
 	display: flex;
@@ -420,6 +423,7 @@
 	flex-direction: column;
 	gap: 10px;
 	padding: 18px;
+	/* the same offset as the list, plus the pane head above and the reply form below */
 	max-height: calc(100vh - 400px);
 	overflow-y: auto;
 }

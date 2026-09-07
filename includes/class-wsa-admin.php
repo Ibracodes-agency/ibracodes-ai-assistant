@@ -98,6 +98,14 @@ class Admin
                     'justNow' => __('Waiting under a minute', 'woocommerce-shop-agent'),
                     /* translators: %s: number of minutes */
                     'waited' => __('Waiting %s min', 'woocommerce-shop-agent'),
+                    /* translators: %s: number of hours */
+                    'waitedHours' => __('Waiting %s h', 'woocommerce-shop-agent'),
+                    /* translators: %s: number of days */
+                    'waitedDays' => __('Waiting %s d', 'woocommerce-shop-agent'),
+                    /* translators: %s: number of unread visitor messages */
+                    'unread' => __('%s unread', 'woocommerce-shop-agent'),
+                    'expired' => __('Session expired. Reload the page.', 'woocommerce-shop-agent'),
+                    'gone' => __('That conversation no longer exists.', 'woocommerce-shop-agent'),
                     'claim' => __('Claim', 'woocommerce-shop-agent'),
                     'close' => __('Close chat', 'woocommerce-shop-agent'),
                     'send' => __('Send', 'woocommerce-shop-agent'),
@@ -126,16 +134,29 @@ class Admin
         ];
     }
 
-    /** How long a visitor has been waiting, in the words the console script uses too, so its first refresh changes nothing. */
+    /**
+     * How long a visitor has been waiting: minutes up to two hours, then
+     * hours up to two days, then days, in the words and the rounding the
+     * console script uses too, so its first refresh changes nothing.
+     */
     private static function waited(int $seconds): string
     {
         $minutes = intdiv($seconds, MINUTE_IN_SECONDS);
         if ($minutes < 1) {
             return __('Waiting under a minute', 'woocommerce-shop-agent');
         }
+        if ($minutes < 120) {
+            /* translators: %s: number of minutes */
+            return sprintf(__('Waiting %s min', 'woocommerce-shop-agent'), number_format_i18n($minutes));
+        }
+        $hours = (int) round($minutes / 60);
+        if ($hours < 48) {
+            /* translators: %s: number of hours */
+            return sprintf(__('Waiting %s h', 'woocommerce-shop-agent'), number_format_i18n($hours));
+        }
 
-        /* translators: %s: number of minutes */
-        return sprintf(__('Waiting %s min', 'woocommerce-shop-agent'), number_format_i18n($minutes));
+        /* translators: %s: number of days */
+        return sprintf(__('Waiting %s d', 'woocommerce-shop-agent'), number_format_i18n((int) round($hours / 24)));
     }
 
     private static function url(string $tab = '', array $extra = []): string
@@ -244,9 +265,12 @@ class Admin
         $tab = self::current_tab();
         $s = Settings::all();
         $leads_month = Leads::count_since(30);
-        // read once: the band counts the waiting ones and the live tab lists them all
-        $open = Settings::live_ready() ? Live::open_threads() : [];
-        $waiting = count(array_filter($open, static fn (array $row): bool => $row['status'] === 'waiting'));
+        // the list, with its timeout pass, only where it is shown; every other
+        // tab counts the waiting visitors for the badge and writes nothing
+        $open = $tab === 'live' && Settings::live_ready() ? Live::open_threads() : [];
+        $waiting = $tab === 'live'
+            ? count(array_filter($open, static fn (array $row): bool => $row['status'] === 'waiting'))
+            : (Settings::live_ready() ? Live::waiting_count() : 0);
         ?>
         <div class="wsa-admin">
             <?php self::band($tab, $leads_month, $waiting); ?>
@@ -844,9 +868,8 @@ class Admin
                 <?php self::toggle('live_enabled', (bool) $s['live_enabled'], __('Let visitors ask for a person', 'woocommerce-shop-agent'), __('Turning it on also turns conversation logging on: a live chat lives on the conversation record.', 'woocommerce-shop-agent')); ?>
                 <div style="margin-top:16px;">
                     <?php
-                    // the address is resolved on save; until then, show where a request would go
-                    $live_email = is_email((string) $s['live_email']) ? (string) $s['live_email'] : (is_email((string) $s['leads_email']) ? (string) $s['leads_email'] : (string) get_option('admin_email'));
-                    self::text_field('live_email', __('Send requests to', 'woocommerce-shop-agent'), $live_email, __('One email per request, with a link to the conversation.', 'woocommerce-shop-agent'), 'email');
+                    // resolved on save; until then, the field shows where a request would go
+                    self::text_field('live_email', __('Send requests to', 'woocommerce-shop-agent'), Settings::live_email(), __('One email per request, with a link to the conversation.', 'woocommerce-shop-agent'), 'email');
                     ?>
                 </div>
                 <div class="wsa-field">
@@ -858,7 +881,13 @@ class Admin
                 self::text_field('live_text_waiting', __('Waiting text', 'woocommerce-shop-agent'), $s['live_text_waiting']);
                 self::text_field('live_text_joined', __('Joined text', 'woocommerce-shop-agent'), $s['live_text_joined']);
                 self::text_field('live_text_missed', __('Missed text', 'woocommerce-shop-agent'), $s['live_text_missed']);
-                self::text_field('live_text_closed', __('Closed text', 'woocommerce-shop-agent'), $s['live_text_closed'], __('In the joined and closed texts, %s becomes the name of the person who joined.', 'woocommerce-shop-agent'));
+                self::text_field(
+                    'live_text_closed',
+                    __('Closed text', 'woocommerce-shop-agent'),
+                    $s['live_text_closed'],
+                    /* translators: %s is literal here: the placeholder the owner writes into the joined and closed texts */
+                    __('In the joined and closed texts, %s becomes the name of the person who joined.', 'woocommerce-shop-agent'),
+                );
                 ?>
             </div>
 
@@ -994,7 +1023,8 @@ class Admin
             <span class="wsa-live-item-top">
                 <span class="wsa-pill is-<?php echo esc_attr($row['status']); ?>"><?php echo esc_html($states[$row['status']] ?? $row['status']); ?></span>
                 <?php if ((int) $row['unread'] > 0) : ?>
-                    <span class="wsa-live-unread"><?php echo esc_html(number_format_i18n((int) $row['unread'])); ?></span>
+                    <?php /* translators: %s: number of unread visitor messages */ ?>
+                    <span class="wsa-live-unread" aria-label="<?php echo esc_attr(sprintf(__('%s unread', 'woocommerce-shop-agent'), number_format_i18n((int) $row['unread']))); ?>"><?php echo esc_html(number_format_i18n((int) $row['unread'])); ?></span>
                 <?php endif; ?>
             </span>
             <span class="wsa-live-item-q"><?php echo esc_html($row['first_question'] ?: __('(no question recorded)', 'woocommerce-shop-agent')); ?></span>

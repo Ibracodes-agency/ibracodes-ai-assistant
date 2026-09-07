@@ -122,7 +122,11 @@ wsa_assert(! array_key_exists('texts', $poll), 'no texts in the poll: the widget
 // missed: a waiting request older than the wait window
 $t2 = $start('Person please', 'mobile');
 Live::request($t2, 0);
+$counted = Live::waiting_count();
+wsa_assert($counted >= 1, 'the waiting count sees a fresh request');
 $wpdb->update(DB::threads_table(), ['requested_at' => gmdate('Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS)], ['id' => $t2]);
+wsa_assert_same($counted - 1, Live::waiting_count(), 'and leaves out a wait past the window');
+wsa_assert_same('waiting', Live::state($t2), 'without writing anything: the count is a number, not the timeout pass');
 $poll = Live::poll_visitor($t2, 0);
 wsa_assert_same('missed', $poll['status'], 'a stale wait becomes missed');
 wsa_assert_same('missed', Live::state($t2), 'and is persisted');

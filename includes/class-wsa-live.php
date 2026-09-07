@@ -120,6 +120,19 @@ class Live
         ];
     }
 
+    /** How many visitors are waiting right now, for a badge: a number only, no timeout pass. Counts what the pass would leave waiting. */
+    public static function waiting_count(): int
+    {
+        global $wpdb;
+        $threads = DB::threads_table();
+        $wait = max(1, (int) Settings::get('live_wait_minutes'));
+
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$threads} WHERE status = 'waiting' AND requested_at >= %s",
+            gmdate('Y-m-d H:i:s', time() - $wait * MINUTE_IN_SECONDS),
+        )); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+    }
+
     /** The stored status, or '' when the thread does not exist. */
     public static function state(int $thread_id): string
     {
@@ -391,7 +404,7 @@ class Live
         ];
 
         wp_mail(
-            (string) Settings::get('live_email'),
+            Settings::live_email(),
             __('A visitor is waiting for a person', 'woocommerce-shop-agent'),
             implode("\n", $lines),
         );

@@ -44,6 +44,28 @@ wsa_assert(str_contains($html, 'class="wsa-live-item" data-thread="' . $thread .
 wsa_assert(str_contains($html, 'id="wsa-live-pane"'), 'the pane is there for the script to fill');
 wsa_assert(preg_match('~<a class="wsa-tab[^"]*" href="[^"]*tab=live[^"]*">\s*[^<]*<span class="wsa-tab-badge">(\d+)</span>~', $html, $m) === 1 && (int) $m[1] >= 1, 'the band shows the waiting count on the live tab');
 wsa_assert(str_contains($render('live', ['thread' => $thread]), 'id="wsa-live" class="wsa-console" data-thread="' . $thread . '"'), 'the thread from the email link is handed to the console');
+wsa_assert(str_contains($render('live', ['thread' => 'abc']), 'id="wsa-live" class="wsa-console" data-thread="0"'), 'a thread parameter that is not a number hands nothing over');
+
+// what the visitor typed is data, in the list as everywhere
+$marked = DB::start_thread('<b>bold</b> & "quoted"', 'desktop');
+$GLOBALS['wsa_test_threads'][] = $marked;
+Live::request($marked, 0);
+$html = $render('live');
+wsa_assert(str_contains($html, '&lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;') && ! str_contains($html, '<b>bold</b>'), 'a first question with markup is escaped in the list');
+
+// every other tab counts the waiting visitors for the badge without the list's timeout pass
+$queries = [];
+$spy = static function (string $query) use (&$queries): string {
+    $queries[] = $query;
+
+    return $query;
+};
+add_filter('query', $spy);
+$overview = $render('overview');
+remove_filter('query', $spy);
+wsa_assert(preg_match('~<a class="wsa-tab[^"]*" href="[^"]*tab=live[^"]*">\s*[^<]*<span class="wsa-tab-badge">(\d+)</span>~', $overview, $m) === 1 && (int) $m[1] >= 2, 'the overview band shows the waiting count');
+$listing = array_filter($queries, static fn (string $q): bool => str_contains($q, 'FIELD(t.status') || str_contains($q, "SET status = 'missed'") || str_contains($q, 'GREATEST(COALESCE('));
+wsa_assert($listing === [], 'without listing the open threads or running the timeout pass');
 
 // the console script and its data go out on this tab only
 Admin::menu();
@@ -66,6 +88,14 @@ $agent = $render('agent');
 foreach (['live_enabled', 'live_email', 'live_wait_minutes', 'live_text_waiting', 'live_text_joined', 'live_text_missed', 'live_text_closed'] as $field) {
     wsa_assert(str_contains($agent, 'name="' . $field . '"'), "{$field} field on the agent tab");
 }
+// before a first save the address is only resolved on the way out: the field shows where a request would go
+$raw = (array) get_option('wsa_settings', []);
+update_option('wsa_settings', ['live_email' => '', 'leads_email' => 'leads@example.com'] + $raw);
+\Closure::bind(static function (): void {
+    self::$cache = null;
+}, null, Settings::class)();
+wsa_assert_same('leads@example.com', Settings::live_email(), 'the resolved address falls back to the leads address');
+wsa_assert(str_contains($render('agent'), 'name="live_email" value="leads@example.com"'), 'and the field shows it before a first save');
 
 // a stored conversation renders a person's lines and the system lines as their own rows
 Live::claim($thread, $admin);

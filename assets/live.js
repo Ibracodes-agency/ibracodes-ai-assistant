@@ -2,8 +2,9 @@
  * The Live chats console: the open threads on one side, one conversation on
  * the other. Both poll, a few seconds apart, and both pause while the tab is
  * hidden: a new request appears in the list without a reload, and the open
- * thread shows the visitor's lines as they arrive. Every request carries the
- * REST nonce; every string reaches the page through textContent.
+ * thread shows the visitor's lines as they arrive. Neither loop is ever in
+ * flight twice. Every request carries the REST nonce; every string reaches
+ * the page through textContent.
  */
 ( function () {
 	'use strict';
@@ -22,13 +23,21 @@
 	var t = cfg.i18n;
 	var INTERVAL = parseInt( cfg.interval, 10 ) || 3000;
 	var baseTitle = document.title;
-	var lastList = '';
+	// the list loop: its timer, whether a request is out, and what it last drew
 	var listTimer = null;
-	// the thread in the pane, and where its transcript got to
+	var listBusy = false;
+	var listKey = '';
+	// the thread loop: the id in the pane, where its transcript got to, the
+	// manager, its timer, whether a request is out and one is wanted after it
 	var current = 0;
 	var since = 0;
 	var manager = '';
 	var threadTimer = null;
+	var threadBusy = false;
+	var threadPending = false;
+	// this thread's loop is over (no such thread, or a refusal); the session is over (both loops off)
+	var threadOver = false;
+	var expired = false;
 	var ui = null;
 
 	// ---------------------------------------------------------------- helpers
@@ -43,6 +52,7 @@
 		return node;
 	}
 
+	/** One request, the nonce on every one; resolves to { ok, status, data }, with an empty data when the body is not JSON. Rejects only on a network error. */
 	function request( url, method, body ) {
 		return fetch( url, {
 			method: method,
@@ -51,7 +61,9 @@
 			body: body ? JSON.stringify( body ) : undefined,
 		} ).then( function ( res ) {
 			return res.json().then( function ( data ) {
-				return { ok: res.ok, data: data };
+				return { ok: res.ok, status: res.status, data: data };
+			}, function () {
+				return { ok: res.ok, status: res.status, data: {} };
 			} );
 		} );
 	}
@@ -63,72 +75,151 @@
 		return url + ( url.indexOf( '?' ) > -1 ? '&' : '?' ) + pairs.join( '&' );
 	}
 
+	/**
+	 * What a reply means for a loop: ok; expired (the nonce or the login
+	 * lapsed, or live chat went off); gone (no such thread); retry (a server
+	 * error, worth asking again); stop (any other refusal).
+	 */
+	function verdict( r ) {
+		if ( r.ok ) {
+			return 'ok';
+		}
+		if ( r.status === 401 || r.status === 403 || r.status === 503 ) {
+			return 'expired';
+		}
+		if ( r.status === 404 ) {
+			return 'gone';
+		}
+		return r.status >= 500 ? 'retry' : 'stop';
+	}
+
 	function note( message ) {
 		if ( ui ) {
 			ui.note.textContent = message || '';
 		}
 	}
 
+	/** Minutes up to two hours, then hours up to two days, then days: the same words and rounding as the page's own list. */
 	function waited( seconds ) {
 		var minutes = Math.floor( ( parseInt( seconds, 10 ) || 0 ) / 60 );
-		return minutes < 1 ? t.justNow : t.waited.replace( '%s', String( minutes ) );
+		if ( minutes < 1 ) {
+			return t.justNow;
+		}
+		if ( minutes < 120 ) {
+			return t.waited.replace( '%s', String( minutes ) );
+		}
+		var hours = Math.round( minutes / 60 );
+		if ( hours < 48 ) {
+			return t.waitedHours.replace( '%s', String( hours ) );
+		}
+		return t.waitedDays.replace( '%s', String( Math.round( hours / 24 ) ) );
+	}
+
+	/** The session is over: both loops stop, the title is plain again, and the list says what to do. */
+	function expire() {
+		expired = true;
+		clearTimeout( listTimer );
+		clearTimeout( threadTimer );
+		listTimer = null;
+		threadTimer = null;
+		document.title = baseTitle;
+		list.textContent = '';
+		list.appendChild( el( 'div', 'wsa-empty', t.expired ) );
+		note( t.expired );
 	}
 
 	// ------------------------------------------------------------------- list
-	/** Rebuilds the list from the server's rows, in the markup the page rendered. */
-	function renderList( rows ) {
-		list.textContent = '';
-		if ( ! rows.length ) {
-			list.appendChild( el( 'div', 'wsa-empty', t.empty ) );
-		}
-		rows.forEach( function ( row ) {
-			var item = el( 'button', 'wsa-live-item' + ( row.id === current ? ' is-active' : '' ) );
-			item.type = 'button';
-			item.setAttribute( 'data-thread', String( row.id ) );
-			var top = el( 'span', 'wsa-live-item-top' );
-			top.appendChild( el( 'span', 'wsa-pill is-' + row.status, t.states[ row.status ] || row.status ) );
-			if ( row.unread > 0 ) {
-				top.appendChild( el( 'span', 'wsa-live-unread', String( row.unread ) ) );
-			}
-			item.appendChild( top );
-			item.appendChild( el( 'span', 'wsa-live-item-q', row.first_question || t.noQuestion ) );
-			item.appendChild( el( 'span', 'wsa-live-item-meta', row.status === 'live' ? ( row.manager || '' ) : waited( row.waiting_seconds ) ) );
-			list.appendChild( item );
-		} );
+	function setTitle( rows ) {
 		var waiting = rows.filter( function ( row ) {
 			return row.status === 'waiting';
 		} ).length;
 		document.title = waiting ? '(' + waiting + ') ' + baseTitle : baseTitle;
 	}
 
+	/** What the list shows of each row, the seconds reduced to the words waited() makes of them, so a tick alone rebuilds nothing. */
+	function keyOf( rows ) {
+		return JSON.stringify( rows.map( function ( row ) {
+			return [ row.id, row.status, row.first_question, row.unread, row.manager, waited( row.waiting_seconds ) ];
+		} ) );
+	}
+
 	function markActive() {
 		Array.prototype.forEach.call( list.querySelectorAll( '.wsa-live-item' ), function ( item ) {
-			item.classList.toggle( 'is-active', parseInt( item.getAttribute( 'data-thread' ), 10 ) === current );
+			var active = parseInt( item.getAttribute( 'data-thread' ), 10 ) === current;
+			item.classList.toggle( 'is-active', active );
+			if ( active ) {
+				item.setAttribute( 'aria-current', 'true' );
+			} else {
+				item.removeAttribute( 'aria-current' );
+			}
 		} );
 	}
 
-	/** Every INTERVAL ms; the list is only rebuilt when the rows changed, so focus and scrolling are left alone. */
+	/** Rebuilds the list from the server's rows, in the markup the page rendered, and keeps the keyboard where it was. */
+	function renderList( rows ) {
+		var focused = document.activeElement && list.contains( document.activeElement ) ? document.activeElement.getAttribute( 'data-thread' ) : null;
+		list.textContent = '';
+		if ( ! rows.length ) {
+			list.appendChild( el( 'div', 'wsa-empty', t.empty ) );
+		}
+		rows.forEach( function ( row ) {
+			var item = el( 'button', 'wsa-live-item' );
+			item.type = 'button';
+			item.setAttribute( 'data-thread', String( row.id ) );
+			var top = el( 'span', 'wsa-live-item-top' );
+			top.appendChild( el( 'span', 'wsa-pill is-' + row.status, t.states[ row.status ] || row.status ) );
+			if ( row.unread > 0 ) {
+				var badge = el( 'span', 'wsa-live-unread', String( row.unread ) );
+				badge.setAttribute( 'aria-label', t.unread.replace( '%s', String( row.unread ) ) );
+				top.appendChild( badge );
+			}
+			item.appendChild( top );
+			item.appendChild( el( 'span', 'wsa-live-item-q', row.first_question || t.noQuestion ) );
+			item.appendChild( el( 'span', 'wsa-live-item-meta', row.status === 'live' ? ( row.manager || '' ) : waited( row.waiting_seconds ) ) );
+			list.appendChild( item );
+		} );
+		markActive();
+		if ( focused ) {
+			var again = list.querySelector( '.wsa-live-item[data-thread="' + focused + '"]' );
+			if ( again ) {
+				again.focus();
+			}
+		}
+	}
+
+	function scheduleList( delay ) {
+		clearTimeout( listTimer );
+		listTimer = setTimeout( pollList, delay );
+	}
+
+	/** Every INTERVAL ms, never twice at once, paused while the tab is hidden; the list is only redrawn when what it shows changed. */
 	function pollList() {
 		listTimer = null;
-		if ( document.hidden ) {
+		if ( expired || document.hidden || listBusy ) {
 			return;
 		}
+		listBusy = true;
 		request( cfg.open, 'GET' )
 			.then( function ( r ) {
-				if ( ! r.ok ) {
-					note( ( r.data && r.data.message ) || t.failed );
-					return;
+				var what = verdict( r );
+				if ( what === 'ok' ) {
+					var rows = r.data.threads || [];
+					var key = keyOf( rows );
+					if ( key !== listKey ) {
+						listKey = key;
+						renderList( rows );
+					}
+					setTitle( rows );
+				} else if ( what !== 'retry' ) {
+					// the login or the nonce lapsed, live chat went off, or the route is gone: a reload is the answer
+					expire();
 				}
-				var key = JSON.stringify( r.data.threads || [] );
-				if ( key !== lastList ) {
-					lastList = key;
-					renderList( r.data.threads || [] );
-				}
-			}, function () {
-				note( t.failed );
-			} )
+			}, function () {} )
 			.finally( function () {
-				listTimer = setTimeout( pollList, INTERVAL );
+				listBusy = false;
+				if ( ! expired ) {
+					scheduleList( INTERVAL );
+				}
 			} );
 	}
 
@@ -190,9 +281,9 @@
 			e.preventDefault();
 			reply();
 		} );
-		// Enter sends, Shift+Enter breaks the line
+		// Enter sends, Shift+Enter breaks the line, and an input method composing a character keeps Enter
 		text.addEventListener( 'keydown', function ( e ) {
-			if ( e.key === 'Enter' && ! e.shiftKey ) {
+			if ( e.key === 'Enter' && ! e.shiftKey && ! e.isComposing ) {
 				e.preventDefault();
 				reply();
 			}
@@ -230,67 +321,107 @@
 	}
 
 	function openThread( id ) {
-		if ( ! id ) {
+		if ( ! id || expired ) {
 			return;
 		}
 		current = id;
 		since = 0;
 		manager = '';
-		if ( threadTimer ) {
-			clearTimeout( threadTimer );
-			threadTimer = null;
-		}
+		threadOver = false;
+		threadPending = false;
+		clearTimeout( threadTimer );
+		threadTimer = null;
 		buildPane();
 		markActive();
 		pollThread();
 	}
 
-	/** Every INTERVAL ms for the open thread, appending what arrived since the last poll. */
+	function scheduleThread( delay ) {
+		clearTimeout( threadTimer );
+		threadTimer = setTimeout( pollThread, delay );
+	}
+
+	/**
+	 * Every INTERVAL ms for the open thread, never twice at once: a poll
+	 * wanted while one is out runs as soon as that one returns. Appends only
+	 * lines beyond the last id seen, so two replies out of order cannot show
+	 * a line twice.
+	 */
 	function pollThread() {
 		threadTimer = null;
-		if ( ! current || document.hidden ) {
+		if ( expired || ! current || threadOver || document.hidden ) {
 			return;
 		}
+		if ( threadBusy ) {
+			threadPending = true;
+			return;
+		}
+		threadBusy = true;
+		threadPending = false;
 		var id = current;
 		request( withQuery( cfg.poll, { id: id, since: since } ), 'GET' )
 			.then( function ( r ) {
 				if ( id !== current ) {
 					return; // the manager moved on while this was in flight
 				}
-				if ( ! r.ok ) {
-					note( ( r.data && r.data.message ) || t.failed );
+				var what = verdict( r );
+				if ( what === 'expired' ) {
+					expire();
+					return;
+				}
+				if ( what === 'gone' || what === 'stop' ) {
+					threadOver = true;
+					note( what === 'gone' ? t.gone : ( ( r.data && r.data.message ) || t.failed ) );
+					return;
+				}
+				if ( what === 'retry' ) {
+					note( t.failed );
 					return;
 				}
 				note( '' );
 				// the state first: a manager line needs the name it carries
 				setState( r.data.status, r.data.manager );
-				var rows = r.data.messages || [];
-				rows.forEach( function ( m ) {
-					if ( m.id > since ) {
-						since = m.id;
+				var added = false;
+				( r.data.messages || [] ).forEach( function ( m ) {
+					var mid = parseInt( m.id, 10 ) || 0;
+					if ( mid <= since ) {
+						return;
 					}
+					since = mid;
 					ui.log.appendChild( bubble( m ) );
+					added = true;
 				} );
-				if ( rows.length ) {
+				if ( added ) {
 					ui.log.scrollTop = ui.log.scrollHeight;
 				}
 			}, function () {
 				note( t.failed );
 			} )
 			.finally( function () {
-				if ( id === current && ! threadTimer ) {
-					threadTimer = setTimeout( pollThread, INTERVAL );
+				threadBusy = false;
+				if ( expired ) {
+					return;
+				}
+				if ( id !== current ) {
+					// the pane moved to another thread meanwhile: its first poll was waiting on this one
+					if ( current && threadPending ) {
+						scheduleThread( 0 );
+					}
+					return;
+				}
+				if ( ! threadOver ) {
+					scheduleThread( threadPending ? 0 : INTERVAL );
 				}
 			} );
 	}
 
-	/** A poll right now, ahead of the loop: after an action, the line it produced should not wait three seconds. */
+	/** A poll right now, ahead of the loop, or right after the one in flight: after an action, the line it produced should not wait three seconds. */
 	function pollNow() {
-		if ( threadTimer ) {
-			clearTimeout( threadTimer );
-			threadTimer = null;
+		if ( threadBusy ) {
+			threadPending = true;
+			return;
 		}
-		pollThread();
+		scheduleThread( 0 );
 	}
 
 	/** Claim or close: one post, the state it returns, then the line it wrote. */
@@ -298,6 +429,10 @@
 		button.disabled = true;
 		request( url, 'POST', { id: current } )
 			.then( function ( r ) {
+				if ( verdict( r ) === 'expired' ) {
+					expire();
+					return;
+				}
 				if ( ! r.ok ) {
 					note( ( r.data && r.data.message ) || t.failed );
 					return;
@@ -320,6 +455,10 @@
 		ui.send.disabled = true;
 		request( cfg.reply, 'POST', { id: current, text: text } )
 			.then( function ( r ) {
+				if ( verdict( r ) === 'expired' ) {
+					expire();
+					return;
+				}
 				if ( ! r.ok ) {
 					note( ( r.data && r.data.message ) || t.failed );
 					return;
@@ -336,14 +475,15 @@
 	}
 
 	// ------------------------------------------------------------------ start
+	// a tab shown again picks its loops up, and only the ones not already running or in flight
 	document.addEventListener( 'visibilitychange', function () {
-		if ( document.hidden ) {
+		if ( document.hidden || expired ) {
 			return;
 		}
-		if ( ! listTimer ) {
+		if ( ! listTimer && ! listBusy ) {
 			pollList();
 		}
-		if ( current && ! threadTimer ) {
+		if ( current && ! threadTimer && ! threadBusy && ! threadOver ) {
 			pollThread();
 		}
 	} );

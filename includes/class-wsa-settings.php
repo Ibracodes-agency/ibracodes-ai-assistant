@@ -168,9 +168,7 @@ class Settings
         if ($clean['live_enabled']) {
             $clean['log_threads'] = true;
         }
-        if ($clean['live_email'] === '') {
-            $clean['live_email'] = is_email($clean['leads_email']) ? $clean['leads_email'] : (string) get_option('admin_email');
-        }
+        $clean['live_email'] = self::resolve_live_email((string) $clean['live_email'], (string) $clean['leads_email']);
 
         // the update_option_wsa_settings hook runs inside update_option(), and readers there must see the new values
         self::$cache = null;
@@ -247,6 +245,22 @@ class Settings
     public static function live_ready(): bool
     {
         return (bool) self::get('live_enabled') && (bool) self::get('log_threads');
+    }
+
+    /** Where a request for a person is emailed. Resolved on save too, but a site that never saved has only the defaults. */
+    public static function live_email(): string
+    {
+        return self::resolve_live_email((string) self::get('live_email'), (string) self::get('leads_email'));
+    }
+
+    /** The saved address, else the leads address, else the site's. */
+    private static function resolve_live_email(string $live, string $leads): string
+    {
+        if (is_email($live)) {
+            return $live;
+        }
+
+        return is_email($leads) ? $leads : (string) get_option('admin_email');
     }
 
     /** Opening suggestion chips, one per line in the settings field, capped at four. */
