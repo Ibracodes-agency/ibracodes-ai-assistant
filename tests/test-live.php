@@ -116,7 +116,8 @@ wsa_assert_same('closed', Live::close($thread)['status'], 'close');
 $poll = Live::poll_visitor($thread, $mid3);
 wsa_assert_same('ai', $poll['status'], 'closed threads report ai to the widget');
 wsa_assert_same(['system'], array_column($poll['messages'], 'role'), 'the closed line reaches the visitor');
-wsa_assert(str_contains($poll['texts']['closed'], $second_name), 'the closed text names the manager who was in the chat');
+wsa_assert(str_contains($poll['messages'][0]['text'], $second_name), 'and names the manager who was in the chat');
+wsa_assert(! array_key_exists('texts', $poll), 'no texts in the poll: the widget renders the stored lines');
 
 // missed: a waiting request older than the wait window
 $t2 = $start('Person please', 'mobile');
@@ -142,7 +143,6 @@ $poll = Live::poll_visitor($t3, 0);
 wsa_assert_same('missed', $poll['status'], 'the widget sees missed');
 $last = end($poll['messages']);
 wsa_assert_same(['system', Settings::get('live_text_missed')], [$last['role'], $last['text']], 'with the missed line, not a closed one');
-wsa_assert_same('', $poll['texts']['closed'], 'no closed text when nobody ever joined');
 wsa_assert_same('missed', Live::close($t3)['status'], 'closing a missed request leaves it missed');
 
 // timeouts from the manager list: a stale wait is missed and an idle live chat is closed, with no visitor poll involved

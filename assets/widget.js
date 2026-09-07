@@ -30,14 +30,18 @@
 	var thread = '';
 	var busy = false;
 	var opened = false;
-	// who has the thread: ai, waiting (a person was asked for), live (one is
-	// in), missed (nobody came; the next AI turn is told so)
+	// who has the thread: ai (the default; also once a chat ended or nobody
+	// came), waiting (a person was asked for), live (one is in)
 	var live = { status: 'ai', manager: '', since: 0 };
 	var pollTimer = null;
 	var polling = null;
 	var SEEN_KEY = 'wsa-seen';
 	var STORE_KEY = 'wsa-chat';
-	var KEEP = 16;
+	// entries kept across pages: a live session's lines count too, and forty
+	// covers a long chat while the store stays small; the model only ever
+	// sees the last ten visitor and assistant turns anyway
+	var KEEP = 40;
+	// the interval is the server's; the fallback only covers a config without one
 	var POLL = parseInt( cfg.livePoll, 10 ) || 4000;
 
 	var ICON = {
@@ -87,7 +91,7 @@
 			if ( saved && Array.isArray( saved.messages ) ) {
 				history = saved.messages;
 				thread = typeof saved.thread === 'string' ? saved.thread : '';
-				if ( saved.live && typeof saved.live.status === 'string' ) {
+				if ( saved.live && ( saved.live.status === 'waiting' || saved.live.status === 'live' ) ) {
 					live = { status: saved.live.status, manager: String( saved.live.manager || '' ), since: parseInt( saved.live.since, 10 ) || 0 };
 				}
 			}
@@ -116,10 +120,17 @@
 	if ( cfg.launcherLabel ) {
 		launcher.appendChild( el( 'span', 'wsa-launcher-label', cfg.launcherLabel ) );
 	}
-	if ( ! seen() ) {
+	/** The dot on the launcher: something the visitor has not seen yet. Opening the panel clears it. */
+	function showDot() {
+		if ( launcher.querySelector( '.wsa-launcher-dot' ) ) {
+			return;
+		}
 		var dot = el( 'span', 'wsa-launcher-dot' );
 		dot.setAttribute( 'aria-hidden', 'true' );
 		launcher.appendChild( dot );
+	}
+	if ( ! seen() ) {
+		showDot();
 	}
 
 	var panel = el( 'div', 'wsa-panel' );
@@ -337,10 +348,10 @@
 		startPolling();
 	}
 
-	/** The AI has the thread again; the manager and the placeholder go with the mode. */
-	function leaveLive( status ) {
+	/** The AI has the thread again, whether the chat ended or nobody came; the manager and the placeholder go with the mode. */
+	function leaveLive() {
 		stopPolling();
-		live.status = status === 'missed' ? 'missed' : 'ai';
+		live.status = 'ai';
 		live.manager = '';
 		setPlaceholder( t.placeholder );
 		persist();
@@ -367,8 +378,9 @@
 	/**
 	 * One request for the lines since the last one. Shared by the loop and by
 	 * a refused visitor line, and never in flight twice, so no row is appended
-	 * twice. Resolves to what happened: ok, slow (rate limited), gone (the
-	 * route refused: live chat is off or the token failed) or retry (network).
+	 * twice. Resolves to what happened: ok, slow (rate limited), gone (a
+	 * deliberate refusal: live chat is off or the token failed) or retry (a
+	 * network error, a server error, a body that is not JSON).
 	 */
 	function fetchPoll() {
 		if ( polling ) {
@@ -382,7 +394,11 @@
 						applyPoll( data );
 						return 'ok';
 					}
-					return res.status === 429 ? 'slow' : 'gone';
+					if ( res.status === 429 ) {
+						return 'slow';
+					}
+					// only a deliberate refusal ends live mode; a 500 or a 502 is a hiccup
+					return data && ( data.code === 'wsa_live_off' || data.code === 'wsa_bad_token' ) ? 'gone' : 'retry';
 				} );
 			} )
 			.catch( function () {
@@ -402,7 +418,7 @@
 		}
 		fetchPoll().then( function ( outcome ) {
 			if ( outcome === 'gone' ) {
-				leaveLive( 'ai' );
+				leaveLive();
 				return;
 			}
 			if ( inLive() ) {
@@ -411,22 +427,36 @@
 		} );
 	}
 
-	/** Appends the lines a poll returned, into the log and the history, then follows the state it reports. */
+	/**
+	 * Appends the lines a poll returned to the history, and to the log once
+	 * the panel has been built, then follows the state it reports. A line
+	 * that lands while the panel is closed lights the launcher.
+	 */
 	function applyPoll( data ) {
 		live.manager = data.manager ? String( data.manager ) : '';
+		var arrived = false;
 		( data.messages || [] ).forEach( function ( m ) {
 			var id = parseInt( m.id, 10 ) || 0;
-			if ( id > live.since ) {
-				live.since = id;
+			if ( id <= live.since || ( m.role !== 'manager' && m.role !== 'system' ) ) {
+				return;
 			}
+			live.since = id;
+			arrived = true;
 			if ( m.role === 'manager' ) {
-				addManager( live.manager, m.text );
 				history.push( { role: 'manager', name: live.manager, text: m.text } );
-			} else if ( m.role === 'system' ) {
-				addSystem( m.text );
+				if ( opened ) {
+					addManager( live.manager, m.text );
+				}
+			} else {
 				history.push( { role: 'system', text: m.text } );
+				if ( opened ) {
+					addSystem( m.text );
+				}
 			}
 		} );
+		if ( arrived && ! root.classList.contains( 'is-open' ) ) {
+			showDot();
+		}
 		if ( data.status === 'live' ) {
 			live.status = 'live';
 			setPlaceholder( ( t.writeTo || '%s' ).replace( '%s', live.manager ) );
@@ -435,12 +465,11 @@
 			live.status = 'waiting';
 			setPlaceholder( t.placeholder );
 			persist();
-		} else if ( data.status === 'missed' ) {
-			// the missed line came with this poll; the contact option is the fallback
-			leaveLive( 'missed' );
-			addHandoff();
 		} else {
-			leaveLive( 'ai' );
+			// the chat ended, or nobody came: the line saying so came with this
+			// poll, and the AI answers again from here. A missed thread gets the
+			// contact option with each of its answers, from the server
+			leaveLive();
 		}
 	}
 
@@ -470,10 +499,11 @@
 		setBusy( true );
 		input.value = '';
 		addMessage( 'user', text );
-		history.push( { role: 'user', text: text } );
+		var entry = { role: 'user', text: text };
+		history.push( entry );
 		persist();
 
-		( inLive() ? sendLive( text, false ) : askAi( text, false ) ).finally( function () {
+		( inLive() ? sendLive( entry, false ) : askAi( entry, false ) ).finally( function () {
 			setBusy( false );
 			input.focus();
 		} );
@@ -483,12 +513,13 @@
 	 * The AI's turn. A 409 with wsa_live_owned means a person has the thread:
 	 * the widget switches modes and hands them the line instead, once.
 	 */
-	function askAi( text, retried ) {
+	function askAi( entry, retried ) {
 		var typing = addTyping();
 		var payload = {
-			// a person's lines and the system lines are not the model's conversation
+			// a person's lines, the system lines and what the visitor wrote to
+			// the person are not the model's conversation
 			messages: history.filter( function ( m ) {
-				return m.role === 'user' || m.role === 'assistant';
+				return ( m.role === 'user' || m.role === 'assistant' ) && ! m.live;
 			} ).slice( -10 ).map( function ( m ) {
 				return { role: m.role, text: m.text };
 			} ),
@@ -496,10 +527,6 @@
 			page: parseInt( cfg.pageId, 10 ) || 0,
 			device: window.matchMedia( '(max-width: 480px)' ).matches ? 'mobile' : 'desktop',
 		};
-		// a person was asked for and nobody came: the server tells the agent so, for this one reply
-		if ( live.status === 'missed' ) {
-			payload.live = 'missed';
-		}
 
 		return fetch( cfg.endpoint, {
 			method: 'POST',
@@ -512,7 +539,7 @@
 				if ( ! result.ok ) {
 					if ( result.status === 409 && result.data && result.data.code === 'wsa_live_owned' && liveAvailable() && ! retried ) {
 						enterLive( result.data.data && result.data.data.status );
-						return sendLive( text, true );
+						return sendLive( entry, true );
 					}
 					// the server's message is the useful one (rate limited,
 					// unavailable); fall back only if it sent none
@@ -523,9 +550,6 @@
 				var data = result.data;
 				if ( data.thread ) {
 					thread = data.thread;
-				}
-				if ( live.status === 'missed' ) {
-					live.status = 'ai';
 				}
 				addMessage( 'assistant', data.reply );
 				history.push( { role: 'assistant', text: data.reply, products: data.products || [], chips: data.chips || [], handoff: !! data.handoff } );
@@ -549,25 +573,29 @@
 
 	/**
 	 * A line to the person on the thread. No typing indicator: nobody is
-	 * composing on the AI's behalf. A 409 means the AI has the thread again
-	 * (the chat ended between two polls): one poll picks up the closing line
-	 * and the state, then the line goes wherever the state says, once.
+	 * composing on the AI's behalf. Once stored, the entry is marked live, so
+	 * it never travels to the model as a visitor turn. A 409 means the AI has
+	 * the thread again (the chat ended between two polls): one poll picks up
+	 * the closing line and the state, then the line goes wherever the state
+	 * says, once.
 	 */
-	function sendLive( text, retried ) {
+	function sendLive( entry, retried ) {
 		return fetch( cfg.liveMessageEndpoint, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify( { thread: thread, text: text } ),
+			body: JSON.stringify( { thread: thread, text: entry.text } ),
 		} )
 			.then( parse )
 			.then( function ( result ) {
 				if ( result.ok ) {
+					entry.live = true;
+					persist();
 					startPolling();
 					return;
 				}
 				if ( result.status === 409 && ! retried ) {
 					return fetchPoll().then( function () {
-						return inLive() ? sendLive( text, true ) : askAi( text, true );
+						return inLive() ? sendLive( entry, true ) : askAi( entry, true );
 					} );
 				}
 				addMessage( 'assistant', ( result.data && result.data.message ) || t.error );
@@ -602,8 +630,6 @@
 		} );
 		if ( live.status === 'live' ) {
 			setPlaceholder( ( t.writeTo || '%s' ).replace( '%s', live.manager ) );
-		} else if ( live.status === 'missed' ) {
-			addHandoff();
 		}
 		startPolling();
 	}
@@ -675,6 +701,8 @@
 	function mount() {
 		document.body.appendChild( root );
 		watchCart();
+		// a live session restored from the last page keeps listening before the panel is opened
+		startPolling();
 	}
 
 	restore();

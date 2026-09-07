@@ -21,7 +21,6 @@ const TEXTS = { waiting: 'נציג יצטרף לשיחה בקרוב. אפשר ל
 const posted = [];
 const state = { status: 'ai', manager: '', messages: [], nextId: 1, polls: 0, chat409: 0, visitorLines: [] };
 const fill = (key) => TEXTS[key].replace('%s', state.manager);
-const texts = () => ({ waiting: fill('waiting'), joined: fill('joined'), missed: fill('missed'), closed: state.manager ? fill('closed') : '' });
 const line = (role, text) => { const m = { id: state.nextId++, role, text, at: new Date().toISOString() }; state.messages.push(m); return m; };
 const json = (res, code, body) => { res.statusCode = code; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
 const readBody = (req) => new Promise((r) => { let b = ''; req.on('data', (c) => b += c); req.on('end', () => r(b ? JSON.parse(b) : {})); });
@@ -44,7 +43,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/live/thread') {
     state.polls++;
     const since = parseInt(url.searchParams.get('since'), 10) || 0;
-    return json(res, 200, { status: state.status === 'closed' ? 'ai' : state.status, manager: state.manager, messages: state.messages.filter((m) => m.id > since && m.role !== 'user'), texts: texts() });
+    return json(res, 200, { status: state.status === 'closed' ? 'ai' : state.status, manager: state.manager, messages: state.messages.filter((m) => m.id > since && m.role !== 'user') });
   }
   if (req.method === 'POST' && url.pathname === '/live/thread/message') {
     const b = await readBody(req);
@@ -126,14 +125,18 @@ const writeTo = await placeholderIs(page, 'Write to Dana');
 console.log('manager bubble: ' + managerShown + ' | name: ' + JSON.stringify(managerName) + ' | placeholder "Write to Dana": ' + writeTo);
 await page.screenshot({ path: shot('live') });
 
-// ---- page 4: reload mid-live; the transcript replays and polling resumes
+// ---- page 4: reload mid-live with the panel closed; polling resumes on its own, a new line lights the launcher, opening replays everything
 const pollsBeforeReload = state.polls;
-await page.reload(); await open();
+await page.reload(); await page.waitForSelector('.wsa-launcher');
+const resumed = await until(() => state.polls > pollsBeforeReload);
+await manager('reply', 'עוד משהו שאפשר לעזור בו?');
+const dotShown = await page.waitForSelector('.wsa-launcher-dot', { timeout: 6000 }).then(() => true, () => false);
+await open();
+const dotGone = (await page.locator('.wsa-launcher-dot').count()) === 0;
 const replayedManager = await page.waitForSelector('.wsa-msg.is-manager', { timeout: 3000 }).then(() => page.locator('.wsa-msg.is-manager').count(), () => 0);
 const replayedSystem = await page.locator('.wsa-system').count();
-const resumed = await until(() => state.polls > pollsBeforeReload);
 const writeToAfterReload = await placeholderIs(page, 'Write to Dana');
-console.log('after reload: manager bubbles ' + replayedManager + ' | system lines ' + replayedSystem + ' | polling resumed: ' + resumed + ' | placeholder kept: ' + writeToAfterReload);
+console.log('after reload: polling resumed while closed: ' + resumed + ' | dot on a new line: ' + dotShown + ' | dot gone on open: ' + dotGone + ' | manager bubbles ' + replayedManager + ' | system lines ' + replayedSystem + ' | placeholder kept: ' + writeToAfterReload);
 
 // ---- a stale tab: the stored state says ai while the server says live; /chat answers 409 and the line goes to the person
 await page.evaluate(() => { const s = JSON.parse(sessionStorage.getItem('wsa-chat')); s.live = { status: 'ai', manager: '', since: (s.live && s.live.since) || 0 }; sessionStorage.setItem('wsa-chat', JSON.stringify(s)); });
@@ -155,7 +158,7 @@ await page.waitForSelector('.wsa-card');
 // the model's conversation is the visitor's and the AI's: the person's lines and the system lines stay out of it
 const sentAfterLive = posted[posted.length - 1].messages;
 const liveTexts = state.messages.filter((m) => m.role !== 'user').map((m) => m.text);
-const modelHistoryClean = sentAfterLive.every((m) => (m.role === 'user' || m.role === 'assistant') && !liveTexts.includes(m.text));
+const modelHistoryClean = sentAfterLive.every((m) => (m.role === 'user' || m.role === 'assistant') && !liveTexts.includes(m.text) && !state.visitorLines.includes(m.text));
 console.log('closed line shown: ' + closedShown + ' | placeholder restored: ' + placeholderRestored + ' | next message went to /chat: ' + backToAi + ' | no manager or system text in it: ' + modelHistoryClean);
 await page.screenshot({ path: shot('closed') });
 
@@ -169,7 +172,7 @@ const ok = after.user === 1 && after.assistant === 2 && after.cards === 1 && aft
   && waitingShown && systemCount === 1 && systemText === TEXTS.waiting && polled
   && visitorRouted && chatsDuringLive === chatsBeforeLive
   && managerShown && managerName === 'Dana' && writeTo
-  && replayedManager === 1 && replayedSystem === 2 && resumed && writeToAfterReload
+  && resumed && dotShown && dotGone && replayedManager === 2 && replayedSystem === 2 && writeToAfterReload
   && rerouted && writeToAfter409
   && closedShown && placeholderRestored && backToAi && modelHistoryClean;
 console.log(ok ? 'PASS: conversation survives navigation, footer right, live mode polls, replays and returns to the AI' : 'FAIL: see the lines above');

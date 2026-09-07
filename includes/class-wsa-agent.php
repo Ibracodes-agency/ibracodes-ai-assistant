@@ -23,7 +23,7 @@ class Agent
     private const MAX_CARDS = 4;
 
     /**
-     * @param array{page_id?: int, thread_id?: int, live?: string} $context what the widget sent with the message: the page being read, the verified thread, the live state the widget last saw
+     * @param array{page_id?: int, thread_id?: int, live?: string} $context the page being read, the verified thread, and 'missed' when a person was asked for and nobody came (from the thread's own state)
      */
     public static function answer(array $history, array $context = []): array|WP_Error
     {
@@ -38,7 +38,7 @@ class Agent
         $reply = '';
         $no_match = false;
         $handoff = false;
-        // 'waiting' once a person was asked to join, 'pending' when that has to wait for the thread to exist, '' otherwise
+        // 'pending' once the model asked for a person (the REST layer makes the request after the turn is recorded), '' otherwise
         $live = '';
 
         for ($turn = 0; $turn < self::MAX_TURNS; $turn++) {

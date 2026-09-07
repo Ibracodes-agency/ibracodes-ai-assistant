@@ -101,27 +101,22 @@ class Live
 
     /**
      * What the widget needs on each poll: the state as the widget understands
-     * it (a closed chat is the AI's again), the manager's name, the lines a
-     * person or the system added since the last poll, and the four texts with
-     * the name filled in.
+     * it (a closed chat is the AI's again), the manager's name, and the lines
+     * a person or the system added since the last poll. Every text the widget
+     * shows in live mode is one of those stored lines.
      *
-     * @return array{status: string, manager: string, messages: array, texts: array}
+     * @return array{status: string, manager: string, messages: array}
      */
     public static function poll_visitor(int $thread_id, int $since_id): array
     {
         self::apply_timeouts($thread_id);
         $row = self::row($thread_id);
         $status = (string) ($row['status'] ?? 'ai');
-        $manager_id = (int) ($row['manager_id'] ?? 0);
-        $manager = self::manager_name($manager_id);
 
         return [
             'status' => $status === 'closed' || $status === '' ? 'ai' : $status,
-            'manager' => $manager,
+            'manager' => self::manager_name((int) ($row['manager_id'] ?? 0)),
             'messages' => $row ? self::messages_since($thread_id, $since_id, ['manager', 'system']) : [],
-            // sent on every poll rather than only when the state changes: four
-            // short strings, and the widget can never miss the one it needs
-            'texts' => self::texts($manager, $manager_id > 0),
         ];
     }
 
@@ -458,16 +453,5 @@ class Live
     private static function text(string $key, string $manager): string
     {
         return str_replace('%s', $manager, (string) Settings::get($key));
-    }
-
-    /** The closed text only exists once a person was in the chat; a declined request has nothing to have ended. */
-    private static function texts(string $manager, bool $had_manager): array
-    {
-        return [
-            'waiting' => self::text('live_text_waiting', $manager),
-            'joined' => self::text('live_text_joined', $manager),
-            'missed' => self::text('live_text_missed', $manager),
-            'closed' => $had_manager ? self::text('live_text_closed', $manager) : '',
-        ];
     }
 }

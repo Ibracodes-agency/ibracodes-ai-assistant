@@ -131,7 +131,7 @@ class Prompt
     /** After a missed request: what to offer instead of a person, from what the owner switched on. */
     private static function missed_line(): string
     {
-        $line = 'A person was requested but did not join. Apologise once.';
+        $line = 'A person was requested but did not join. Apologise once unless you already have in this conversation.';
         if (Settings::get('leads_enabled')) {
             $line .= ' Offer to take the visitor\'s details so the owner calls back, and call capture_lead when they agree.';
         }

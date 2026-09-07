@@ -26,6 +26,8 @@ register_shutdown_function(static function () use ($snapshot, $ip): void {
     }
     delete_transient('wsa_rl_' . $ip);
     delete_transient('wsa_rld_' . $ip);
+    // a failed assertion inside the model filter would otherwise leave the concurrency slot taken
+    delete_transient('wsa_busy');
     Settings::update($snapshot);
 });
 $start = static function (string $question): int {
@@ -64,6 +66,7 @@ $missed = Prompt::system_message(['thread_id' => $thread, 'live' => 'missed'])['
 wsa_assert(str_contains($missed, 'did not join'), 'missed instruction present');
 wsa_assert(! str_contains($missed, 'A person will join this chat'), 'and the live hand-off line is not');
 wsa_assert(str_contains($missed, 'insists'), 'hand_off again only if the visitor insists on a person');
+wsa_assert(str_contains($missed, 'unless you already have'), 'one apology per conversation');
 wsa_assert(str_contains($missed, 'WhatsApp'), 'the contact option is named when there is one');
 wsa_assert(! str_contains($missed, 'capture_lead'), 'no lead offer while leads are off');
 Settings::update(['leads_enabled' => true, 'handoff_url' => '']);
@@ -133,6 +136,22 @@ add_filter('wsa_pre_complete', $unexpected);
 [$code] = $call(['messages' => [['role' => 'user', 'text' => 'Hello?']], 'thread' => $data['thread']]);
 remove_filter('wsa_pre_complete', $unexpected);
 wsa_assert_same(409, $code, 'the next chat on that thread is refused');
+
+// nobody came: the AI answers again, told so by the thread's own state, and the contact button comes with each answer
+wsa_assert_same('missed', Live::close($new)['status'], 'declining the request marks it missed');
+$system = '';
+$plain = static function ($pre, array $messages) use (&$system) {
+    $system = (string) ($messages[0]['content'] ?? '');
+
+    return ['role' => 'assistant', 'content' => 'Sorry, nobody could join. You can reach us on WhatsApp below.'];
+};
+add_filter('wsa_pre_complete', $plain, 10, 2);
+[$code, $data] = $call(['messages' => [['role' => 'user', 'text' => 'Hello?']], 'thread' => $data['thread']]);
+remove_filter('wsa_pre_complete', $plain, 10);
+wsa_assert_same(200, $code, 'a missed thread is the AI\'s again');
+wsa_assert(str_contains($system, 'did not join') && ! str_contains($system, 'A person will join this chat'), 'the agent was given the missed paragraph, not the live line');
+wsa_assert_same(true, $data['handoff'], 'the contact button comes with the answer on a missed thread');
+wsa_assert_same('', $data['live'], 'and no live request is made');
 
 // the model asks for a person and then fails: the visitor still gets an answer and the request is still made
 $calls = 0;

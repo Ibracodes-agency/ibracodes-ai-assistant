@@ -43,8 +43,6 @@ class Rest
                 // the post the visitor is reading; the prompt only uses it when the page is public and in scope
                 'page' => ['type' => 'integer', 'required' => false],
                 'thread' => ['type' => 'string', 'required' => false],
-                // accepted for older widgets, never trusted: the live state comes from the thread itself
-                'live' => ['type' => 'string', 'required' => false],
             ],
         ]);
 
@@ -187,6 +185,11 @@ class Rest
             if ($answer['live'] === 'pending') {
                 $live_id = Threads::id_from_token((string) $answer['thread']);
                 $answer['live'] = $live_id > 0 ? Live::request($live_id, $page_id)['status'] : '';
+            }
+
+            // nobody came: the AI answers again and each answer carries the contact option, where there is one
+            if ($state === 'missed') {
+                $answer['handoff'] = $answer['live'] === '' && Prompt::handoff_label() !== '';
             }
 
             return rest_ensure_response($answer);
