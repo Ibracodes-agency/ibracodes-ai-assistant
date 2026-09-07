@@ -6,3 +6,7 @@ node_modules
 tests
 docs
 languages/build-he.php
+README.md
+languages/*.po
+languages/*.pot
+bin
