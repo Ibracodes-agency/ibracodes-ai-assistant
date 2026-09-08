@@ -73,6 +73,7 @@ A visitor who asks for a person waits in the Live chats screen. You get an email
 == Changelog ==
 
 = 0.2.0 =
+* Everything the plugin declares or stores is now prefixed ibraai. Settings, conversations and leads migrate automatically on first load. Two consequences: an old bookmark to the settings screen no longer resolves, and a chat open in a visitor's browser starts fresh.
 * Works on any WordPress site: answers from pages and posts, with an optional embeddings index.
 * Knows the page the visitor is on.
 * Lead capture with owner email and its own retention.
