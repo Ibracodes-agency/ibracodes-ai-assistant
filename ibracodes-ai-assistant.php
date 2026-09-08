@@ -20,7 +20,7 @@
  * is the owner's own notification of a lead the visitor agreed to leave.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -29,7 +29,7 @@ if (! defined('ABSPATH')) {
 // A second copy of the plugin (a manual upload next to the store install) must
 // not redefine the constants and redeclare the classes, which would take the
 // site down. The copy that loaded first wins; this one only leaves a notice.
-if (defined('WSA_VERSION')) {
+if (defined('IBRAAI_VERSION')) {
     add_action('admin_notices', static function (): void {
         echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'ibracodes-ai-assistant') . '</p></div>';
     });
@@ -37,10 +37,10 @@ if (defined('WSA_VERSION')) {
     return;
 }
 
-define('WSA_VERSION', '0.2.0');
-define('WSA_FILE', __FILE__);
-define('WSA_PATH', plugin_dir_path(__FILE__));
-define('WSA_URL', plugin_dir_url(__FILE__));
+define('IBRAAI_VERSION', '0.2.0');
+define('IBRAAI_FILE', __FILE__);
+define('IBRAAI_PATH', plugin_dir_path(__FILE__));
+define('IBRAAI_URL', plugin_dir_url(__FILE__));
 
 register_activation_hook(__FILE__, function (): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) {
@@ -51,15 +51,15 @@ register_activation_hook(__FILE__, function (): void {
             ['back_link' => true],
         );
     }
-    require_once WSA_PATH . 'includes/class-wsa-settings.php';
-    require_once WSA_PATH . 'includes/class-wsa-db.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-settings.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-db.php';
     DB::install();
     DB::schedule_purge();
 });
 
 register_deactivation_hook(__FILE__, function (): void {
-    require_once WSA_PATH . 'includes/class-wsa-db.php';
-    require_once WSA_PATH . 'includes/class-wsa-index.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-db.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-index.php';
     wp_clear_scheduled_hook(DB::PURGE_HOOK);
     wp_clear_scheduled_hook(Index::HOOK);
     wp_clear_scheduled_hook(Index::RECONCILE_HOOK);
@@ -71,24 +71,24 @@ add_action('plugins_loaded', function (): void {
     // this call is what loads the bundled files.
     load_plugin_textdomain('ibracodes-ai-assistant', false, dirname(plugin_basename(__FILE__)) . '/languages'); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- the plugin ships its own he_IL catalogue in /languages
 
-    require_once WSA_PATH . 'includes/class-wsa-settings.php';
-    require_once WSA_PATH . 'includes/class-wsa-capabilities.php';
-    require_once WSA_PATH . 'includes/class-wsa-db.php';
-    require_once WSA_PATH . 'includes/class-wsa-threads.php';
-    require_once WSA_PATH . 'includes/class-wsa-guards.php';
-    require_once WSA_PATH . 'includes/class-wsa-catalog.php';
-    require_once WSA_PATH . 'includes/class-wsa-content.php';
-    require_once WSA_PATH . 'includes/class-wsa-leads.php';
-    require_once WSA_PATH . 'includes/class-wsa-live.php';
-    require_once WSA_PATH . 'includes/class-wsa-index.php';
-    require_once WSA_PATH . 'includes/class-wsa-tools.php';
-    require_once WSA_PATH . 'includes/class-wsa-prompt.php';
-    require_once WSA_PATH . 'includes/class-wsa-scrubber.php';
-    require_once WSA_PATH . 'includes/class-wsa-provider.php';
-    require_once WSA_PATH . 'includes/class-wsa-agent.php';
-    require_once WSA_PATH . 'includes/class-wsa-rest.php';
-    require_once WSA_PATH . 'includes/class-wsa-widget.php';
-    require_once WSA_PATH . 'includes/class-wsa-admin.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-settings.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-capabilities.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-db.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-threads.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-guards.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-catalog.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-content.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-leads.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-live.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-index.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-tools.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-prompt.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-scrubber.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-provider.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-agent.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-rest.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-widget.php';
+    require_once IBRAAI_PATH . 'includes/class-ibraai-admin.php';
 
     DB::maybe_upgrade();
     DB::schedule_purge();

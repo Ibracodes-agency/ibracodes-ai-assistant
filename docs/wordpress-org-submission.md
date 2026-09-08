@@ -3,7 +3,7 @@
 ## First submission
 
 1. `wp plugin check ibracodes-ai-assistant` on a site running the latest WordPress: zero errors. The remaining warnings are the dev dotfiles (excluded from the zip) and the informational note about calling OpenAI directly, which readme.txt discloses under Third-party services.
-2. `readme.txt`: `Stable tag` equals the plugin header version and `WSA_VERSION`; `Tested up to` equals the current WordPress major.minor; `Contributors` is the wordpress.org username that owns the plugin. `bin/check-version.sh` confirms the versions agree.
+2. `readme.txt`: `Stable tag` equals the plugin header version and `IBRAAI_VERSION`; `Tested up to` equals the current WordPress major.minor; `Contributors` is the wordpress.org username that owns the plugin. `bin/check-version.sh` confirms the versions agree.
 3. Build the zip from the WordPress root: `wp dist-archive /path/to/ibracodes-ai-assistant /path/to/output/` (honours `.distignore`, so only the plugin file, readme.txt, uninstall.php, includes, assets and the compiled .mo are inside).
 4. Upload the zip at https://wordpress.org/plugins/developers/add/ with the owner account. The review team answers by email; reply from the same address, every round restarts the queue.
 5. Once approved, WordPress.org creates the SVN repository and emails the credentials.
@@ -17,7 +17,7 @@ Add two repository secrets on GitHub under Settings, Secrets and variables, Acti
 Publishing is automated; a tag is the release:
 
     # 1. bump the version in three places (all must agree)
-    #    ibracodes-ai-assistant.php: Version: and define('WSA_VERSION', ...)
+    #    ibracodes-ai-assistant.php: Version: and define('IBRAAI_VERSION', ...)
     #    readme.txt: Stable tag: and a changelog entry
     # 2. verify locally
     bin/check-version.sh

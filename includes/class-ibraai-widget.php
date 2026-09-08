@@ -10,7 +10,7 @@
  * which are the fiddliest part of shipping a translated plugin.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -30,27 +30,27 @@ class Widget
         }
 
         /** Lets a store hide the chat on specific pages (checkout, for instance). */
-        if (! apply_filters('wsa_show_widget', true)) {
+        if (! apply_filters('ibraai_show_widget', true)) {
             return;
         }
 
-        wp_enqueue_style('wsa-widget', WSA_URL . 'assets/widget.css', [], WSA_VERSION);
+        wp_enqueue_style('ibraai-widget', IBRAAI_URL . 'assets/widget.css', [], IBRAAI_VERSION);
         if (Capabilities::has_commerce()) {
             // WooCommerce's own add-to-cart script: with it the card button adds
             // without a page load and updates the cart fragments; without it the
             // button is still a working link
             wp_enqueue_script('wc-add-to-cart');
         }
-        wp_enqueue_script('wsa-widget', WSA_URL . 'assets/widget.js', [], WSA_VERSION, true);
+        wp_enqueue_script('ibraai-widget', IBRAAI_URL . 'assets/widget.js', [], IBRAAI_VERSION, true);
 
-        wp_localize_script('wsa-widget', 'wsaConfig', self::config());
+        wp_localize_script('ibraai-widget', 'ibraaiConfig', self::config());
     }
 
     public static function config(): array
     {
         $config = [
-            'endpoint' => esc_url_raw(rest_url('wsa/v1/chat')),
-            'cartEndpoint' => Settings::get('log_threads') ? esc_url_raw(rest_url('wsa/v1/cart-event')) : '',
+            'endpoint' => esc_url_raw(rest_url('ibraai/v1/chat')),
+            'cartEndpoint' => Settings::get('log_threads') ? esc_url_raw(rest_url('ibraai/v1/cart-event')) : '',
             'accent' => (string) Settings::get('accent'),
             'position' => (string) Settings::get('position'),
             'isRtl' => is_rtl(),
@@ -69,7 +69,7 @@ class Widget
             'brand' => Settings::get('show_credit') ? [
                 'url' => 'https://ibracodes.com/?utm_source=ai-assistant&utm_medium=widget',
                 'label' => __('Developed by Ibracodes', 'ibracodes-ai-assistant'),
-                'logo' => WSA_URL . 'assets/ibracodes.svg',
+                'logo' => IBRAAI_URL . 'assets/ibracodes.svg',
             ] : null,
             'i18n' => [
                 'open' => __('Open chat', 'ibracodes-ai-assistant'),
@@ -90,8 +90,8 @@ class Widget
 
         // the live routes only exist for the widget when a person can actually be asked for
         if (Settings::live_ready()) {
-            $config['liveEndpoint'] = esc_url_raw(rest_url('wsa/v1/live/thread'));
-            $config['liveMessageEndpoint'] = esc_url_raw(rest_url('wsa/v1/live/thread/message'));
+            $config['liveEndpoint'] = esc_url_raw(rest_url('ibraai/v1/live/thread'));
+            $config['liveMessageEndpoint'] = esc_url_raw(rest_url('ibraai/v1/live/thread/message'));
             $config['livePoll'] = 4000;
         }
 

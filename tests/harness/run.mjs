@@ -30,7 +30,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://stub');
   if (req.method === 'POST' && url.pathname === '/chat') {
     const b = await readBody(req); posted.push(b);
-    if (inLive()) { state.chat409++; return json(res, 409, { code: 'wsa_live_owned', message: 'owned', data: { status: state.status } }); }
+    if (inLive()) { state.chat409++; return json(res, 409, { code: 'ibraai_live_owned', message: 'owned', data: { status: state.status } }); }
     const text = b.messages.slice(-1)[0].text;
     if (/נציג/.test(text)) {
       state.status = 'waiting'; state.manager = ''; line('system', fill('waiting'));
@@ -47,7 +47,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'POST' && url.pathname === '/live/thread/message') {
     const b = await readBody(req);
-    if (!inLive()) return json(res, 409, { code: 'wsa_not_live', message: 'not live', data: { status: 409 } });
+    if (!inLive()) return json(res, 409, { code: 'ibraai_not_live', message: 'not live', data: { status: 409 } });
     state.visitorLines.push(b.text);
     return json(res, 200, { id: line('user', b.text).id, status: state.status });
   }
@@ -140,7 +140,7 @@ const writeToAfterReload = await placeholderIs(page, 'Write to Dana');
 console.log('after reload: polling resumed while closed: ' + resumed + ' | dot on a new line: ' + dotShown + ' | dot gone on open: ' + dotGone + ' | manager bubbles ' + replayedManager + ' | system lines ' + replayedSystem + ' | placeholder kept: ' + writeToAfterReload);
 
 // ---- a stale tab: the stored state says ai while the server says live; /chat answers 409 and the line goes to the person
-await page.evaluate(() => { const s = JSON.parse(sessionStorage.getItem('wsa-chat')); s.live = { status: 'ai', manager: '', since: (s.live && s.live.since) || 0 }; sessionStorage.setItem('wsa-chat', JSON.stringify(s)); });
+await page.evaluate(() => { const s = JSON.parse(sessionStorage.getItem('ibraai-chat')); s.live = { status: 'ai', manager: '', since: (s.live && s.live.since) || 0 }; sessionStorage.setItem('ibraai-chat', JSON.stringify(s)); });
 await page.reload(); await open();
 const chat409Before = state.chat409;
 await say('עדיין כאן?');

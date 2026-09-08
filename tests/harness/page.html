@@ -3,7 +3,7 @@
 <script>
 document.getElementById('which').textContent = location.search || 'page 1';
 var bare = /[?&]bare=1/.test(location.search); // no credit, no note: the footer must not render at all
-window.wsaConfig = { endpoint: '/chat', cartEndpoint: '', liveEndpoint: '/live/thread', liveMessageEndpoint: '/live/thread/message', livePoll: 1000, accent: '#1f2937', position: 'right', isRtl: true, launcherLabel: '',
+window.ibraaiConfig = { endpoint: '/chat', cartEndpoint: '', liveEndpoint: '/live/thread', liveMessageEndpoint: '/live/thread/message', livePoll: 1000, accent: '#1f2937', position: 'right', isRtl: true, launcherLabel: '',
   title: 'יש לכם שאלה?', subtitle: 'אפשר לשאול אותי הכל', welcome: 'שלום! במה אפשר לעזור?', chips: ['מסך או שמע?', 'אינטרקום אלחוטי או חוטי?'],
   handoff: { url: 'https://wa.me/972500000000', label: 'וואטסאפ' },
   pageId: '42', privacyNote: bare ? '' : 'הפרטים שתמסרו יועברו לבעל האתר.', brand: bare ? null : { url: 'https://ibracodes.com', label: 'Developed by Ibracodes', logo: '/ibracodes.svg' },

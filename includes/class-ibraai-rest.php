@@ -9,7 +9,7 @@
  * admin capability, with the REST nonce the admin script already sends.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 use WP_Error;
 use WP_REST_Request;
@@ -21,7 +21,7 @@ if (! defined('ABSPATH')) {
 
 class Rest
 {
-    private const NS = 'wsa/v1';
+    private const NS = 'ibraai/v1';
 
     public static function boot(): void
     {
@@ -128,7 +128,7 @@ class Rest
     public static function chat(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         if (! Settings::ready()) {
-            return new WP_Error('wsa_off', __('The chat is not available right now.', 'ibracodes-ai-assistant'), ['status' => 503]);
+            return new WP_Error('ibraai_off', __('The chat is not available right now.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
 
         // A thread a person owns, or is about to, is not the AI's to answer:
@@ -145,7 +145,7 @@ class Rest
                 // reads a WP_Error's data.status as the HTTP code, and here
                 // that key has to carry the live state for the widget
                 return new WP_REST_Response([
-                    'code' => 'wsa_live_owned',
+                    'code' => 'ibraai_live_owned',
                     'message' => __('A person has this conversation right now.', 'ibracodes-ai-assistant'),
                     'data' => ['status' => $state],
                 ], 409);
@@ -215,10 +215,10 @@ class Rest
     public static function rebuild_index(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         if (! Index::enabled()) {
-            return new WP_Error('wsa_index_off', __('Switch retrieval to the embeddings index first.', 'ibracodes-ai-assistant'), ['status' => 400]);
+            return new WP_Error('ibraai_index_off', __('Switch retrieval to the embeddings index first.', 'ibracodes-ai-assistant'), ['status' => 400]);
         }
         if (Settings::api_key() === '') {
-            return new WP_Error('wsa_no_key', __('Add an OpenAI key first.', 'ibracodes-ai-assistant'), ['status' => 400]);
+            return new WP_Error('ibraai_no_key', __('Add an OpenAI key first.', 'ibracodes-ai-assistant'), ['status' => 400]);
         }
         Index::drop();
         // the batches run on WP-Cron, off this request; due now, so the spawn below actually fires
@@ -258,7 +258,7 @@ class Rest
         }
         $state = Live::state($thread_id);
         if (! in_array($state, ['waiting', 'live'], true)) {
-            return new WP_Error('wsa_not_live', __('No person is on this chat right now.', 'ibracodes-ai-assistant'), ['status' => 409]);
+            return new WP_Error('ibraai_not_live', __('No person is on this chat right now.', 'ibracodes-ai-assistant'), ['status' => 409]);
         }
         $id = Live::visitor_message($thread_id, (string) $request->get_param('text'));
         if ($id === 0) {
@@ -307,7 +307,7 @@ class Rest
             return $thread_id;
         }
         if (Live::state($thread_id) !== 'live') {
-            return new WP_Error('wsa_not_live', __('Claim the chat before replying.', 'ibracodes-ai-assistant'), ['status' => 409]);
+            return new WP_Error('ibraai_not_live', __('Claim the chat before replying.', 'ibracodes-ai-assistant'), ['status' => 409]);
         }
         $id = Live::manager_reply($thread_id, get_current_user_id(), (string) $request->get_param('text'));
         if ($id === 0) {
@@ -335,10 +335,10 @@ class Rest
         }
         $thread_id = Threads::id_from_token(sanitize_text_field((string) $request->get_param('thread')));
         if ($thread_id === 0) {
-            return new WP_Error('wsa_bad_token', __('This conversation could not be verified.', 'ibracodes-ai-assistant'), ['status' => 403]);
+            return new WP_Error('ibraai_bad_token', __('This conversation could not be verified.', 'ibracodes-ai-assistant'), ['status' => 403]);
         }
         if (! Guards::poll_allowed($thread_id)) {
-            return new WP_Error('wsa_rate_limited', __('Too many requests. Slow down a little.', 'ibracodes-ai-assistant'), ['status' => 429]);
+            return new WP_Error('ibraai_rate_limited', __('Too many requests. Slow down a little.', 'ibracodes-ai-assistant'), ['status' => 429]);
         }
 
         return $thread_id;
@@ -352,7 +352,7 @@ class Rest
         }
         $thread_id = absint($request->get_param('id'));
         if ($thread_id === 0 || Live::state($thread_id) === '') {
-            return new WP_Error('wsa_no_thread', __('That conversation no longer exists.', 'ibracodes-ai-assistant'), ['status' => 404]);
+            return new WP_Error('ibraai_no_thread', __('That conversation no longer exists.', 'ibracodes-ai-assistant'), ['status' => 404]);
         }
 
         return $thread_id;
@@ -360,12 +360,12 @@ class Rest
 
     private static function live_off(): WP_Error
     {
-        return new WP_Error('wsa_live_off', __('Live chat is not available right now.', 'ibracodes-ai-assistant'), ['status' => 503]);
+        return new WP_Error('ibraai_live_off', __('Live chat is not available right now.', 'ibracodes-ai-assistant'), ['status' => 503]);
     }
 
     private static function empty_message(): WP_Error
     {
-        return new WP_Error('wsa_empty_message', __('Write something first.', 'ibracodes-ai-assistant'), ['status' => 400]);
+        return new WP_Error('ibraai_empty_message', __('Write something first.', 'ibracodes-ai-assistant'), ['status' => 400]);
     }
 
     public static function test_key(WP_REST_Request $request): WP_REST_Response

@@ -8,7 +8,7 @@
  * system prompt says so explicitly and nothing here is ever executed.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;

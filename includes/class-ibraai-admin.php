@@ -9,7 +9,7 @@
  * pipeline instead of a separate JSON catalogue.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -18,7 +18,7 @@ if (! defined('ABSPATH')) {
 class Admin
 {
     /** Public: the lead email links to the conversation and the leads tab. */
-    public const SLUG = 'shop-agent';
+    public const SLUG = 'ibracodes-ai-assistant';
 
     private const TABS = ['overview', 'appearance', 'agent', 'catalogue', 'conversations', 'live', 'leads'];
 
@@ -28,9 +28,9 @@ class Admin
     public static function boot(): void
     {
         add_action('admin_menu', [self::class, 'menu']);
-        add_action('admin_post_wsa_save', [self::class, 'save']);
+        add_action('admin_post_ibraai_save', [self::class, 'save']);
         add_action('admin_enqueue_scripts', [self::class, 'assets']);
-        add_filter('plugin_action_links_' . plugin_basename(WSA_FILE), [self::class, 'action_links']);
+        add_filter('plugin_action_links_' . plugin_basename(IBRAAI_FILE), [self::class, 'action_links']);
     }
 
     public static function menu(): void
@@ -63,11 +63,11 @@ class Admin
         // No remote fonts: the admin uses the site's system font stack (a
         // WordPress.org privacy expectation) and admin.css lists Heebo first for
         // sites that have it installed.
-        wp_enqueue_style('wsa-admin', WSA_URL . 'assets/admin.css', [], WSA_VERSION);
-        wp_enqueue_script('wsa-admin', WSA_URL . 'assets/admin.js', [], WSA_VERSION, true);
-        wp_localize_script('wsa-admin', 'wsaAdmin', [
-            'endpoint' => esc_url_raw(rest_url('wsa/v1/test-key')),
-            'rebuildEndpoint' => esc_url_raw(rest_url('wsa/v1/rebuild-index')),
+        wp_enqueue_style('ibraai-admin', IBRAAI_URL . 'assets/admin.css', [], IBRAAI_VERSION);
+        wp_enqueue_script('ibraai-admin', IBRAAI_URL . 'assets/admin.js', [], IBRAAI_VERSION, true);
+        wp_localize_script('ibraai-admin', 'ibraaiAdmin', [
+            'endpoint' => esc_url_raw(rest_url('ibraai/v1/test-key')),
+            'rebuildEndpoint' => esc_url_raw(rest_url('ibraai/v1/rebuild-index')),
             'nonce' => wp_create_nonce('wp_rest'),
             'testing' => __('Testing…', 'ibracodes-ai-assistant'),
             'rebuilding' => __('Rebuilding…', 'ibracodes-ai-assistant'),
@@ -76,13 +76,13 @@ class Admin
 
         // the console script only where the console is
         if (self::current_tab() === 'live' && Settings::live_ready()) {
-            wp_enqueue_script('wsa-live', WSA_URL . 'assets/live.js', [], WSA_VERSION, true);
-            wp_localize_script('wsa-live', 'wsaLive', [
-                'open' => esc_url_raw(rest_url('wsa/v1/live/open')),
-                'poll' => esc_url_raw(rest_url('wsa/v1/live/poll')),
-                'claim' => esc_url_raw(rest_url('wsa/v1/live/claim')),
-                'reply' => esc_url_raw(rest_url('wsa/v1/live/reply')),
-                'close' => esc_url_raw(rest_url('wsa/v1/live/close')),
+            wp_enqueue_script('ibraai-live', IBRAAI_URL . 'assets/live.js', [], IBRAAI_VERSION, true);
+            wp_localize_script('ibraai-live', 'ibraaiLive', [
+                'open' => esc_url_raw(rest_url('ibraai/v1/live/open')),
+                'poll' => esc_url_raw(rest_url('ibraai/v1/live/poll')),
+                'claim' => esc_url_raw(rest_url('ibraai/v1/live/claim')),
+                'reply' => esc_url_raw(rest_url('ibraai/v1/live/reply')),
+                'close' => esc_url_raw(rest_url('ibraai/v1/live/close')),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'interval' => 3000,
                 'me' => wp_get_current_user()->display_name,
@@ -186,7 +186,7 @@ class Admin
         if (! current_user_can(Capabilities::admin_cap())) {
             wp_die(esc_html__('You are not allowed to do that.', 'ibracodes-ai-assistant'));
         }
-        check_admin_referer('wsa_save');
+        check_admin_referer('ibraai_save');
 
         $posted = wp_unslash($_POST);
         $tab = self::valid_tab(isset($posted['tab']) ? sanitize_key($posted['tab']) : 'overview');
@@ -384,9 +384,9 @@ class Admin
     {
         ?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-            <input type="hidden" name="action" value="wsa_save">
+            <input type="hidden" name="action" value="ibraai_save">
             <input type="hidden" name="tab" value="<?php echo esc_attr($tab); ?>">
-            <?php wp_nonce_field('wsa_save'); ?>
+            <?php wp_nonce_field('ibraai_save'); ?>
         <?php
     }
 
@@ -626,7 +626,7 @@ class Admin
 
     private static function text_field(string $name, string $label, string $value, string $help = '', string $type = 'text'): void
     {
-        $id = 'wsa-' . str_replace('_', '-', $name);
+        $id = 'ibraai-' . str_replace('_', '-', $name);
         ?>
         <div class="wsa-field">
             <label class="wsa-label" for="<?php echo esc_attr($id); ?>"><?php echo esc_html($label); ?></label>
@@ -656,11 +656,11 @@ class Admin
                     <label class="wsa-label" for="wsa-key"><?php esc_html_e('OpenAI API key', 'ibracodes-ai-assistant'); ?></label>
                     <?php if (Settings::key_is_constant()) : ?>
                         <p><span class="wsa-pill is-good"><?php esc_html_e('Set in wp-config.php', 'ibracodes-ai-assistant'); ?></span></p>
-                        <p class="wsa-help"><?php esc_html_e('WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden.', 'ibracodes-ai-assistant'); ?></p>
+                        <p class="wsa-help"><?php esc_html_e('IBRAAI_OPENAI_KEY is defined, so the constant wins and this field is hidden.', 'ibracodes-ai-assistant'); ?></p>
                     <?php else : ?>
                         <input class="fld is-mono" type="text" id="wsa-key" name="api_key" autocomplete="off" spellcheck="false"
                             value="<?php echo esc_attr(Settings::masked_key()); ?>" placeholder="sk-...">
-                        <p class="wsa-help"><?php esc_html_e('Stored in this site\'s database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead.', 'ibracodes-ai-assistant'); ?></p>
+                        <p class="wsa-help"><?php esc_html_e('Stored in this site\'s database, so any administrator can read it. Where that matters, define IBRAAI_OPENAI_KEY in wp-config.php instead.', 'ibracodes-ai-assistant'); ?></p>
                     <?php endif; ?>
                     <p style="margin-top:10px;">
                         <button type="button" class="wsa-btn is-ghost" id="wsa-test"><?php esc_html_e('Test connection', 'ibracodes-ai-assistant'); ?></button>
@@ -904,8 +904,8 @@ class Admin
                     ];
                     foreach ($limits as $key => [$label, $help]) : ?>
                         <div class="wsa-field">
-                            <label class="wsa-label" for="wsa-<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></label>
-                            <input class="fld" style="max-width:130px;" type="number" min="1" id="wsa-<?php echo esc_attr($key); ?>" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr((string) $s[$key]); ?>">
+                            <label class="wsa-label" for="ibraai-<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></label>
+                            <input class="fld" style="max-width:130px;" type="number" min="1" id="ibraai-<?php echo esc_attr($key); ?>" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr((string) $s[$key]); ?>">
                             <?php if ($help) : ?><p class="wsa-help"><?php echo esc_html($help); ?></p><?php endif; ?>
                         </div>
                     <?php endforeach; ?>

@@ -68,7 +68,7 @@ it. On sites where that matters, define it in `wp-config.php` instead and the se
 disappears:
 
 ```php
-define( 'WSA_OPENAI_KEY', 'sk-...' );
+define( 'IBRAAI_OPENAI_KEY', 'sk-...' );
 ```
 
 ## Content
@@ -126,18 +126,18 @@ because the assistant searches before answering, and index builds count against 
 
 | Filter | Purpose |
 | --- | --- |
-| `wsa_has_commerce` | Override whether the plugin treats the site as a store (default: WooCommerce active). |
-| `wsa_show_widget` | Return false to hide the chat on specific pages. |
-| `wsa_content_text` | Change the plain text taken from a post before it is chunked (`$text, $post`). |
-| `wsa_content_excluded_ids` | Post ids the assistant must never read, on top of the scope settings. |
-| `wsa_search_args` | Adjust the `WP_Query` arguments the search retrieval uses. |
-| `wsa_currency_tokens` | Words that count as money for the price guard (`$tokens, $currency`). |
-| `wsa_client_ip` | Override how the visitor's address is resolved for rate limiting. |
-| `wsa_models` | Add or replace the selectable models. |
-| `wsa_pre_embed` | Return vectors instead of calling the embeddings API (`$texts`). |
-| `wsa_pre_complete` | Return an assistant message instead of calling the completion API (`$messages, $tools`). |
+| `ibraai_has_commerce` | Override whether the plugin treats the site as a store (default: WooCommerce active). |
+| `ibraai_show_widget` | Return false to hide the chat on specific pages. |
+| `ibraai_content_text` | Change the plain text taken from a post before it is chunked (`$text, $post`). |
+| `ibraai_content_excluded_ids` | Post ids the assistant must never read, on top of the scope settings. |
+| `ibraai_search_args` | Adjust the `WP_Query` arguments the search retrieval uses. |
+| `ibraai_currency_tokens` | Words that count as money for the price guard (`$tokens, $currency`). |
+| `ibraai_client_ip` | Override how the visitor's address is resolved for rate limiting. |
+| `ibraai_models` | Add or replace the selectable models. |
+| `ibraai_pre_embed` | Return vectors instead of calling the embeddings API (`$texts`). |
+| `ibraai_pre_complete` | Return an assistant message instead of calling the completion API (`$messages, $tools`). |
 
-The two `wsa_pre_` filters answer before the key check and the spending guards run, so they
+The two `ibraai_pre_` filters answer before the key check and the spending guards run, so they
 bypass both. They exist for the tests and for alternative providers; do not use them to route
 real traffic around your own limits.
 
@@ -172,7 +172,7 @@ mark under the chat input, linking to ibracodes.com. Nothing is shown unless you
 Publishing is automated; a tag is the release:
 
     # 1. bump the version in three places (all must agree)
-    #    ibracodes-ai-assistant.php: Version: and define('WSA_VERSION', ...)
+    #    ibracodes-ai-assistant.php: Version: and define('IBRAAI_VERSION', ...)
     #    readme.txt: Stable tag: and a changelog entry
     # 2. verify locally
     bin/check-version.sh
@@ -198,7 +198,13 @@ drives the widget against a stub of the REST routes. See [tests/README.md](tests
 The plugin folder was renamed from `woocommerce-shop-agent` to `ibracodes-ai-assistant` in 0.2.0,
 so an install created before 0.2.0 shows as inactive after the update and has to be activated
 once more on the Plugins screen. Settings, conversations, leads and the content index are kept:
-they live under their own option and table names, which did not change.
+0.2.0 also moved every option, table and cron hook onto the `ibraai_` prefix WordPress.org
+requires, and the first request after the update carries the old rows across by itself.
+
+Two things do not survive the move. The admin page address changed, so an old bookmark to it
+404s; reach it from the menu instead. And the token that identifies a conversation to a
+returning visitor is hashed with a new salt, so a chat left open in a browser starts fresh.
+Nothing stored is lost either way.
 
 ## Notes
 

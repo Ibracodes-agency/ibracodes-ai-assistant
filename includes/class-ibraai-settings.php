@@ -3,13 +3,13 @@
  * Settings storage and sanitization.
  *
  * The API key lives in its own non-autoloaded option, separate from the
- * settings blob, and can be overridden by a WSA_OPENAI_KEY constant in
+ * settings blob, and can be overridden by a IBRAAI_OPENAI_KEY constant in
  * wp-config.php. On sites where "any administrator can read the key from the
  * database" is not acceptable, the constant is the answer, and the admin UI
  * says so rather than pretending the option is a secret store.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -17,9 +17,9 @@ if (! defined('ABSPATH')) {
 
 class Settings
 {
-    private const OPTION = 'wsa_settings';
+    private const OPTION = 'ibraai_settings';
 
-    private const KEY_OPTION = 'wsa_openai_key';
+    private const KEY_OPTION = 'ibraai_openai_key';
 
     /** Cached per request: the widget and the agent both read these. */
     private static ?array $cache = null;
@@ -172,7 +172,7 @@ class Settings
         }
         $clean['live_email'] = self::resolve_live_email((string) $clean['live_email'], (string) $clean['leads_email']);
 
-        // the update_option_wsa_settings hook runs inside update_option(), and readers there must see the new values
+        // the update_option_ibraai_settings hook runs inside update_option(), and readers there must see the new values
         self::$cache = null;
         update_option(self::OPTION, $clean);
 
@@ -191,7 +191,7 @@ class Settings
     /** Allowed models. Filterable so a store can pin one this plugin has not heard of. */
     public static function models(): array
     {
-        return apply_filters('wsa_models', [
+        return apply_filters('ibraai_models', [
             'gpt-5-mini' => __('gpt-5-mini (recommended, cheapest)', 'ibracodes-ai-assistant'),
             'gpt-5' => __('gpt-5 (best answers, costs more)', 'ibracodes-ai-assistant'),
             'gpt-4.1-mini' => __('gpt-4.1-mini', 'ibracodes-ai-assistant'),
@@ -204,7 +204,7 @@ class Settings
     public static function api_key(): string
     {
         if (self::key_is_constant()) {
-            return (string) constant('WSA_OPENAI_KEY');
+            return (string) constant('IBRAAI_OPENAI_KEY');
         }
 
         return (string) get_option(self::KEY_OPTION, '');
@@ -212,7 +212,7 @@ class Settings
 
     public static function key_is_constant(): bool
     {
-        return defined('WSA_OPENAI_KEY') && constant('WSA_OPENAI_KEY');
+        return defined('IBRAAI_OPENAI_KEY') && constant('IBRAAI_OPENAI_KEY');
     }
 
     public static function save_api_key(string $key): void

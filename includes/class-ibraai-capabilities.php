@@ -5,7 +5,7 @@
  * either mode.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -20,7 +20,7 @@ class Capabilities
     {
         $present = class_exists('WooCommerce') && defined('WC_VERSION') && version_compare(WC_VERSION, self::WC_MIN, '>=');
 
-        return (bool) apply_filters('wsa_has_commerce', $present);
+        return (bool) apply_filters('ibraai_has_commerce', $present);
     }
 
     /** Who may see the admin: shop managers on a shop, administrators elsewhere. */

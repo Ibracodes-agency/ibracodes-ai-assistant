@@ -8,7 +8,7 @@
  * privacy note and the maker's mark.
  *
  * Self-injecting and dependency-free: it builds its own DOM, owns every class
- * under the wsa- prefix, and assumes nothing about the host theme. Product text
+ * it renders, from `wsa-root` down, and assumes nothing about the host theme. Product text
  * is written with textContent; the only innerHTML is WooCommerce's own price
  * markup and our own inline icons.
  *
@@ -20,7 +20,7 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.wsaConfig;
+	var cfg = window.ibraaiConfig;
 	if ( ! cfg || ! cfg.endpoint ) {
 		return;
 	}
@@ -35,8 +35,8 @@
 	var live = { status: 'ai', manager: '', since: 0 };
 	var pollTimer = null;
 	var polling = null;
-	var SEEN_KEY = 'wsa-seen';
-	var STORE_KEY = 'wsa-chat';
+	var SEEN_KEY = 'ibraai-seen';
+	var STORE_KEY = 'ibraai-chat';
 	// entries kept across pages: a live session's lines count too, and forty
 	// covers a long chat while the store stays small; the model only ever
 	// sees the last ten visitor and assistant turns anyway
@@ -398,7 +398,7 @@
 						return 'slow';
 					}
 					// only a deliberate refusal ends live mode; a 500 or a 502 is a hiccup
-					return data && ( data.code === 'wsa_live_off' || data.code === 'wsa_bad_token' ) ? 'gone' : 'retry';
+					return data && ( data.code === 'ibraai_live_off' || data.code === 'ibraai_bad_token' ) ? 'gone' : 'retry';
 				} );
 			} )
 			.catch( function () {
@@ -520,7 +520,7 @@
 	}
 
 	/**
-	 * The AI's turn. A 409 with wsa_live_owned means a person has the thread:
+	 * The AI's turn. A 409 with ibraai_live_owned means a person has the thread:
 	 * the widget switches modes and hands them the line instead, once.
 	 */
 	function askAi( entry, retried ) {
@@ -547,7 +547,7 @@
 			.then( function ( result ) {
 				typing.remove();
 				if ( ! result.ok ) {
-					if ( result.status === 409 && result.data && result.data.code === 'wsa_live_owned' && liveAvailable() && ! retried ) {
+					if ( result.status === 409 && result.data && result.data.code === 'ibraai_live_owned' && liveAvailable() && ! retried ) {
 						enterLive( result.data.data && result.data.data.status );
 						return sendLive( entry, true );
 					}

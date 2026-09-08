@@ -25,7 +25,7 @@
  * ever renders what the server stored and never has to synthesise a text.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;

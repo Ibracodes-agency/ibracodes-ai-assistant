@@ -11,7 +11,7 @@
  * plus a monthly call budget for slow, silent creep.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 use WP_Error;
 
@@ -37,8 +37,8 @@ class Guards
     public static function check_and_acquire(): ?WP_Error
     {
         $ip = self::client_ip_hash();
-        $burst_key = 'wsa_rl_' . $ip;
-        $day_key = 'wsa_rld_' . $ip;
+        $burst_key = 'ibraai_rl_' . $ip;
+        $day_key = 'ibraai_rld_' . $ip;
 
         if ((int) get_transient($burst_key) >= (int) Settings::get('limit_ip_burst')) {
             return self::busy(__('That is a lot of messages at once. Try again in a few minutes.', 'ibracodes-ai-assistant'));
@@ -52,7 +52,7 @@ class Guards
         if (self::month_count() >= (int) Settings::get('limit_month')) {
             return self::busy(__('The chat is unavailable right now. Please use the contact page.', 'ibracodes-ai-assistant'));
         }
-        if ((int) get_transient('wsa_busy') >= (int) Settings::get('limit_concurrent')) {
+        if ((int) get_transient('ibraai_busy') >= (int) Settings::get('limit_concurrent')) {
             return self::busy(__('The chat is busy right now. Try again in a moment.', 'ibracodes-ai-assistant'));
         }
 
@@ -62,14 +62,14 @@ class Guards
         // which is a rounding error against the daily bound.
         set_transient($burst_key, (int) get_transient($burst_key) + 1, 10 * MINUTE_IN_SECONDS);
         set_transient($day_key, (int) get_transient($day_key) + 1, DAY_IN_SECONDS);
-        set_transient('wsa_busy', (int) get_transient('wsa_busy') + 1, self::SLOT_TTL);
+        set_transient('ibraai_busy', (int) get_transient('ibraai_busy') + 1, self::SLOT_TTL);
 
         return null;
     }
 
     public static function release(): void
     {
-        set_transient('wsa_busy', max(0, (int) get_transient('wsa_busy') - 1), self::SLOT_TTL);
+        set_transient('ibraai_busy', max(0, (int) get_transient('ibraai_busy') - 1), self::SLOT_TTL);
     }
 
     /**
@@ -105,8 +105,8 @@ class Guards
      */
     public static function poll_allowed(int $thread_id): bool
     {
-        return self::within_window('wsa_poll_' . $thread_id, self::POLLS_PER_THREAD)
-            && self::within_window('wsa_pollip_' . self::remote_addr_hash(), self::POLLS_PER_ADDRESS);
+        return self::within_window('ibraai_poll_' . $thread_id, self::POLLS_PER_THREAD)
+            && self::within_window('ibraai_pollip_' . self::remote_addr_hash(), self::POLLS_PER_ADDRESS);
     }
 
     /**
@@ -150,18 +150,18 @@ class Guards
             'today_limit' => (int) Settings::get('limit_store_day'),
             'month' => self::month_count(),
             'month_limit' => (int) Settings::get('limit_month'),
-            'in_flight' => (int) get_transient('wsa_busy'),
+            'in_flight' => (int) get_transient('ibraai_busy'),
         ];
     }
 
     private static function day_key(): string
     {
-        return 'wsa_calls_' . gmdate('Y-m-d');
+        return 'ibraai_calls_' . gmdate('Y-m-d');
     }
 
     private static function month_key(): string
     {
-        return 'wsa_calls_month_' . gmdate('Y-m');
+        return 'ibraai_calls_month_' . gmdate('Y-m');
     }
 
     /**
@@ -185,9 +185,9 @@ class Guards
                 break;
             }
         }
-        $ip = (string) apply_filters('wsa_client_ip', $ip);
+        $ip = (string) apply_filters('ibraai_client_ip', $ip);
 
-        return md5('wsa|' . $ip);
+        return md5('ibraai|' . $ip);
     }
 
     /** The connecting address alone, hashed like client_ip_hash(): the one header a caller cannot choose. */
@@ -195,11 +195,11 @@ class Guards
     {
         $ip = empty($_SERVER['REMOTE_ADDR']) ? '' : sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
 
-        return md5('wsa|' . $ip);
+        return md5('ibraai|' . $ip);
     }
 
     private static function busy(string $message): WP_Error
     {
-        return new WP_Error('wsa_rate_limited', $message, ['status' => 429]);
+        return new WP_Error('ibraai_rate_limited', $message, ['status' => 429]);
     }
 }

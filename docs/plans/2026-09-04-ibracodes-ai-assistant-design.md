@@ -4,7 +4,8 @@ Date: 2026-09-04. Status: validated with the owner, not yet implemented.
 
 Turns Shop Agent for WooCommerce (0.1.2) into one plugin that serves any
 WordPress site. Content answering is always on; product tools switch on
-only when WooCommerce is active. The plugin slug and the WSA prefix stay;
+only when WooCommerce is active. The plugin slug stays (the internal prefix
+became `ibraai` later, for the WordPress.org review);
 the display name becomes IbraCodes AI Assistant.
 
 ## Decisions taken with the owner
@@ -182,8 +183,8 @@ admin screen every 3 seconds, both paused while the browser tab is hidden.
 ### Endpoints
 
 Visitor, public, token-verified and rate-limited per IP:
-`GET wsa/v1/live/thread` (state and new messages since an id),
-`POST wsa/v1/live/thread/message` (a visitor message during waiting or live).
+`GET ibraai/v1/live/thread` (state and new messages since an id),
+`POST ibraai/v1/live/thread/message` (a visitor message during waiting or live).
 Manager, admin capability and nonce: list open threads with unread counts,
 poll one thread, claim, reply, close.
 

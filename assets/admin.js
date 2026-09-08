@@ -7,7 +7,7 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.wsaAdmin ) {
+	if ( ! window.ibraaiAdmin ) {
 		return;
 	}
 
@@ -30,7 +30,7 @@
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'X-WP-Nonce': wsaAdmin.nonce,
+					'X-WP-Nonce': ibraaiAdmin.nonce,
 				},
 				credentials: 'same-origin',
 				body: JSON.stringify( payload() ),
@@ -43,7 +43,7 @@
 					result.className = 'wsa-test-result ' + ( data.ok ? 'is-ok' : 'is-bad' );
 				} )
 				.catch( function () {
-					result.textContent = wsaAdmin.failed;
+					result.textContent = ibraaiAdmin.failed;
 					result.className = 'wsa-test-result is-bad';
 				} )
 				.finally( function () {
@@ -53,12 +53,12 @@
 		} );
 	}
 
-	wire( 'wsa-test', 'wsa-test-result', wsaAdmin.endpoint, wsaAdmin.testing, function () {
+	wire( 'wsa-test', 'wsa-test-result', ibraaiAdmin.endpoint, ibraaiAdmin.testing, function () {
 		var keyField = document.getElementById( 'wsa-key' );
 		var modelField = document.getElementById( 'wsa-model' );
 		return { key: keyField ? keyField.value : '', model: modelField ? modelField.value : '' };
 	} );
-	wire( 'wsa-rebuild', 'wsa-rebuild-result', wsaAdmin.rebuildEndpoint, wsaAdmin.rebuilding, function () {
+	wire( 'wsa-rebuild', 'wsa-rebuild-result', ibraaiAdmin.rebuildEndpoint, ibraaiAdmin.rebuilding, function () {
 		return {};
 	} );
 

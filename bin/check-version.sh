@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Guard against a release WordPress would refuse to serve: the git tag, the
-# plugin header Version, the WSA_VERSION constant and the readme Stable tag
+# plugin header Version, the IBRAAI_VERSION constant and the readme Stable tag
 # must all be the same. The directory reads Stable tag from trunk and then
 # serves that tag folder, so a mismatch silently publishes the wrong code, or
 # nothing at all.
@@ -16,13 +16,13 @@ cd "$(dirname "$0")/.."
 plugin_file="ibracodes-ai-assistant.php"
 
 header_version=$(grep -m1 -E '^\s*\*\s*Version:' "$plugin_file" | sed -E 's/.*Version:[[:space:]]*//' | tr -d '[:space:]')
-constant_version=$(grep -m1 -E "define\('WSA_VERSION'" "$plugin_file" | sed -E "s/.*'WSA_VERSION',[[:space:]]*'([^']+)'.*/\1/")
+constant_version=$(grep -m1 -E "define\('IBRAAI_VERSION'" "$plugin_file" | sed -E "s/.*'IBRAAI_VERSION',[[:space:]]*'([^']+)'.*/\1/")
 stable_tag=$(grep -m1 -E '^Stable tag:' readme.txt | sed -E 's/^Stable tag:[[:space:]]*//' | tr -d '[:space:]')
 expected="${1:-$header_version}"
 
 printf 'expected (tag):      %s\n' "$expected"
 printf 'plugin header:       %s\n' "$header_version"
-printf 'WSA_VERSION:         %s\n' "$constant_version"
+printf 'IBRAAI_VERSION:      %s\n' "$constant_version"
 printf 'readme stable tag:   %s\n' "$stable_tag"
 
 status=0

@@ -11,7 +11,7 @@
  * forged one is nothing, because forging it requires the site's own salts.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -21,7 +21,7 @@ class Threads
 {
     public static function token(int $thread_id): string
     {
-        return $thread_id . '.' . substr(wp_hash('wsa_thread_' . $thread_id, 'nonce'), 0, 20);
+        return $thread_id . '.' . substr(wp_hash('ibraai_thread_' . $thread_id, 'nonce'), 0, 20);
     }
 
     /** The thread id a token refers to, or 0 when it does not verify. */
@@ -35,7 +35,7 @@ class Threads
         if ($id <= 0) {
             return 0;
         }
-        $expected = substr(wp_hash('wsa_thread_' . $id, 'nonce'), 0, 20);
+        $expected = substr(wp_hash('ibraai_thread_' . $id, 'nonce'), 0, 20);
 
         return hash_equals($expected, $signature) ? $id : 0;
     }

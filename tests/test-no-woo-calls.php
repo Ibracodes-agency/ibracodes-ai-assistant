@@ -34,25 +34,25 @@ $scrubber_calls = 0;
 foreach ($files as $file) {
     $rel = substr($file, strlen($root) + 1);
     $lines = file($file, FILE_IGNORE_NEW_LINES);
-    [$tokens_from, $tokens_to] = $rel === 'includes/class-wsa-scrubber.php' ? $method_span($lines, 'currency_tokens') : [-1, -1];
+    [$tokens_from, $tokens_to] = $rel === 'includes/class-ibraai-scrubber.php' ? $method_span($lines, 'currency_tokens') : [-1, -1];
 
     foreach ($lines as $i => $line) {
         if (! preg_match($call, $line)) {
             continue;
         }
-        if ($rel === 'includes/class-wsa-catalog.php') {
+        if ($rel === 'includes/class-ibraai-catalog.php') {
             $catalog_calls++;
 
             continue;
         }
         $start = max(0, $i - $window);
         $guarded = (bool) preg_grep($guard, array_slice($lines, $start, $i - $start + 1));
-        if ($rel === 'includes/class-wsa-admin.php') {
+        if ($rel === 'includes/class-ibraai-admin.php') {
             $admin_calls++;
             if ($guarded && str_contains($line, 'wc_get_product(')) {
                 continue;
             }
-        } elseif ($rel === 'includes/class-wsa-scrubber.php' && $guarded && $i >= $tokens_from && $i <= $tokens_to) {
+        } elseif ($rel === 'includes/class-ibraai-scrubber.php' && $guarded && $i >= $tokens_from && $i <= $tokens_to) {
             $scrubber_calls++;
 
             continue;
@@ -64,9 +64,9 @@ foreach ($files as $file) {
 foreach ($offending as $where) {
     echo "  offending: {$where}\n";
 }
-wsa_assert($catalog_calls > 0, 'the scan recognises the WooCommerce calls the Catalog makes');
-wsa_assert($offending === [], 'no WooCommerce call outside the Catalog and the guarded sites');
-wsa_assert_same(2, $admin_calls, 'the admin has exactly two guarded wc_get_product() calls');
-wsa_assert_same(2, $scrubber_calls, 'the scrubber has exactly two guarded currency calls');
+ibraai_assert($catalog_calls > 0, 'the scan recognises the WooCommerce calls the Catalog makes');
+ibraai_assert($offending === [], 'no WooCommerce call outside the Catalog and the guarded sites');
+ibraai_assert_same(2, $admin_calls, 'the admin has exactly two guarded wc_get_product() calls');
+ibraai_assert_same(2, $scrubber_calls, 'the scrubber has exactly two guarded currency calls');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);

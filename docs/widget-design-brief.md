@@ -29,8 +29,8 @@ These are integration requirements, not style preferences. The design is free ev
 
 1. **One root element.** Everything lives inside a single `<div class="wsa-root">`. It is
    `position: fixed` and pinned to a bottom corner.
-2. **Every class starts with `wsa-`.** Keep the class names listed in the inventory below. If a
-   design needs a new element, name it `wsa-something`.
+2. **Every class carries the widget prefix**, as in `wsa-root` and `wsa-card`. Keep the class
+   names listed in the inventory below. If a design needs a new element, name it `wsa-extra`.
 3. **Self-contained CSS.** Plain CSS in one `<style>` block. No Tailwind, no CSS framework, no
    external stylesheet, no CDN, no webfont, no icon font, no build step. Icons must be **inline
    SVG**. The only remote asset is the product image, which comes from the shop.

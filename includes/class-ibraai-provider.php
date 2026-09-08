@@ -6,7 +6,7 @@
  * too, behind the same key and the same spend guards.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 use WP_Error;
 
@@ -36,14 +36,14 @@ class Provider
     public static function complete(array $messages, array $tools): array|WP_Error
     {
         // tests hand a message back here, so nothing touches the network or the budget
-        $pre = apply_filters('wsa_pre_complete', null, $messages, $tools);
+        $pre = apply_filters('ibraai_pre_complete', null, $messages, $tools);
         if (is_array($pre) || $pre instanceof WP_Error) {
             return $pre;
         }
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
+            return new WP_Error('ibraai_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
 
         $charged = Guards::charge_upstream_call();
@@ -111,14 +111,14 @@ class Provider
             return [];
         }
         // tests and the index tests hand vectors back here, so nothing touches the network
-        $pre = apply_filters('wsa_pre_embed', null, $texts);
+        $pre = apply_filters('ibraai_pre_embed', null, $texts);
         if (is_array($pre) || $pre instanceof WP_Error) {
             return $pre;
         }
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
+            return new WP_Error('ibraai_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
 
         $charged = Guards::charge_upstream_call();
@@ -187,7 +187,7 @@ class Provider
         ]);
 
         if (is_wp_error($response)) {
-            return new WP_Error('wsa_test_failed', $response->get_error_message());
+            return new WP_Error('ibraai_test_failed', $response->get_error_message());
         }
 
         $code = wp_remote_retrieve_response_code($response);
@@ -198,7 +198,7 @@ class Provider
         $data = json_decode(wp_remote_retrieve_body($response), true);
         $message = (string) ($data['error']['message'] ?? '');
 
-        return new WP_Error('wsa_test_failed', match (true) {
+        return new WP_Error('ibraai_test_failed', match (true) {
             $code === 401 => __('OpenAI rejected that key.', 'ibracodes-ai-assistant'),
             $code === 429 => __('The key works, but the account is out of quota or rate limited.', 'ibracodes-ai-assistant'),
             $code === 404 => __('The key works, but this account cannot use the selected model.', 'ibracodes-ai-assistant'),
@@ -213,14 +213,14 @@ class Provider
     /** The last upstream failure, surfaced in the admin so a dead key is visible. */
     public static function last_failure(): ?array
     {
-        $failure = get_option('wsa_last_failure');
+        $failure = get_option('ibraai_last_failure');
 
         return is_array($failure) ? $failure : null;
     }
 
     private static function remember_failure(int $code, mixed $data): void
     {
-        update_option('wsa_last_failure', [
+        update_option('ibraai_last_failure', [
             'code' => $code,
             'message' => (string) (is_array($data) ? ($data['error']['message'] ?? '') : ''),
             'at' => current_time('mysql'),
@@ -229,15 +229,15 @@ class Provider
 
     private static function clear_failure(): void
     {
-        if (get_option('wsa_last_failure') !== false) {
-            delete_option('wsa_last_failure');
+        if (get_option('ibraai_last_failure') !== false) {
+            delete_option('ibraai_last_failure');
         }
     }
 
     private static function unavailable(): WP_Error
     {
         return new WP_Error(
-            'wsa_upstream',
+            'ibraai_upstream',
             __('The chat is unavailable right now. Please try again.', 'ibracodes-ai-assistant'),
             ['status' => 502],
         );
@@ -246,7 +246,7 @@ class Provider
     private static function log(string $message): void
     {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[shop-agent] ' . $message); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('[ibracodes-ai-assistant] ' . $message); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         }
     }
 }

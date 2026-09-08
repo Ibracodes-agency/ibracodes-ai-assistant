@@ -15,7 +15,7 @@
  * default is short.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -25,36 +25,54 @@ if (! defined('ABSPATH')) {
 
 class DB
 {
-    public const PURGE_HOOK = 'wsa_purge_threads';
+    public const PURGE_HOOK = 'ibraai_purge_threads';
 
     private const DB_VERSION = '1.3.0';
+
+    /** The prefix every option, table and cron hook used before 0.2.0. */
+    private const LEGACY_PREFIX = 'wsa_';
+
+    /** Fixed option names under that prefix; the monthly counters are found by query. */
+    private const LEGACY_OPTIONS = [
+        'settings',
+        'openai_key',
+        'db_version',
+        'last_failure',
+        'index_queue',
+        'index_backoff',
+        'index_model',
+    ];
+
+    private const LEGACY_TABLES = ['threads', 'messages', 'chunks', 'leads'];
+
+    private const LEGACY_HOOKS = ['purge_threads', 'index_batch', 'index_reconcile'];
 
     public static function threads_table(): string
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wsa_threads';
+        return $wpdb->prefix . 'ibraai_threads';
     }
 
     public static function messages_table(): string
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wsa_messages';
+        return $wpdb->prefix . 'ibraai_messages';
     }
 
     public static function chunks_table(): string
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wsa_chunks';
+        return $wpdb->prefix . 'ibraai_chunks';
     }
 
     public static function leads_table(): string
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wsa_leads';
+        return $wpdb->prefix . 'ibraai_leads';
     }
 
     public static function install(): void
@@ -137,26 +155,86 @@ class DB
             KEY created_at (created_at)
         ) {$charset};");
 
-        update_option('wsa_db_version', self::DB_VERSION, false);
+        update_option('ibraai_db_version', self::DB_VERSION, false);
     }
 
     /** Runs the schema once per version bump, under a lock so a busy site cannot stampede it. */
     public static function maybe_upgrade(): void
     {
-        if (get_option('wsa_db_version') === self::DB_VERSION) {
+        if (get_option('ibraai_db_version') === self::DB_VERSION) {
             return;
         }
         global $wpdb;
-        $lock = 'wsa_install_' . substr(md5(DB_NAME . $wpdb->prefix), 0, 8);
+        $lock = 'ibraai_install_' . substr(md5(DB_NAME . $wpdb->prefix), 0, 8);
         if (! (bool) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 0)', $lock))) {
             return;
         }
         try {
-            if (get_option('wsa_db_version') !== self::DB_VERSION) {
+            self::adopt_legacy_names();
+            if (get_option('ibraai_db_version') !== self::DB_VERSION) {
                 self::install();
             }
         } finally {
             $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+        }
+    }
+
+    /**
+     * 0.2.0 moved every option, table and cron hook onto the ibraai_ prefix,
+     * which WordPress.org requires. An install that predates it keeps its data:
+     * the options are copied across, the tables renamed and the old cron hooks
+     * cleared, once, before the schema step fills in whatever is still missing.
+     *
+     * Runs inside maybe_upgrade()'s lock, so two requests cannot both start it,
+     * and only while the new version stamp is absent and the old one is not, so
+     * it cannot run twice or undo later writes.
+     */
+    private static function adopt_legacy_names(): void
+    {
+        global $wpdb;
+        $old_prefix = self::LEGACY_PREFIX;
+
+        if (get_option('ibraai_db_version') !== false || get_option($old_prefix . 'db_version') === false) {
+            return;
+        }
+
+        $names = self::LEGACY_OPTIONS;
+        // one option per month of API usage, so the set is only known at runtime
+        $counters = $wpdb->get_col($wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $wpdb->esc_like($old_prefix . 'calls_month_') . '%',
+        ));
+        foreach ($counters as $counter) {
+            $names[] = substr($counter, strlen($old_prefix));
+        }
+
+        foreach ($names as $name) {
+            $old = $old_prefix . $name;
+            $value = get_option($old);
+            if ($value !== false) {
+                // the stored autoload flag comes along, so the settings stay on
+                // the autoloaded set and the counters stay off it
+                $autoload = $wpdb->get_var($wpdb->prepare(
+                    "SELECT autoload FROM {$wpdb->options} WHERE option_name = %s",
+                    $old,
+                ));
+                update_option('ibraai_' . $name, $value, $autoload);
+            }
+            delete_option($old);
+        }
+
+        foreach (self::LEGACY_TABLES as $table) {
+            $old = $wpdb->prefix . $old_prefix . $table;
+            $new = $wpdb->prefix . 'ibraai_' . $table;
+            $have_old = (bool) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($old)));
+            $have_new = (bool) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($new)));
+            if ($have_old && ! $have_new) {
+                $wpdb->query($wpdb->prepare('RENAME TABLE %i TO %i', $old, $new)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- renaming the plugin's own tables onto the new prefix
+            }
+        }
+
+        foreach (self::LEGACY_HOOKS as $hook) {
+            wp_unschedule_hook($old_prefix . $hook);
         }
     }
 

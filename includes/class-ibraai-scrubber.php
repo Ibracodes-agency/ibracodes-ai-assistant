@@ -13,7 +13,7 @@
  * code rather than words like "costs".
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -125,7 +125,7 @@ class Scrubber
 
         /** Add or replace the words that count as money on this store. */
         return array_values(array_unique(array_filter(
-            (array) apply_filters('wsa_currency_tokens', $tokens, $code),
+            (array) apply_filters('ibraai_currency_tokens', $tokens, $code),
         )));
     }
 

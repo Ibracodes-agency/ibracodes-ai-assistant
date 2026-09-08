@@ -5,7 +5,7 @@
  * active, which WP-CLI gives for free.
  */
 
-function wsa_assert(bool $ok, string $what): void
+function ibraai_assert(bool $ok, string $what): void
 {
     if (! $ok) {
         fwrite(STDERR, "FAIL: {$what}\n");
@@ -14,13 +14,13 @@ function wsa_assert(bool $ok, string $what): void
     echo "  ok: {$what}\n";
 }
 
-function wsa_assert_same(mixed $expected, mixed $actual, string $what): void
+function ibraai_assert_same(mixed $expected, mixed $actual, string $what): void
 {
-    wsa_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
+    ibraai_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
 }
 
 /** Creates a post the test owns (published by default); returns the id. $extra adds or overrides insert arguments. */
-function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish', array $extra = []): int
+function ibraai_make_post(string $title, string $content, string $type = 'page', string $status = 'publish', array $extra = []): int
 {
     $id = wp_insert_post($extra + [
         'post_title' => $title,
@@ -32,24 +32,24 @@ function wsa_make_post(string $title, string $content, string $type = 'page', st
         fwrite(STDERR, 'could not create post: ' . $id->get_error_message() . "\n");
         exit(1);
     }
-    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for wsa_cleanup() to see it.
-    $GLOBALS['wsa_test_posts'][] = (int) $id;
+    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for ibraai_cleanup() to see it.
+    $GLOBALS['ibraai_test_posts'][] = (int) $id;
 
     return (int) $id;
 }
 
-function wsa_cleanup(): void
+function ibraai_cleanup(): void
 {
-    foreach ($GLOBALS['wsa_test_posts'] ?? [] as $id) {
+    foreach ($GLOBALS['ibraai_test_posts'] ?? [] as $id) {
         wp_delete_post($id, true);
     }
-    $GLOBALS['wsa_test_posts'] = [];
+    $GLOBALS['ibraai_test_posts'] = [];
 }
 
-function wsa_done(string $file): void
+function ibraai_done(string $file): void
 {
-    wsa_cleanup();
+    ibraai_cleanup();
     echo 'PASS ' . basename($file) . "\n";
 }
 
-register_shutdown_function('wsa_cleanup');
+register_shutdown_function('ibraai_cleanup');

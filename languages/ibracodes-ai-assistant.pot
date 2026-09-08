@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-07T10:00:45+00:00\n"
+"POT-Creation-Date: 2026-09-08T12:17:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: ibracodes-ai-assistant\n"
@@ -20,9 +20,8 @@ msgid "IbraCodes AI Assistant"
 msgstr ""
 
 #. Plugin URI of the plugin
-#. Author URI of the plugin
 #: ibracodes-ai-assistant.php
-msgid "https://ibracodes.com"
+msgid "https://ibracodes.com/resources/ibracodes-ai-assistant/"
 msgstr ""
 
 #. Description of the plugin
@@ -33,6 +32,11 @@ msgstr ""
 #. Author of the plugin
 #: ibracodes-ai-assistant.php
 msgid "Ibracodes"
+msgstr ""
+
+#. Author URI of the plugin
+#: ibracodes-ai-assistant.php
+msgid "https://ibracodes.com"
 msgstr ""
 
 #: ibracodes-ai-assistant.php:34
@@ -47,1207 +51,1207 @@ msgstr ""
 msgid "Plugin activation error"
 msgstr ""
 
-#: includes/class-wsa-admin.php:38
-#: includes/class-wsa-admin.php:312
+#: includes/class-ibraai-admin.php:38
+#: includes/class-ibraai-admin.php:307
 msgid "AI Assistant"
 msgstr ""
 
-#: includes/class-wsa-admin.php:52
+#: includes/class-ibraai-admin.php:52
 msgid "Settings"
 msgstr ""
 
-#: includes/class-wsa-admin.php:77
+#: includes/class-ibraai-admin.php:72
 msgid "Testing…"
 msgstr ""
 
-#: includes/class-wsa-admin.php:78
+#: includes/class-ibraai-admin.php:73
 msgid "Rebuilding…"
 msgstr ""
 
-#: includes/class-wsa-admin.php:79
-#: includes/class-wsa-admin.php:119
+#: includes/class-ibraai-admin.php:74
+#: includes/class-ibraai-admin.php:114
 msgid "Request failed."
 msgstr ""
 
-#: includes/class-wsa-admin.php:96
-#: includes/class-wsa-admin.php:1003
+#: includes/class-ibraai-admin.php:91
+#: includes/class-ibraai-admin.php:998
 msgid "No one is waiting."
 msgstr ""
 
-#: includes/class-wsa-admin.php:97
-#: includes/class-wsa-admin.php:1030
-#: includes/class-wsa-admin.php:1235
+#: includes/class-ibraai-admin.php:92
+#: includes/class-ibraai-admin.php:1025
+#: includes/class-ibraai-admin.php:1230
 msgid "(no question recorded)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:98
-#: includes/class-wsa-admin.php:146
+#: includes/class-ibraai-admin.php:93
+#: includes/class-ibraai-admin.php:141
 msgid "Waiting under a minute"
 msgstr ""
 
 #. translators: %s: number of minutes
-#: includes/class-wsa-admin.php:100
-#: includes/class-wsa-admin.php:150
+#: includes/class-ibraai-admin.php:95
+#: includes/class-ibraai-admin.php:145
 #, php-format
 msgid "Waiting %s min"
 msgstr ""
 
 #. translators: %s: number of hours
-#: includes/class-wsa-admin.php:102
-#: includes/class-wsa-admin.php:155
+#: includes/class-ibraai-admin.php:97
+#: includes/class-ibraai-admin.php:150
 #, php-format
 msgid "Waiting %s h"
 msgstr ""
 
 #. translators: %s: number of days
-#: includes/class-wsa-admin.php:104
-#: includes/class-wsa-admin.php:159
+#: includes/class-ibraai-admin.php:99
+#: includes/class-ibraai-admin.php:154
 #, php-format
 msgid "Waiting %s d"
 msgstr ""
 
 #. translators: %s: number of unread visitor messages
-#: includes/class-wsa-admin.php:106
-#: includes/class-wsa-admin.php:1027
+#: includes/class-ibraai-admin.php:101
+#: includes/class-ibraai-admin.php:1022
 #, php-format
 msgid "%s unread"
 msgstr ""
 
-#: includes/class-wsa-admin.php:107
+#: includes/class-ibraai-admin.php:102
 msgid "Session expired. Reload the page."
 msgstr ""
 
-#: includes/class-wsa-admin.php:108
-#: includes/class-wsa-rest.php:355
+#: includes/class-ibraai-admin.php:103
+#: includes/class-ibraai-rest.php:355
 msgid "That conversation no longer exists."
 msgstr ""
 
-#: includes/class-wsa-admin.php:109
+#: includes/class-ibraai-admin.php:104
 msgid "Claim"
 msgstr ""
 
-#: includes/class-wsa-admin.php:110
-#: includes/class-wsa-widget.php:76
+#: includes/class-ibraai-admin.php:105
+#: includes/class-ibraai-widget.php:76
 msgid "Close chat"
 msgstr ""
 
-#: includes/class-wsa-admin.php:111
-#: includes/class-wsa-widget.php:78
+#: includes/class-ibraai-admin.php:106
+#: includes/class-ibraai-widget.php:78
 msgid "Send"
 msgstr ""
 
-#: includes/class-wsa-admin.php:112
+#: includes/class-ibraai-admin.php:107
 msgid "Write a reply"
 msgstr ""
 
-#: includes/class-wsa-admin.php:113
+#: includes/class-ibraai-admin.php:108
 msgid "Claim the chat to reply"
 msgstr ""
 
 #. translators: %s: the name of the manager who has the chat now
-#: includes/class-wsa-admin.php:115
+#: includes/class-ibraai-admin.php:110
 #, php-format
 msgid "Replying takes over from %s"
 msgstr ""
 
-#: includes/class-wsa-admin.php:116
+#: includes/class-ibraai-admin.php:111
 msgid "Visitor"
 msgstr ""
 
-#: includes/class-wsa-admin.php:117
+#: includes/class-ibraai-admin.php:112
 msgid "Assistant"
 msgstr ""
 
-#: includes/class-wsa-admin.php:118
+#: includes/class-ibraai-admin.php:113
 msgid "Loading…"
 msgstr ""
 
-#: includes/class-wsa-admin.php:129
+#: includes/class-ibraai-admin.php:124
 msgid "Waiting"
 msgstr ""
 
-#: includes/class-wsa-admin.php:130
+#: includes/class-ibraai-admin.php:125
 msgid "Live"
 msgstr ""
 
-#: includes/class-wsa-admin.php:131
+#: includes/class-ibraai-admin.php:126
 msgid "Missed"
 msgstr ""
 
-#: includes/class-wsa-admin.php:132
+#: includes/class-ibraai-admin.php:127
 msgid "Closed"
 msgstr ""
 
-#: includes/class-wsa-admin.php:133
+#: includes/class-ibraai-admin.php:128
 msgid "AI"
 msgstr ""
 
-#: includes/class-wsa-admin.php:192
+#: includes/class-ibraai-admin.php:187
 msgid "You are not allowed to do that."
 msgstr ""
 
-#: includes/class-wsa-admin.php:318
+#: includes/class-ibraai-admin.php:313
 msgid "Live on the storefront"
 msgstr ""
 
-#: includes/class-wsa-admin.php:318
+#: includes/class-ibraai-admin.php:313
 msgid "Not live"
 msgstr ""
 
-#: includes/class-wsa-admin.php:325
+#: includes/class-ibraai-admin.php:320
 msgid "Overview"
 msgstr ""
 
-#: includes/class-wsa-admin.php:326
+#: includes/class-ibraai-admin.php:321
 msgid "Appearance"
 msgstr ""
 
-#: includes/class-wsa-admin.php:327
+#: includes/class-ibraai-admin.php:322
 msgid "Agent"
 msgstr ""
 
-#: includes/class-wsa-admin.php:327
+#: includes/class-ibraai-admin.php:322
 msgid "Setup"
 msgstr ""
 
-#: includes/class-wsa-admin.php:328
+#: includes/class-ibraai-admin.php:323
 msgid "Catalogue"
 msgstr ""
 
-#: includes/class-wsa-admin.php:329
-#: includes/class-wsa-admin.php:441
-#: includes/class-wsa-admin.php:1207
+#: includes/class-ibraai-admin.php:324
+#: includes/class-ibraai-admin.php:436
+#: includes/class-ibraai-admin.php:1202
 msgid "Conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:330
-#: includes/class-wsa-admin.php:988
+#: includes/class-ibraai-admin.php:325
+#: includes/class-ibraai-admin.php:983
 msgid "Live chats"
 msgstr ""
 
-#: includes/class-wsa-admin.php:331
-#: includes/class-wsa-admin.php:797
-#: includes/class-wsa-admin.php:1050
+#: includes/class-ibraai-admin.php:326
+#: includes/class-ibraai-admin.php:792
+#: includes/class-ibraai-admin.php:1045
 msgid "Leads"
 msgstr ""
 
-#: includes/class-wsa-admin.php:350
+#: includes/class-ibraai-admin.php:345
 msgid "Settings saved."
 msgstr ""
 
-#: includes/class-wsa-admin.php:353
+#: includes/class-ibraai-admin.php:348
 msgid "Lead deleted, along with its conversation."
 msgstr ""
 
-#: includes/class-wsa-admin.php:358
+#: includes/class-ibraai-admin.php:353
 msgid "The agent is off because no API key is connected. Customers see nothing until you add one."
 msgstr ""
 
-#: includes/class-wsa-admin.php:359
+#: includes/class-ibraai-admin.php:354
 msgid "The agent is switched off. Customers see nothing until you turn it on."
 msgstr ""
 
-#: includes/class-wsa-admin.php:360
+#: includes/class-ibraai-admin.php:355
 msgid "Connect now"
 msgstr ""
 
 #. translators: 1: HTTP status code, 2: error message from OpenAI, 3: date and time
-#: includes/class-wsa-admin.php:367
+#: includes/class-ibraai-admin.php:362
 #, php-format
 msgid "The last request to OpenAI failed with HTTP %1$d. %2$s (%3$s)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:403
+#: includes/class-ibraai-admin.php:398
 msgid "Save settings"
 msgstr ""
 
-#: includes/class-wsa-admin.php:441
-#: includes/class-wsa-admin.php:442
+#: includes/class-ibraai-admin.php:436
+#: includes/class-ibraai-admin.php:437
 msgid "last 30 days"
 msgstr ""
 
-#: includes/class-wsa-admin.php:442
+#: includes/class-ibraai-admin.php:437
 msgid "Replies sent"
 msgstr ""
 
-#: includes/class-wsa-admin.php:445
+#: includes/class-ibraai-admin.php:440
 msgid "Products shown"
 msgstr ""
 
-#: includes/class-wsa-admin.php:445
+#: includes/class-ibraai-admin.php:440
 msgid "recommendations made"
 msgstr ""
 
-#: includes/class-wsa-admin.php:446
-#: includes/class-wsa-admin.php:1243
+#: includes/class-ibraai-admin.php:441
+#: includes/class-ibraai-admin.php:1238
 msgid "Added to cart"
 msgstr ""
 
-#: includes/class-wsa-admin.php:446
+#: includes/class-ibraai-admin.php:441
 msgid "chats that led to a cart"
 msgstr ""
 
-#: includes/class-wsa-admin.php:448
+#: includes/class-ibraai-admin.php:443
 msgid "Leads, 30 days"
 msgstr ""
 
-#: includes/class-wsa-admin.php:448
+#: includes/class-ibraai-admin.php:443
 msgid "visitors who left their details"
 msgstr ""
 
-#: includes/class-wsa-admin.php:462
+#: includes/class-ibraai-admin.php:457
 msgid "Questions the agent could not answer"
 msgstr ""
 
-#: includes/class-wsa-admin.php:463
+#: includes/class-ibraai-admin.php:458
 msgid "The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use."
 msgstr ""
 
-#: includes/class-wsa-admin.php:467
+#: includes/class-ibraai-admin.php:462
 msgid "Nothing yet. Unanswered questions show up here as customers ask them."
 msgstr ""
 
-#: includes/class-wsa-admin.php:486
+#: includes/class-ibraai-admin.php:481
 msgid "Monthly usage"
 msgstr ""
 
 #. translators: %s: the monthly cap on API calls
-#: includes/class-wsa-admin.php:492
+#: includes/class-ibraai-admin.php:487
 #, php-format
 msgid "of %s API calls"
 msgstr ""
 
 #. translators: 1: calls used today, 2: daily cap, 3: projected month total
-#: includes/class-wsa-admin.php:504
+#: includes/class-ibraai-admin.php:499
 #, php-format
 msgid "%1$s today of %2$s. At this pace the month ends near %3$s calls."
 msgstr ""
 
-#: includes/class-wsa-admin.php:515
+#: includes/class-ibraai-admin.php:510
 msgid "Top products shown"
 msgstr ""
 
-#: includes/class-wsa-admin.php:517
+#: includes/class-ibraai-admin.php:512
 msgid "No recommendations yet."
 msgstr ""
 
 #. translators: %s: human readable time difference
-#: includes/class-wsa-admin.php:554
+#: includes/class-ibraai-admin.php:549
 #, php-format
 msgid "%s ago"
 msgstr ""
 
-#: includes/class-wsa-admin.php:568
+#: includes/class-ibraai-admin.php:563
 msgid "Launcher"
 msgstr ""
 
-#: includes/class-wsa-admin.php:569
+#: includes/class-ibraai-admin.php:564
 msgid "How the closed widget appears on the storefront."
 msgstr ""
 
-#: includes/class-wsa-admin.php:574
+#: includes/class-ibraai-admin.php:569
 msgid "Corner"
 msgstr ""
 
-#: includes/class-wsa-admin.php:577
+#: includes/class-ibraai-admin.php:572
 msgid "Bottom right"
 msgstr ""
 
-#: includes/class-wsa-admin.php:578
+#: includes/class-ibraai-admin.php:573
 msgid "Bottom left"
 msgstr ""
 
-#: includes/class-wsa-admin.php:583
+#: includes/class-ibraai-admin.php:578
 msgid "side of the screen"
 msgstr ""
 
-#: includes/class-wsa-admin.php:589
+#: includes/class-ibraai-admin.php:584
 msgid "Show a label next to the icon"
 msgstr ""
 
-#: includes/class-wsa-admin.php:589
+#: includes/class-ibraai-admin.php:584
 msgid "A labelled pill gets noticed more than a bare bubble. It collapses to a circle on phones either way."
 msgstr ""
 
-#: includes/class-wsa-admin.php:592
+#: includes/class-ibraai-admin.php:587
 msgid "Label"
 msgstr ""
 
-#: includes/class-wsa-admin.php:597
+#: includes/class-ibraai-admin.php:592
 msgid "Accent colour"
 msgstr ""
 
-#: includes/class-wsa-admin.php:599
+#: includes/class-ibraai-admin.php:594
 msgid "Used for the launcher, the customer's own messages and the add-to-cart button."
 msgstr ""
 
-#: includes/class-wsa-admin.php:606
+#: includes/class-ibraai-admin.php:601
 msgid "Copy"
 msgstr ""
 
-#: includes/class-wsa-admin.php:607
+#: includes/class-ibraai-admin.php:602
 msgid "Write these in your store's language. The agent replies in it automatically."
 msgstr ""
 
-#: includes/class-wsa-admin.php:611
+#: includes/class-ibraai-admin.php:606
 msgid "Header title"
 msgstr ""
 
-#: includes/class-wsa-admin.php:612
+#: includes/class-ibraai-admin.php:607
 msgid "Header subtitle"
 msgstr ""
 
-#: includes/class-wsa-admin.php:615
+#: includes/class-ibraai-admin.php:610
 msgid "Opening message"
 msgstr ""
 
-#: includes/class-wsa-admin.php:619
+#: includes/class-ibraai-admin.php:614
 msgid "Opening chips"
 msgstr ""
 
-#: includes/class-wsa-admin.php:621
+#: includes/class-ibraai-admin.php:616
 msgid "One per line, up to four. Shown as buttons under the opening message."
 msgstr ""
 
-#: includes/class-wsa-admin.php:624
+#: includes/class-ibraai-admin.php:619
 msgid "Show \"Developed by Ibracodes\" under the chat"
 msgstr ""
 
-#: includes/class-wsa-admin.php:624
+#: includes/class-ibraai-admin.php:619
 msgid "A small credit line linking to ibracodes.com. Off by default."
 msgstr ""
 
-#: includes/class-wsa-admin.php:629
+#: includes/class-ibraai-admin.php:624
 msgid "Changes go live on the storefront as soon as you save."
 msgstr ""
 
-#: includes/class-wsa-admin.php:653
+#: includes/class-ibraai-admin.php:648
 msgid "Connection"
 msgstr ""
 
-#: includes/class-wsa-admin.php:654
+#: includes/class-ibraai-admin.php:649
 msgid "The store uses its own OpenAI account and pays OpenAI directly for what the chat uses."
 msgstr ""
 
-#: includes/class-wsa-admin.php:658
+#: includes/class-ibraai-admin.php:653
 msgid "Show the chat to customers"
 msgstr ""
 
-#: includes/class-wsa-admin.php:658
+#: includes/class-ibraai-admin.php:653
 msgid "It only appears once a working key is saved."
 msgstr ""
 
-#: includes/class-wsa-admin.php:661
+#: includes/class-ibraai-admin.php:656
 msgid "OpenAI API key"
 msgstr ""
 
-#: includes/class-wsa-admin.php:663
+#: includes/class-ibraai-admin.php:658
 msgid "Set in wp-config.php"
 msgstr ""
 
-#: includes/class-wsa-admin.php:664
-msgid "WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden."
+#: includes/class-ibraai-admin.php:659
+msgid "IBRAAI_OPENAI_KEY is defined, so the constant wins and this field is hidden."
 msgstr ""
 
-#: includes/class-wsa-admin.php:668
-msgid "Stored in this site's database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead."
+#: includes/class-ibraai-admin.php:663
+msgid "Stored in this site's database, so any administrator can read it. Where that matters, define IBRAAI_OPENAI_KEY in wp-config.php instead."
 msgstr ""
 
-#: includes/class-wsa-admin.php:671
+#: includes/class-ibraai-admin.php:666
 msgid "Test connection"
 msgstr ""
 
-#: includes/class-wsa-admin.php:677
+#: includes/class-ibraai-admin.php:672
 msgid "Model"
 msgstr ""
 
-#: includes/class-wsa-admin.php:687
+#: includes/class-ibraai-admin.php:682
 msgid "Shop questions rarely need the expensive model. Start cheap and move up only if answers disappoint."
 msgstr ""
 
-#: includes/class-wsa-admin.php:694
-#: includes/class-wsa-admin.php:699
+#: includes/class-ibraai-admin.php:689
+#: includes/class-ibraai-admin.php:694
 msgid "House rules"
 msgstr ""
 
-#: includes/class-wsa-admin.php:695
+#: includes/class-ibraai-admin.php:690
 msgid "Plain sentences work better than a wall of instructions. Sent with every conversation."
 msgstr ""
 
-#: includes/class-wsa-admin.php:702
+#: includes/class-ibraai-admin.php:697
 msgid "Store facts"
 msgstr ""
 
-#: includes/class-wsa-admin.php:703
+#: includes/class-ibraai-admin.php:698
 msgid "Free shipping over 50. Returns within 14 days. One year warranty."
 msgstr ""
 
-#: includes/class-wsa-admin.php:704
+#: includes/class-ibraai-admin.php:699
 msgid "The only non-product information the agent may state as fact. Anything not written here, it will say it does not know."
 msgstr ""
 
-#: includes/class-wsa-admin.php:711
+#: includes/class-ibraai-admin.php:706
 msgid "Content"
 msgstr ""
 
-#: includes/class-wsa-admin.php:712
+#: includes/class-ibraai-admin.php:707
 msgid "The pages and posts the assistant may read and answer from. Drafts, private and password-protected content are never included."
 msgstr ""
 
-#: includes/class-wsa-admin.php:717
+#: includes/class-ibraai-admin.php:712
 msgid "Content types"
 msgstr ""
 
-#: includes/class-wsa-admin.php:733
+#: includes/class-ibraai-admin.php:728
 msgid "Which pages"
 msgstr ""
 
-#: includes/class-wsa-admin.php:736
+#: includes/class-ibraai-admin.php:731
 msgid "All published pages and posts"
 msgstr ""
 
-#: includes/class-wsa-admin.php:737
+#: includes/class-ibraai-admin.php:732
 msgid "Only the pages listed below"
 msgstr ""
 
-#: includes/class-wsa-admin.php:750
+#: includes/class-ibraai-admin.php:745
 msgid "Pages"
 msgstr ""
 
-#: includes/class-wsa-admin.php:752
+#: includes/class-ibraai-admin.php:747
 msgid "Page ids, comma separated. The id is in the address bar when you edit a page."
 msgstr ""
 
-#: includes/class-wsa-admin.php:757
+#: includes/class-ibraai-admin.php:752
 msgid "How the assistant finds content"
 msgstr ""
 
-#: includes/class-wsa-admin.php:760
+#: includes/class-ibraai-admin.php:755
 msgid "WordPress search (free)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:761
+#: includes/class-ibraai-admin.php:756
 msgid "Embeddings index (better answers)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:769
+#: includes/class-ibraai-admin.php:764
 msgid "Building the index costs about one cent per hundred pages once, then a fraction of that per question. It uses your OpenAI key and counts against your daily and monthly limits."
 msgstr ""
 
 #. translators: 1: pages indexed, 2: pages in scope, 3: pages waiting in the queue
-#: includes/class-wsa-admin.php:780
+#: includes/class-ibraai-admin.php:775
 #, php-format
 msgid "Indexed %1$s of %2$s pages, %3$s waiting."
 msgstr ""
 
-#: includes/class-wsa-admin.php:788
+#: includes/class-ibraai-admin.php:783
 msgid "Rebuild index"
 msgstr ""
 
-#: includes/class-wsa-admin.php:799
+#: includes/class-ibraai-admin.php:794
 msgid "Offer to take the visitor's details"
 msgstr ""
 
-#: includes/class-wsa-admin.php:799
+#: includes/class-ibraai-admin.php:794
 msgid "The assistant asks for a name and a phone or email, saves the lead and emails you."
 msgstr ""
 
-#: includes/class-wsa-admin.php:801
+#: includes/class-ibraai-admin.php:796
 msgid "When to offer"
 msgstr ""
 
-#: includes/class-wsa-admin.php:803
+#: includes/class-ibraai-admin.php:798
 msgid "One line, for example: when someone wants a quote or a callback."
 msgstr ""
 
-#: includes/class-wsa-admin.php:805
+#: includes/class-ibraai-admin.php:800
 msgid "Send leads to"
 msgstr ""
 
-#: includes/class-wsa-admin.php:807
+#: includes/class-ibraai-admin.php:802
 msgid "Keep leads for (days)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:809
+#: includes/class-ibraai-admin.php:804
 msgid "Older leads are deleted once a day, along with the conversation they came from."
 msgstr ""
 
-#: includes/class-wsa-admin.php:812
+#: includes/class-ibraai-admin.php:807
 msgid "Note under the chat input"
 msgstr ""
 
-#: includes/class-wsa-admin.php:814
+#: includes/class-ibraai-admin.php:809
 msgid "Say that details typed here are passed to the site owner and kept with the conversation."
 msgstr ""
 
-#: includes/class-wsa-admin.php:820
+#: includes/class-ibraai-admin.php:815
 msgid "Behaviour"
 msgstr ""
 
-#: includes/class-wsa-admin.php:823
+#: includes/class-ibraai-admin.php:818
 msgid "Products per reply"
 msgstr ""
 
-#: includes/class-wsa-admin.php:825
+#: includes/class-ibraai-admin.php:820
 msgid "Three or fewer keeps a reply readable on a phone."
 msgstr ""
 
-#: includes/class-wsa-admin.php:828
+#: includes/class-ibraai-admin.php:823
 msgid "Ask one question before recommending"
 msgstr ""
 
-#: includes/class-wsa-admin.php:828
+#: includes/class-ibraai-admin.php:823
 msgid "On a vague request the agent asks a single clarifying question first. Better matches, one extra exchange."
 msgstr ""
 
-#: includes/class-wsa-admin.php:831
+#: includes/class-ibraai-admin.php:826
 msgid "Prices in the reply text"
 msgstr ""
 
-#: includes/class-wsa-admin.php:835
+#: includes/class-ibraai-admin.php:830
 msgid "Card only"
 msgstr ""
 
-#: includes/class-wsa-admin.php:836
+#: includes/class-ibraai-admin.php:831
 msgid "recommended"
 msgstr ""
 
-#: includes/class-wsa-admin.php:840
+#: includes/class-ibraai-admin.php:835
 msgid "Allow in text"
 msgstr ""
 
-#: includes/class-wsa-admin.php:841
+#: includes/class-ibraai-admin.php:836
 msgid "may go stale"
 msgstr ""
 
-#: includes/class-wsa-admin.php:844
+#: includes/class-ibraai-admin.php:839
 msgid "The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed."
 msgstr ""
 
-#: includes/class-wsa-admin.php:851
+#: includes/class-ibraai-admin.php:846
 msgid "Handoff to a person"
 msgstr ""
 
-#: includes/class-wsa-admin.php:852
+#: includes/class-ibraai-admin.php:847
 msgid "Offered as a button when the agent cannot help."
 msgstr ""
 
-#: includes/class-wsa-admin.php:856
+#: includes/class-ibraai-admin.php:851
 msgid "Chip label"
 msgstr ""
 
-#: includes/class-wsa-admin.php:857
+#: includes/class-ibraai-admin.php:852
 msgid "Destination"
 msgstr ""
 
-#: includes/class-wsa-admin.php:857
+#: includes/class-ibraai-admin.php:852
 msgid "Your contact page, or a wa.me link for WhatsApp."
 msgstr ""
 
-#: includes/class-wsa-admin.php:864
+#: includes/class-ibraai-admin.php:859
 msgid "Live chat"
 msgstr ""
 
-#: includes/class-wsa-admin.php:865
+#: includes/class-ibraai-admin.php:860
 msgid "A visitor who asks for a person waits for you in the Live chats tab. The AI pauses until you answer or the wait runs out."
 msgstr ""
 
-#: includes/class-wsa-admin.php:868
+#: includes/class-ibraai-admin.php:863
 msgid "Let visitors ask for a person"
 msgstr ""
 
-#: includes/class-wsa-admin.php:868
+#: includes/class-ibraai-admin.php:863
 msgid "Turning it on also turns conversation logging on: a live chat lives on the conversation record."
 msgstr ""
 
-#: includes/class-wsa-admin.php:872
+#: includes/class-ibraai-admin.php:867
 msgid "Send requests to"
 msgstr ""
 
-#: includes/class-wsa-admin.php:872
+#: includes/class-ibraai-admin.php:867
 msgid "One email per request, with a link to the conversation."
 msgstr ""
 
-#: includes/class-wsa-admin.php:876
+#: includes/class-ibraai-admin.php:871
 msgid "Wait for a person (minutes)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:878
+#: includes/class-ibraai-admin.php:873
 msgid "If nobody joins in time, the visitor is offered lead capture and the contact option. The request stays in the list, so you can still answer later."
 msgstr ""
 
-#: includes/class-wsa-admin.php:881
+#: includes/class-ibraai-admin.php:876
 msgid "Waiting text"
 msgstr ""
 
-#: includes/class-wsa-admin.php:882
+#: includes/class-ibraai-admin.php:877
 msgid "Joined text"
 msgstr ""
 
-#: includes/class-wsa-admin.php:883
+#: includes/class-ibraai-admin.php:878
 msgid "Missed text"
 msgstr ""
 
-#: includes/class-wsa-admin.php:886
+#: includes/class-ibraai-admin.php:881
 msgid "Closed text"
 msgstr ""
 
 #. translators: %s is literal here: the placeholder the owner writes into the joined and closed texts
-#: includes/class-wsa-admin.php:889
+#: includes/class-ibraai-admin.php:884
 #, php-format
 msgid "In the joined and closed texts, %s becomes the name of the person who joined."
 msgstr ""
 
-#: includes/class-wsa-admin.php:897
+#: includes/class-ibraai-admin.php:892
 msgid "Spending limits"
 msgstr ""
 
-#: includes/class-wsa-admin.php:898
+#: includes/class-ibraai-admin.php:893
 msgid "Every conversation costs you money at OpenAI. These caps are what stands between a bored bot and a large invoice. One reply can use two or three calls."
 msgstr ""
 
-#: includes/class-wsa-admin.php:904
+#: includes/class-ibraai-admin.php:899
 msgid "Messages per visitor, per 10 minutes"
 msgstr ""
 
-#: includes/class-wsa-admin.php:905
+#: includes/class-ibraai-admin.php:900
 msgid "Messages per visitor, per day"
 msgstr ""
 
-#: includes/class-wsa-admin.php:905
+#: includes/class-ibraai-admin.php:900
 msgid "Stops one person using up the store's budget."
 msgstr ""
 
-#: includes/class-wsa-admin.php:906
+#: includes/class-ibraai-admin.php:901
 msgid "API calls for the whole store, per day"
 msgstr ""
 
-#: includes/class-wsa-admin.php:906
+#: includes/class-ibraai-admin.php:901
 msgid "The hard daily cost bound."
 msgstr ""
 
-#: includes/class-wsa-admin.php:907
+#: includes/class-ibraai-admin.php:902
 msgid "API calls for the whole store, per month"
 msgstr ""
 
-#: includes/class-wsa-admin.php:908
+#: includes/class-ibraai-admin.php:903
 msgid "Requests at the same time"
 msgstr ""
 
-#: includes/class-wsa-admin.php:908
+#: includes/class-ibraai-admin.php:903
 msgid "Protects your server rather than your wallet."
 msgstr ""
 
-#: includes/class-wsa-admin.php:936
+#: includes/class-ibraai-admin.php:931
 msgid "Which products the agent may recommend"
 msgstr ""
 
-#: includes/class-wsa-admin.php:937
+#: includes/class-ibraai-admin.php:932
 msgid "Exclude anything you do not want a bot selling unattended. Excluded categories are invisible to the agent: it cannot find them, mention them or link to them."
 msgstr ""
 
-#: includes/class-wsa-admin.php:941
+#: includes/class-ibraai-admin.php:936
 msgid "Only recommend products in stock"
 msgstr ""
 
-#: includes/class-wsa-admin.php:941
+#: includes/class-ibraai-admin.php:936
 msgid "Off means the agent may show out-of-stock products, marked as such on the card."
 msgstr ""
 
-#: includes/class-wsa-admin.php:944
+#: includes/class-ibraai-admin.php:939
 msgid "Excluded categories"
 msgstr ""
 
-#: includes/class-wsa-admin.php:946
+#: includes/class-ibraai-admin.php:941
 msgid "This store has no product categories yet."
 msgstr ""
 
-#: includes/class-wsa-admin.php:957
+#: includes/class-ibraai-admin.php:952
 msgid "Child categories are excluded along with their parent."
 msgstr ""
 
-#: includes/class-wsa-admin.php:963
+#: includes/class-ibraai-admin.php:958
 msgid "How the agent searches"
 msgstr ""
 
-#: includes/class-wsa-admin.php:965
+#: includes/class-ibraai-admin.php:960
 msgid "It searches your live catalogue on every question: product titles, descriptions and SKUs. There is no index to build and nothing to keep in sync, so a product you publish is findable immediately, and one you unpublish disappears the same second."
 msgstr ""
 
-#: includes/class-wsa-admin.php:989
+#: includes/class-ibraai-admin.php:984
 msgid "Live chat is off. With it on, a visitor who asks for a person waits here for you to answer, and the AI pauses until you do."
 msgstr ""
 
-#: includes/class-wsa-admin.php:992
+#: includes/class-ibraai-admin.php:987
 msgid "Turn it on in the Agent tab"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1011
+#: includes/class-ibraai-admin.php:1006
 msgid "Pick a conversation from the list."
 msgstr ""
 
 #. translators: %s: number of days leads are kept
-#: includes/class-wsa-admin.php:1055
+#: includes/class-ibraai-admin.php:1050
 #, php-format
 msgid "Leads are kept %s days, then deleted along with the conversation they came from."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1065
+#: includes/class-ibraai-admin.php:1060
 msgid "Search leads"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1066
+#: includes/class-ibraai-admin.php:1061
 msgid "Search"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1069
+#: includes/class-ibraai-admin.php:1064
 msgid "Export CSV"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1076
+#: includes/class-ibraai-admin.php:1071
 msgid "No leads yet. Turn on lead capture on the Agent tab."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1076
+#: includes/class-ibraai-admin.php:1071
 msgid "No leads match that search."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1081
-#: includes/class-wsa-admin.php:1226
+#: includes/class-ibraai-admin.php:1076
+#: includes/class-ibraai-admin.php:1221
 msgid "When"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1082
+#: includes/class-ibraai-admin.php:1077
 msgid "Name"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1083
+#: includes/class-ibraai-admin.php:1078
 msgid "Contact"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1084
+#: includes/class-ibraai-admin.php:1079
 msgid "Request"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1085
+#: includes/class-ibraai-admin.php:1080
 msgid "Page"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1086
+#: includes/class-ibraai-admin.php:1081
 msgid "Email"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1111
+#: includes/class-ibraai-admin.php:1106
 msgid "Sent"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1113
+#: includes/class-ibraai-admin.php:1108
 msgid "Failed"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1118
+#: includes/class-ibraai-admin.php:1113
 msgid "Delete this lead and the conversation it came from?"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1118
+#: includes/class-ibraai-admin.php:1113
 msgid "Delete"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1128
-#: includes/class-wsa-admin.php:1259
+#: includes/class-ibraai-admin.php:1123
+#: includes/class-ibraai-admin.php:1254
 msgid "Previous"
 msgstr ""
 
 #. translators: 1: current page, 2: total pages
-#: includes/class-wsa-admin.php:1134
-#: includes/class-wsa-admin.php:1265
+#: includes/class-ibraai-admin.php:1129
+#: includes/class-ibraai-admin.php:1260
 #, php-format
 msgid "Page %1$s of %2$s"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1141
-#: includes/class-wsa-admin.php:1272
+#: includes/class-ibraai-admin.php:1136
+#: includes/class-ibraai-admin.php:1267
 msgid "Next"
 msgstr ""
 
 #. translators: %s: number of days threads are kept
-#: includes/class-wsa-admin.php:1212
+#: includes/class-ibraai-admin.php:1207
 #, php-format
 msgid "Threads are kept %s days, then deleted. No email, name or payment detail is stored: only the messages and the product ids the agent showed."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1221
+#: includes/class-ibraai-admin.php:1216
 msgid "No conversations yet."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1225
+#: includes/class-ibraai-admin.php:1220
 msgid "First question"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1227
+#: includes/class-ibraai-admin.php:1222
 msgid "Turns"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1228
+#: includes/class-ibraai-admin.php:1223
 msgid "Shown"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1229
+#: includes/class-ibraai-admin.php:1224
 msgid "Outcome"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1245
+#: includes/class-ibraai-admin.php:1240
 msgid "No match"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1247
+#: includes/class-ibraai-admin.php:1242
 msgid "Recommended"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1249
+#: includes/class-ibraai-admin.php:1244
 msgid "Answered"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1281
+#: includes/class-ibraai-admin.php:1276
 msgid "Recording"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1282
+#: includes/class-ibraai-admin.php:1277
 msgid "Keep a record of conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1282
+#: includes/class-ibraai-admin.php:1277
 msgid "Off means nothing is written at all. You lose the reports on the overview."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1284
+#: includes/class-ibraai-admin.php:1279
 msgid "Keep for (days)"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1286
+#: includes/class-ibraai-admin.php:1281
 msgid "Older threads are deleted automatically once a day."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1290
+#: includes/class-ibraai-admin.php:1285
 msgid "Delete every stored conversation when I save"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1304
+#: includes/class-ibraai-admin.php:1299
 msgid "All conversations"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1306
+#: includes/class-ibraai-admin.php:1301
 msgid "That conversation is gone. It may have passed the retention window."
 msgstr ""
 
-#: includes/class-wsa-admin.php:1311
+#: includes/class-ibraai-admin.php:1306
 msgid "Conversation"
 msgstr ""
 
 #. translators: 1: relative time, 2: number of turns
-#: includes/class-wsa-admin.php:1316
+#: includes/class-ibraai-admin.php:1311
 #, php-format
 msgid "%1$s · %2$s turns"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1329
+#: includes/class-ibraai-admin.php:1324
 msgid "Manager"
 msgstr ""
 
-#: includes/class-wsa-admin.php:1356
+#: includes/class-ibraai-admin.php:1351
 msgid "(deleted product)"
 msgstr ""
 
-#: includes/class-wsa-agent.php:33
+#: includes/class-ibraai-agent.php:33
 msgid "No message received."
 msgstr ""
 
-#: includes/class-wsa-agent.php:102
+#: includes/class-ibraai-agent.php:102
 msgid "A person will join this chat shortly."
 msgstr ""
 
-#: includes/class-wsa-agent.php:105
+#: includes/class-ibraai-agent.php:105
 msgid "Here is what I found that might suit you:"
 msgstr ""
 
-#: includes/class-wsa-agent.php:106
+#: includes/class-ibraai-agent.php:106
 msgid "I could not answer that one. Try rephrasing, or get in touch and a person will help."
 msgstr ""
 
-#: includes/class-wsa-guards.php:44
+#: includes/class-ibraai-guards.php:44
 msgid "That is a lot of messages at once. Try again in a few minutes."
 msgstr ""
 
-#: includes/class-wsa-guards.php:47
+#: includes/class-ibraai-guards.php:47
 msgid "You have reached today's chat limit. Try again tomorrow, or use the contact page."
 msgstr ""
 
-#: includes/class-wsa-guards.php:50
-#: includes/class-wsa-guards.php:83
+#: includes/class-ibraai-guards.php:50
+#: includes/class-ibraai-guards.php:83
 msgid "The chat is busy right now. Please try again later."
 msgstr ""
 
-#: includes/class-wsa-guards.php:53
-#: includes/class-wsa-guards.php:86
+#: includes/class-ibraai-guards.php:53
+#: includes/class-ibraai-guards.php:86
 msgid "The chat is unavailable right now. Please use the contact page."
 msgstr ""
 
-#: includes/class-wsa-guards.php:56
+#: includes/class-ibraai-guards.php:56
 msgid "The chat is busy right now. Try again in a moment."
 msgstr ""
 
-#: includes/class-wsa-index.php:225
+#: includes/class-ibraai-index.php:225
 msgid "The embeddings service returned the wrong number of vectors."
 msgstr ""
 
 #. translators: %s: the visitor's name
-#: includes/class-wsa-leads.php:88
+#: includes/class-ibraai-leads.php:88
 #, php-format
 msgid "Updated lead from the AI Assistant: %s"
 msgstr ""
 
 #. translators: %s: the visitor's name
-#: includes/class-wsa-leads.php:90
+#: includes/class-ibraai-leads.php:90
 #, php-format
 msgid "New lead from the AI Assistant: %s"
 msgstr ""
 
 #. translators: %s: the visitor's name
-#: includes/class-wsa-leads.php:95
+#: includes/class-ibraai-leads.php:95
 #, php-format
 msgid "Name: %s"
 msgstr ""
 
 #. translators: %s: the visitor's phone number or email address
-#: includes/class-wsa-leads.php:97
+#: includes/class-ibraai-leads.php:97
 #, php-format
 msgid "Contact: %s"
 msgstr ""
 
 #. translators: %s: what the visitor asked for
-#: includes/class-wsa-leads.php:99
+#: includes/class-ibraai-leads.php:99
 #, php-format
 msgid "Request: %s"
 msgstr ""
 
 #. translators: %s: the URL of the page the visitor was on
-#: includes/class-wsa-leads.php:101
-#: includes/class-wsa-live.php:418
+#: includes/class-ibraai-leads.php:101
+#: includes/class-ibraai-live.php:418
 #, php-format
 msgid "Page: %s"
 msgstr ""
 
 #. translators: %s: link to the conversation in the WordPress admin
-#: includes/class-wsa-leads.php:104
+#: includes/class-ibraai-leads.php:104
 #, php-format
 msgid "Conversation: %s"
 msgstr ""
 
 #. translators: %s: link to the leads screen in the WordPress admin
-#: includes/class-wsa-leads.php:106
+#: includes/class-ibraai-leads.php:106
 #, php-format
 msgid "All leads: %s"
 msgstr ""
 
 #. translators: %s: link to the conversation in the WordPress admin
-#: includes/class-wsa-live.php:413
+#: includes/class-ibraai-live.php:413
 #, php-format
 msgid "Answer here: %s"
 msgstr ""
 
 #. translators: %s: the visitor's first question
-#: includes/class-wsa-live.php:416
+#: includes/class-ibraai-live.php:416
 #, php-format
 msgid "Question: %s"
 msgstr ""
 
-#: includes/class-wsa-live.php:423
+#: includes/class-ibraai-live.php:423
 msgid "A visitor is waiting for a person"
 msgstr ""
 
-#: includes/class-wsa-prompt.php:128
+#: includes/class-ibraai-prompt.php:128
 msgid "the contact option"
 msgstr ""
 
-#: includes/class-wsa-provider.php:46
-#: includes/class-wsa-provider.php:121
+#: includes/class-ibraai-provider.php:46
+#: includes/class-ibraai-provider.php:121
 msgid "The chat is not configured."
 msgstr ""
 
-#: includes/class-wsa-provider.php:202
+#: includes/class-ibraai-provider.php:202
 msgid "OpenAI rejected that key."
 msgstr ""
 
-#: includes/class-wsa-provider.php:203
+#: includes/class-ibraai-provider.php:203
 msgid "The key works, but the account is out of quota or rate limited."
 msgstr ""
 
-#: includes/class-wsa-provider.php:204
+#: includes/class-ibraai-provider.php:204
 msgid "The key works, but this account cannot use the selected model."
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/class-wsa-provider.php:207
+#: includes/class-ibraai-provider.php:207
 #, php-format
 msgid "OpenAI returned an error (HTTP %d)."
 msgstr ""
 
-#: includes/class-wsa-provider.php:241
+#: includes/class-ibraai-provider.php:241
 msgid "The chat is unavailable right now. Please try again."
 msgstr ""
 
-#: includes/class-wsa-rest.php:131
+#: includes/class-ibraai-rest.php:131
 msgid "The chat is not available right now."
 msgstr ""
 
-#: includes/class-wsa-rest.php:149
+#: includes/class-ibraai-rest.php:149
 msgid "A person has this conversation right now."
 msgstr ""
 
-#: includes/class-wsa-rest.php:218
+#: includes/class-ibraai-rest.php:218
 msgid "Switch retrieval to the embeddings index first."
 msgstr ""
 
-#: includes/class-wsa-rest.php:221
+#: includes/class-ibraai-rest.php:221
 msgid "Add an OpenAI key first."
 msgstr ""
 
 #. translators: %s: number of pages waiting to be indexed
-#: includes/class-wsa-rest.php:234
+#: includes/class-ibraai-rest.php:234
 #, php-format
 msgid "Rebuilding, %s pages queued."
 msgstr ""
 
-#: includes/class-wsa-rest.php:261
+#: includes/class-ibraai-rest.php:261
 msgid "No person is on this chat right now."
 msgstr ""
 
-#: includes/class-wsa-rest.php:310
+#: includes/class-ibraai-rest.php:310
 msgid "Claim the chat before replying."
 msgstr ""
 
-#: includes/class-wsa-rest.php:338
+#: includes/class-ibraai-rest.php:338
 msgid "This conversation could not be verified."
 msgstr ""
 
-#: includes/class-wsa-rest.php:341
+#: includes/class-ibraai-rest.php:341
 msgid "Too many requests. Slow down a little."
 msgstr ""
 
-#: includes/class-wsa-rest.php:363
+#: includes/class-ibraai-rest.php:363
 msgid "Live chat is not available right now."
 msgstr ""
 
-#: includes/class-wsa-rest.php:368
+#: includes/class-ibraai-rest.php:368
 msgid "Write something first."
 msgstr ""
 
-#: includes/class-wsa-rest.php:381
+#: includes/class-ibraai-rest.php:381
 msgid "Add a key first."
 msgstr ""
 
-#: includes/class-wsa-rest.php:389
+#: includes/class-ibraai-rest.php:389
 msgid "Connected. The key works and the model is available."
 msgstr ""
 
-#: includes/class-wsa-scrubber.php:70
+#: includes/class-ibraai-scrubber.php:70
 msgid "(price is on the card below)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:43
+#: includes/class-ibraai-settings.php:43
 msgid "Ask us anything"
 msgstr ""
 
-#: includes/class-wsa-settings.php:44
+#: includes/class-ibraai-settings.php:44
 msgid "Have a question?"
 msgstr ""
 
-#: includes/class-wsa-settings.php:45
+#: includes/class-ibraai-settings.php:45
 msgid "Ask me anything"
 msgstr ""
 
-#: includes/class-wsa-settings.php:46
+#: includes/class-ibraai-settings.php:46
 msgid "Hi, can I help you find a product or answer a question?"
 msgstr ""
 
-#: includes/class-wsa-settings.php:79
+#: includes/class-ibraai-settings.php:79
 msgid "A person will join this chat shortly. You can keep writing in the meantime."
 msgstr ""
 
 #. translators: %s: the manager's display name
-#: includes/class-wsa-settings.php:81
+#: includes/class-ibraai-settings.php:81
 #, php-format
 msgid "%s joined the chat."
 msgstr ""
 
-#: includes/class-wsa-settings.php:82
+#: includes/class-ibraai-settings.php:82
 msgid "Nobody is available right now. Leave your details and we will get back to you, or use the contact option below."
 msgstr ""
 
 #. translators: %s: the manager's display name
-#: includes/class-wsa-settings.php:84
+#: includes/class-ibraai-settings.php:84
 #, php-format
 msgid "The chat with %s has ended. I can keep helping here."
 msgstr ""
 
-#: includes/class-wsa-settings.php:195
+#: includes/class-ibraai-settings.php:195
 msgid "gpt-5-mini (recommended, cheapest)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:196
+#: includes/class-ibraai-settings.php:196
 msgid "gpt-5 (best answers, costs more)"
 msgstr ""
 
-#: includes/class-wsa-settings.php:197
+#: includes/class-ibraai-settings.php:197
 msgid "gpt-4.1-mini"
 msgstr ""
 
-#: includes/class-wsa-widget.php:64
+#: includes/class-ibraai-widget.php:64
 msgid "Contact us"
 msgstr ""
 
-#: includes/class-wsa-widget.php:71
+#: includes/class-ibraai-widget.php:71
 msgid "Developed by Ibracodes"
 msgstr ""
 
-#: includes/class-wsa-widget.php:75
+#: includes/class-ibraai-widget.php:75
 msgid "Open chat"
 msgstr ""
 
-#: includes/class-wsa-widget.php:77
+#: includes/class-ibraai-widget.php:77
 msgid "Type your question"
 msgstr ""
 
-#: includes/class-wsa-widget.php:79
+#: includes/class-ibraai-widget.php:79
 msgid "Typing"
 msgstr ""
 
-#: includes/class-wsa-widget.php:80
+#: includes/class-ibraai-widget.php:80
 msgid "Add to cart"
 msgstr ""
 
-#: includes/class-wsa-widget.php:81
+#: includes/class-ibraai-widget.php:81
 msgid "View product"
 msgstr ""
 
-#: includes/class-wsa-widget.php:82
+#: includes/class-ibraai-widget.php:82
 msgid "Out of stock"
 msgstr ""
 
-#: includes/class-wsa-widget.php:83
+#: includes/class-ibraai-widget.php:83
 msgid "Sale"
 msgstr ""
 
-#: includes/class-wsa-widget.php:84
+#: includes/class-ibraai-widget.php:84
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: includes/class-wsa-widget.php:85
+#: includes/class-ibraai-widget.php:85
 msgid "Chat conversation"
 msgstr ""
 
 #. translators: %s: the name of the person who joined the chat
-#: includes/class-wsa-widget.php:87
+#: includes/class-ibraai-widget.php:87
 #, php-format
 msgid "Write to %s"
 msgstr ""

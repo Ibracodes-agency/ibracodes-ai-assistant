@@ -6,7 +6,7 @@
 
 **Architecture:** A `Capabilities` class decides at boot whether commerce tools exist; content retrieval is a new `Content` class with two backends behind one tool (WordPress search by default, an embeddings index the owner opts into); leads are a new table plus a `capture_lead` tool; the prompt and tool list are assembled from the capabilities present. Nothing about the widget's look changes except a branding footer line and an optional privacy note.
 
-**Tech Stack:** PHP 8.1+ (WordPress plugin, namespace `WSA`), vanilla JS widget, OpenAI chat completions and embeddings (`text-embedding-3-small`, 512 dimensions), WP-Cron, Playwright harness against a stub endpoint, PHP test scripts run through WP-CLI on the local xswitch install where the plugin is symlinked and active.
+**Tech Stack:** PHP 8.1+ (WordPress plugin, namespace `Ibracodes\AI_Assistant`), vanilla JS widget, OpenAI chat completions and embeddings (`text-embedding-3-small`, 512 dimensions), WP-Cron, Playwright harness against a stub endpoint, PHP test scripts run through WP-CLI on the local xswitch install where the plugin is symlinked and active.
 
 ---
 
@@ -51,7 +51,7 @@
  * active, which WP-CLI gives for free.
  */
 
-function wsa_assert(bool $ok, string $what): void
+function ibraai_assert(bool $ok, string $what): void
 {
     if (! $ok) {
         fwrite(STDERR, "FAIL: {$what}\n");
@@ -60,13 +60,13 @@ function wsa_assert(bool $ok, string $what): void
     echo "  ok: {$what}\n";
 }
 
-function wsa_assert_same(mixed $expected, mixed $actual, string $what): void
+function ibraai_assert_same(mixed $expected, mixed $actual, string $what): void
 {
-    wsa_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
+    ibraai_assert($expected === $actual, $what . ' (expected ' . var_export($expected, true) . ', got ' . var_export($actual, true) . ')');
 }
 
 /** Creates a post the test owns (published by default); returns the id. */
-function wsa_make_post(string $title, string $content, string $type = 'page', string $status = 'publish'): int
+function ibraai_make_post(string $title, string $content, string $type = 'page', string $status = 'publish'): int
 {
     $id = wp_insert_post([
         'post_title' => $title,
@@ -78,27 +78,27 @@ function wsa_make_post(string $title, string $content, string $type = 'page', st
         fwrite(STDERR, 'could not create post: ' . $id->get_error_message() . "\n");
         exit(1);
     }
-    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for wsa_cleanup() to see it.
-    $GLOBALS['wsa_test_posts'][] = (int) $id;
+    // wp eval-file includes the script inside a method scope, so the registry has to live in $GLOBALS for ibraai_cleanup() to see it.
+    $GLOBALS['ibraai_test_posts'][] = (int) $id;
 
     return (int) $id;
 }
 
-function wsa_cleanup(): void
+function ibraai_cleanup(): void
 {
-    foreach ($GLOBALS['wsa_test_posts'] ?? [] as $id) {
+    foreach ($GLOBALS['ibraai_test_posts'] ?? [] as $id) {
         wp_delete_post($id, true);
     }
-    $GLOBALS['wsa_test_posts'] = [];
+    $GLOBALS['ibraai_test_posts'] = [];
 }
 
-function wsa_done(string $file): void
+function ibraai_done(string $file): void
 {
-    wsa_cleanup();
+    ibraai_cleanup();
     echo 'PASS ' . basename($file) . "\n";
 }
 
-register_shutdown_function('wsa_cleanup');
+register_shutdown_function('ibraai_cleanup');
 ```
 
 **Step 2: Move the widget harness into the repo**
@@ -149,7 +149,7 @@ git commit -m "Test scaffolding: assertion helper and the widget harness in-repo
 ### Task 2: Capabilities
 
 **Files:**
-- Create: `includes/class-wsa-capabilities.php`
+- Create: `includes/class-ibraai-capabilities.php`
 - Test: `tests/test-capabilities.php`
 
 **Step 1: Write the failing test**
@@ -158,26 +158,26 @@ git commit -m "Test scaffolding: assertion helper and the widget harness in-repo
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Capabilities;
+use Ibracodes\AI_Assistant\Capabilities;
 
-wsa_assert(class_exists(Capabilities::class), 'Capabilities class loads');
-wsa_assert_same(true, Capabilities::has_commerce(), 'commerce detected on shop.test (WooCommerce active)');
+ibraai_assert(class_exists(Capabilities::class), 'Capabilities class loads');
+ibraai_assert_same(true, Capabilities::has_commerce(), 'commerce detected on shop.test (WooCommerce active)');
 
-add_filter('wsa_has_commerce', '__return_false');
-wsa_assert_same(false, Capabilities::has_commerce(), 'the wsa_has_commerce filter can switch commerce off for tests');
-remove_filter('wsa_has_commerce', '__return_false');
+add_filter('ibraai_has_commerce', '__return_false');
+ibraai_assert_same(false, Capabilities::has_commerce(), 'the ibraai_has_commerce filter can switch commerce off for tests');
+remove_filter('ibraai_has_commerce', '__return_false');
 
-wsa_assert_same('manage_woocommerce', Capabilities::admin_cap(), 'admin capability follows WooCommerce when present');
-add_filter('wsa_has_commerce', '__return_false');
-wsa_assert_same('manage_options', Capabilities::admin_cap(), 'admin capability falls back to manage_options');
-remove_filter('wsa_has_commerce', '__return_false');
+ibraai_assert_same('manage_woocommerce', Capabilities::admin_cap(), 'admin capability follows WooCommerce when present');
+add_filter('ibraai_has_commerce', '__return_false');
+ibraai_assert_same('manage_options', Capabilities::admin_cap(), 'admin capability falls back to manage_options');
+remove_filter('ibraai_has_commerce', '__return_false');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run it, expect failure**
 
-Expected: `FAIL: Capabilities class loads` (the class does not exist yet; the script must `require_once` nothing, the plugin autoload happens in Task 3, so for now add `require_once WSA_PATH . 'includes/class-wsa-capabilities.php';` at the top of the test after lib.php and remove it in Task 3).
+Expected: `FAIL: Capabilities class loads` (the class does not exist yet; the script must `require_once` nothing, the plugin autoload happens in Task 3, so for now add `require_once IBRAAI_PATH . 'includes/class-ibraai-capabilities.php';` at the top of the test after lib.php and remove it in Task 3).
 
 **Step 3: Implement**
 
@@ -188,7 +188,7 @@ Expected: `FAIL: Capabilities class loads` (the class does not exist yet; the sc
  * unusual hosts can force either mode.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -203,7 +203,7 @@ class Capabilities
     {
         $present = class_exists('WooCommerce') && defined('WC_VERSION') && version_compare(WC_VERSION, self::WC_MIN, '>=');
 
-        return (bool) apply_filters('wsa_has_commerce', $present);
+        return (bool) apply_filters('ibraai_has_commerce', $present);
     }
 
     /** Who may see the admin: shop managers on a shop, administrators elsewhere. */
@@ -224,8 +224,8 @@ class Capabilities
 
 **Files:**
 - Modify: `ibracodes-ai-assistant.php` (header lines 1-25, functions at 36-58, activation hook 60-78, `plugins_loaded` at 85-119)
-- Modify: `includes/class-wsa-admin.php:32-42` (menu) and every `current_user_can('manage_woocommerce')` (lines 97 and wherever `grep -n manage_woocommerce includes/` reports, including `class-wsa-rest.php:57`)
-- Modify: `includes/class-wsa-admin.php:184-189` (band eyebrow and h1), `includes/class-wsa-admin.php:198-204` (tab labels: Catalogue only with commerce)
+- Modify: `includes/class-ibraai-admin.php:32-42` (menu) and every `current_user_can('manage_woocommerce')` (lines 97 and wherever `grep -n manage_woocommerce includes/` reports, including `class-ibraai-rest.php:57`)
+- Modify: `includes/class-ibraai-admin.php:184-189` (band eyebrow and h1), `includes/class-ibraai-admin.php:198-204` (tab labels: Catalogue only with commerce)
 - Test: `tests/test-bootstrap.php`
 
 **Step 1: Write the failing test**
@@ -234,13 +234,13 @@ class Capabilities
 <?php
 require_once __DIR__ . '/lib.php';
 
-$plugin = get_plugin_data(WSA_FILE, false, false);
-wsa_assert_same('IbraCodes AI Assistant', $plugin['Name'], 'plugin name renamed');
-wsa_assert_same('', $plugin['WC requires at least'] ?? '', 'WooCommerce is no longer a declared hard requirement');
-wsa_assert(! function_exists('WSA\\has_required_woocommerce'), 'the hard dependency check is gone');
-wsa_assert(class_exists('WSA\\Capabilities'), 'Capabilities loaded by the bootstrap');
+$plugin = get_plugin_data(IBRAAI_FILE, false, false);
+ibraai_assert_same('IbraCodes AI Assistant', $plugin['Name'], 'plugin name renamed');
+ibraai_assert_same('', $plugin['WC requires at least'] ?? '', 'WooCommerce is no longer a declared hard requirement');
+ibraai_assert(! function_exists('Ibracodes\AI_Assistant\\has_required_woocommerce'), 'the hard dependency check is gone');
+ibraai_assert(class_exists('Ibracodes\AI_Assistant\\Capabilities'), 'Capabilities loaded by the bootstrap');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run it, expect failure** (`plugin name renamed`).
@@ -251,7 +251,7 @@ Header: `Plugin Name: IbraCodes AI Assistant`, `Description: An AI assistant for
 
 Delete `has_required_woocommerce()` and `woocommerce_missing_notice()`. Activation hook keeps only the PHP version check (text: `IbraCodes AI Assistant requires PHP 8.1 or later.`) and the DB install.
 
-`plugins_loaded`: drop the WooCommerce branch; require `class-wsa-capabilities.php` right after settings; require `class-wsa-catalog.php` unconditionally (it only touches WooCommerce functions inside methods that Tools call when commerce is on; add `if (! Capabilities::has_commerce()) return ['results' => [], 'total' => 0];` guards at the top of `Catalog::search()`, `categories()`, `product_details()`).
+`plugins_loaded`: drop the WooCommerce branch; require `class-ibraai-capabilities.php` right after settings; require `class-ibraai-catalog.php` unconditionally (it only touches WooCommerce functions inside methods that Tools call when commerce is on; add `if (! Capabilities::has_commerce()) return ['results' => [], 'total' => 0];` guards at the top of `Catalog::search()`, `categories()`, `product_details()`).
 
 Admin menu:
 ```php
@@ -277,7 +277,7 @@ Replace every `'manage_woocommerce'` in `includes/` with `Capabilities::admin_ca
 ### Task 4: Settings for content, retrieval, leads, privacy
 
 **Files:**
-- Modify: `includes/class-wsa-settings.php:27-66` (defaults) and `:98-135` (sanitiser match)
+- Modify: `includes/class-ibraai-settings.php:27-66` (defaults) and `:98-135` (sanitiser match)
 - Test: `tests/test-settings.php`
 
 **Step 1: Write the failing test**
@@ -286,14 +286,14 @@ Replace every `'manage_woocommerce'` in `includes/` with `Capabilities::admin_ca
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Settings;
+use Ibracodes\AI_Assistant\Settings;
 
 $d = Settings::defaults();
-wsa_assert_same(['page', 'post'], $d['content_post_types'], 'content types default to pages and posts');
-wsa_assert_same('all', $d['content_scope'], 'scope defaults to all published');
-wsa_assert_same('search', $d['retrieval'], 'retrieval defaults to search');
-wsa_assert_same(false, $d['leads_enabled'], 'leads off by default');
-wsa_assert_same(180, $d['leads_retention_days'], 'lead retention 180 days');
+ibraai_assert_same(['page', 'post'], $d['content_post_types'], 'content types default to pages and posts');
+ibraai_assert_same('all', $d['content_scope'], 'scope defaults to all published');
+ibraai_assert_same('search', $d['retrieval'], 'retrieval defaults to search');
+ibraai_assert_same(false, $d['leads_enabled'], 'leads off by default');
+ibraai_assert_same(180, $d['leads_retention_days'], 'lead retention 180 days');
 
 $saved = Settings::update([
     'content_post_types' => ['page', 'nonexistent_type', '<script>'],
@@ -306,20 +306,20 @@ $saved = Settings::update([
     'leads_when' => "when <b>someone</b> wants a quote",
     'privacy_note' => '<em>Your details</em> go to the owner',
 ]);
-wsa_assert_same(['page'], $saved['content_post_types'], 'unknown post types dropped');
-wsa_assert_same('selected', $saved['content_scope'], 'scope accepted');
-wsa_assert_same([5], $saved['content_pages'], 'page ids cleaned and deduplicated');
-wsa_assert_same('embeddings', $saved['retrieval'], 'retrieval accepted');
-wsa_assert_same(true, $saved['leads_enabled'], 'leads toggle cast');
-wsa_assert_same(get_option('admin_email'), $saved['leads_email'], 'bad lead email falls back to the admin email');
-wsa_assert_same(365, $saved['leads_retention_days'], 'lead retention capped at 365');
-wsa_assert_same('when someone wants a quote', $saved['leads_when'], 'leads_when stripped of tags');
-wsa_assert_same('Your details go to the owner', $saved['privacy_note'], 'privacy note stripped of tags');
+ibraai_assert_same(['page'], $saved['content_post_types'], 'unknown post types dropped');
+ibraai_assert_same('selected', $saved['content_scope'], 'scope accepted');
+ibraai_assert_same([5], $saved['content_pages'], 'page ids cleaned and deduplicated');
+ibraai_assert_same('embeddings', $saved['retrieval'], 'retrieval accepted');
+ibraai_assert_same(true, $saved['leads_enabled'], 'leads toggle cast');
+ibraai_assert_same(get_option('admin_email'), $saved['leads_email'], 'bad lead email falls back to the admin email');
+ibraai_assert_same(365, $saved['leads_retention_days'], 'lead retention capped at 365');
+ibraai_assert_same('when someone wants a quote', $saved['leads_when'], 'leads_when stripped of tags');
+ibraai_assert_same('Your details go to the owner', $saved['privacy_note'], 'privacy note stripped of tags');
 
 // restore what the site had (update() merges defaults, so blanking is explicit)
 Settings::update(['content_scope' => 'all', 'content_pages' => [], 'retrieval' => 'search', 'leads_enabled' => false, 'leads_when' => '', 'privacy_note' => '', 'leads_retention_days' => 180, 'content_post_types' => ['page', 'post']]);
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run it, expect failure** on the first default.
@@ -374,7 +374,7 @@ Note: `'enabled', 'only_in_stock', ...` boolean line already exists; add `leads_
 ### Task 5: Content extraction and chunking
 
 **Files:**
-- Create: `includes/class-wsa-content.php`
+- Create: `includes/class-ibraai-content.php`
 - Modify: `ibracodes-ai-assistant.php` (require after catalog)
 - Test: `tests/test-content-text.php`
 
@@ -384,30 +384,30 @@ Note: `'enabled', 'only_in_stock', ...` boolean line already exists; add `leads_
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Content;
+use Ibracodes\AI_Assistant\Content;
 
-$id = wsa_make_post('Warranty', "<!-- wp:paragraph --><p>Every camera carries a <strong>three year</strong> warranty.</p><!-- /wp:paragraph -->\n[gallery]\n<script>alert(1)</script><p>Installation is included in Tel Aviv.</p>");
+$id = ibraai_make_post('Warranty', "<!-- wp:paragraph --><p>Every camera carries a <strong>three year</strong> warranty.</p><!-- /wp:paragraph -->\n[gallery]\n<script>alert(1)</script><p>Installation is included in Tel Aviv.</p>");
 $text = Content::text_for($id);
-wsa_assert(str_contains($text, 'three year warranty'), 'blocks rendered and tags stripped');
-wsa_assert(! str_contains($text, '<'), 'no markup survives');
-wsa_assert(! str_contains($text, 'alert(1)'), 'script bodies removed, not just their tags');
-wsa_assert(str_contains($text, 'Installation is included'), 'later paragraphs kept');
+ibraai_assert(str_contains($text, 'three year warranty'), 'blocks rendered and tags stripped');
+ibraai_assert(! str_contains($text, '<'), 'no markup survives');
+ibraai_assert(! str_contains($text, 'alert(1)'), 'script bodies removed, not just their tags');
+ibraai_assert(str_contains($text, 'Installation is included'), 'later paragraphs kept');
 
 $long = implode(' ', array_fill(0, 1000, 'word'));
 $chunks = Content::chunk($long, 300, 40);
-wsa_assert_same(4, count($chunks), '1000 words in 300-word chunks with 40 overlap gives 4 chunks');
-wsa_assert_same(300, str_word_count($chunks[0]), 'first chunk is 300 words');
-wsa_assert(str_word_count(end($chunks)) > 0, 'last chunk not empty');
-wsa_assert_same([], Content::chunk('   ', 300, 40), 'blank text gives no chunks');
+ibraai_assert_same(4, count($chunks), '1000 words in 300-word chunks with 40 overlap gives 4 chunks');
+ibraai_assert_same(300, str_word_count($chunks[0]), 'first chunk is 300 words');
+ibraai_assert(str_word_count(end($chunks)) > 0, 'last chunk not empty');
+ibraai_assert_same([], Content::chunk('   ', 300, 40), 'blank text gives no chunks');
 
-$draft = wsa_make_post('Secret', 'hidden', 'page', 'draft');
-wsa_assert_same(false, Content::is_allowed($draft), 'drafts are never allowed');
-wsa_assert_same(true, Content::is_allowed($id), 'a published page in an allowed type is allowed');
-$locked = wsa_make_post('Locked', 'x');
+$draft = ibraai_make_post('Secret', 'hidden', 'page', 'draft');
+ibraai_assert_same(false, Content::is_allowed($draft), 'drafts are never allowed');
+ibraai_assert_same(true, Content::is_allowed($id), 'a published page in an allowed type is allowed');
+$locked = ibraai_make_post('Locked', 'x');
 wp_update_post(['ID' => $locked, 'post_password' => 'pw']);
-wsa_assert_same(false, Content::is_allowed($locked), 'password protected pages are never allowed');
+ibraai_assert_same(false, Content::is_allowed($locked), 'password protected pages are never allowed');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure** (class missing).
@@ -424,7 +424,7 @@ wsa_done(__FILE__);
  * found inside them, and nothing here is ever executed.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -526,7 +526,7 @@ class Content
 ### Task 6: Search-mode retrieval
 
 **Files:**
-- Modify: `includes/class-wsa-content.php` (add `search()` and `passage()`)
+- Modify: `includes/class-ibraai-content.php` (add `search()` and `passage()`)
 - Test: `tests/test-content-search.php`
 
 **Step 1: Write the failing test**
@@ -535,39 +535,39 @@ class Content
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Content;
-use WSA\Settings;
+use Ibracodes\AI_Assistant\Content;
+use Ibracodes\AI_Assistant\Settings;
 
 Settings::update(['retrieval' => 'search', 'content_scope' => 'all', 'content_post_types' => ['page', 'post']]);
 
-$a = wsa_make_post('Shipping policy', 'Orders ship within two business days. Free shipping over 399 shekels. ' . str_repeat('Filler sentence about packaging. ', 120) . ' Returns are accepted within fourteen days.');
-$b = wsa_make_post('About us', 'We install security systems in homes and businesses since 2009.');
-$c = wsa_make_post('Hidden draft', 'Free shipping secret', 'page', 'draft');
+$a = ibraai_make_post('Shipping policy', 'Orders ship within two business days. Free shipping over 399 shekels. ' . str_repeat('Filler sentence about packaging. ', 120) . ' Returns are accepted within fourteen days.');
+$b = ibraai_make_post('About us', 'We install security systems in homes and businesses since 2009.');
+$c = ibraai_make_post('Hidden draft', 'Free shipping secret', 'page', 'draft');
 
 $hits = Content::search('free shipping');
-wsa_assert(count($hits) >= 1, 'search finds something');
-wsa_assert_same($a, $hits[0]['id'], 'the shipping page ranks first');
-wsa_assert_same('Shipping policy', $hits[0]['title'], 'title carried');
-wsa_assert_same(get_permalink($a), $hits[0]['url'], 'url carried');
-wsa_assert(str_contains($hits[0]['passage'], 'Free shipping over 399'), 'passage is the chunk that mentions the terms');
-wsa_assert(mb_strlen($hits[0]['passage']) < 2500, 'passage bounded');
+ibraai_assert(count($hits) >= 1, 'search finds something');
+ibraai_assert_same($a, $hits[0]['id'], 'the shipping page ranks first');
+ibraai_assert_same('Shipping policy', $hits[0]['title'], 'title carried');
+ibraai_assert_same(get_permalink($a), $hits[0]['url'], 'url carried');
+ibraai_assert(str_contains($hits[0]['passage'], 'Free shipping over 399'), 'passage is the chunk that mentions the terms');
+ibraai_assert(mb_strlen($hits[0]['passage']) < 2500, 'passage bounded');
 foreach ($hits as $h) {
-    wsa_assert($h['id'] !== $c, 'drafts never returned');
+    ibraai_assert($h['id'] !== $c, 'drafts never returned');
 }
 
 $returns = Content::search('returns fourteen days');
-wsa_assert(str_contains($returns[0]['passage'], 'Returns are accepted'), 'a later chunk wins when it holds the terms');
+ibraai_assert(str_contains($returns[0]['passage'], 'Returns are accepted'), 'a later chunk wins when it holds the terms');
 
-wsa_assert_same([], Content::search('x'), 'one-character queries return nothing');
+ibraai_assert_same([], Content::search('x'), 'one-character queries return nothing');
 
 Settings::update(['content_scope' => 'selected', 'content_pages' => [$b]]);
 $scoped = Content::search('shipping');
 foreach ($scoped as $h) {
-    wsa_assert($h['id'] === $b, 'selected scope excludes every other page');
+    ibraai_assert($h['id'] === $b, 'selected scope excludes every other page');
 }
 Settings::update(['content_scope' => 'all', 'content_pages' => []]);
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure** (`search` undefined).
@@ -653,7 +653,7 @@ wsa_done(__FILE__);
 ### Task 7: Embeddings provider call
 
 **Files:**
-- Modify: `includes/class-wsa-provider.php` (add `EMBED_ENDPOINT`, `EMBED_MODEL`, `EMBED_DIMS`, `embed()`)
+- Modify: `includes/class-ibraai-provider.php` (add `EMBED_ENDPOINT`, `EMBED_MODEL`, `EMBED_DIMS`, `embed()`)
 - Test: `tests/test-embed.php`
 
 **Step 1: Write the failing test**
@@ -662,20 +662,20 @@ wsa_done(__FILE__);
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Provider;
+use Ibracodes\AI_Assistant\Provider;
 
-wsa_assert_same(512, Provider::EMBED_DIMS, 'vectors are 512 wide (fast cosine in PHP, small rows)');
+ibraai_assert_same(512, Provider::EMBED_DIMS, 'vectors are 512 wide (fast cosine in PHP, small rows)');
 
 // no network in tests: the filter hands back vectors, the same hook the index tests use
-add_filter('wsa_pre_embed', static function ($pre, array $texts) {
+add_filter('ibraai_pre_embed', static function ($pre, array $texts) {
     return array_map(static fn ($t) => array_fill(0, Provider::EMBED_DIMS, strlen($t) / 100), $texts);
 }, 10, 2);
 $vectors = Provider::embed(['hello', 'hello world']);
-wsa_assert(is_array($vectors) && count($vectors) === 2, 'one vector per text');
-wsa_assert_same(512, count($vectors[0]), 'vector width');
-wsa_assert_same([], Provider::embed([]), 'empty input short-circuits without a call');
+ibraai_assert(is_array($vectors) && count($vectors) === 2, 'one vector per text');
+ibraai_assert_same(512, count($vectors[0]), 'vector width');
+ibraai_assert_same([], Provider::embed([]), 'empty input short-circuits without a call');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure.**
@@ -702,14 +702,14 @@ wsa_done(__FILE__);
         if (! $texts) {
             return [];
         }
-        $pre = apply_filters('wsa_pre_embed', null, $texts);
+        $pre = apply_filters('ibraai_pre_embed', null, $texts);
         if (is_array($pre)) {
             return $pre;
         }
 
         $key = Settings::api_key();
         if ($key === '') {
-            return new WP_Error('wsa_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
+            return new WP_Error('ibraai_no_key', __('The chat is not configured.', 'ibracodes-ai-assistant'), ['status' => 503]);
         }
         $charged = Guards::charge_upstream_call();
         if ($charged instanceof WP_Error) {
@@ -753,10 +753,10 @@ wsa_done(__FILE__);
 ### Task 8: The embeddings index
 
 **Files:**
-- Create: `includes/class-wsa-index.php`
-- Modify: `includes/class-wsa-db.php:24` (`DB_VERSION = '1.1.0'`), `install()` (add the chunks table), add `chunks_table()`
+- Create: `includes/class-ibraai-index.php`
+- Modify: `includes/class-ibraai-db.php:24` (`DB_VERSION = '1.1.0'`), `install()` (add the chunks table), add `chunks_table()`
 - Modify: `ibracodes-ai-assistant.php` (require index, register cron hook, `Index::boot()`)
-- Modify: `uninstall.php` (drop `wsa_chunks`, delete `wsa_index_queue` option, clear the cron)
+- Modify: `uninstall.php` (drop `ibraai_chunks`, delete `ibraai_index_queue` option, clear the cron)
 - Test: `tests/test-index.php`
 
 **Step 1: Write the failing test**
@@ -765,12 +765,12 @@ wsa_done(__FILE__);
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Index;
-use WSA\Provider;
-use WSA\Settings;
+use Ibracodes\AI_Assistant\Index;
+use Ibracodes\AI_Assistant\Provider;
+use Ibracodes\AI_Assistant\Settings;
 
 // deterministic fake embeddings: a bag of letters, so similar wording lands close
-add_filter('wsa_pre_embed', static function ($pre, array $texts) {
+add_filter('ibraai_pre_embed', static function ($pre, array $texts) {
     return array_map(static function ($t) {
         $v = array_fill(0, Provider::EMBED_DIMS, 0.0);
         foreach (preg_split('/\W+/u', mb_strtolower($t)) as $w) {
@@ -784,42 +784,42 @@ add_filter('wsa_pre_embed', static function ($pre, array $texts) {
 
 Settings::update(['retrieval' => 'embeddings', 'content_scope' => 'all', 'content_post_types' => ['page', 'post']]);
 global $wpdb;
-wsa_assert_same($wpdb->prefix . 'wsa_chunks', $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wsa_chunks'"), 'chunks table exists after upgrade');
+ibraai_assert_same($wpdb->prefix . 'ibraai_chunks', $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ibraai_chunks'"), 'chunks table exists after upgrade');
 
-$a = wsa_make_post('Opening hours', 'We are open Sunday to Thursday from nine to six and Friday until one.');
-$b = wsa_make_post('Warranty', 'Every product carries a three year warranty with free replacement.');
+$a = ibraai_make_post('Opening hours', 'We are open Sunday to Thursday from nine to six and Friday until one.');
+$b = ibraai_make_post('Warranty', 'Every product carries a three year warranty with free replacement.');
 
 Index::queue_all();
 $status = Index::status();
-wsa_assert($status['pending'] >= 2, 'both pages queued');
+ibraai_assert($status['pending'] >= 2, 'both pages queued');
 Index::process_batch();
 $status = Index::status();
-wsa_assert_same(0, $status['pending'], 'batch drained the queue');
-wsa_assert($status['chunks'] >= 2, 'chunks stored');
-wsa_assert_same(true, Index::ready(), 'index reports ready once it holds chunks');
+ibraai_assert_same(0, $status['pending'], 'batch drained the queue');
+ibraai_assert($status['chunks'] >= 2, 'chunks stored');
+ibraai_assert_same(true, Index::ready(), 'index reports ready once it holds chunks');
 
 $hits = Index::search('what are your opening hours', 3);
-wsa_assert_same($a, $hits[0]['id'], 'opening hours page ranks first by cosine');
-wsa_assert(str_contains($hits[0]['passage'], 'Sunday to Thursday'), 'passage is the chunk text');
+ibraai_assert_same($a, $hits[0]['id'], 'opening hours page ranks first by cosine');
+ibraai_assert(str_contains($hits[0]['passage'], 'Sunday to Thursday'), 'passage is the chunk text');
 
 // editing re-indexes just that post
 wp_update_post(['ID' => $b, 'post_content' => 'Every product carries a five year warranty.']);
 Index::process_batch();
 $hits = Index::search('five year warranty', 1);
-wsa_assert(str_contains($hits[0]['passage'], 'five year'), 'updated content replaced the old chunks');
+ibraai_assert(str_contains($hits[0]['passage'], 'five year'), 'updated content replaced the old chunks');
 
 // unpublishing removes it
 wp_update_post(['ID' => $b, 'post_status' => 'draft']);
 $hits = Index::search('warranty', 3);
 foreach ($hits as $h) {
-    wsa_assert($h['id'] !== $b, 'draft removed from the index');
+    ibraai_assert($h['id'] !== $b, 'draft removed from the index');
 }
 
 Index::drop();
-wsa_assert_same(false, Index::ready(), 'drop empties the index');
+ibraai_assert_same(false, Index::ready(), 'drop empties the index');
 Settings::update(['retrieval' => 'search']);
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure** (table missing).
@@ -832,7 +832,7 @@ DB: bump `DB_VERSION` to `'1.1.0'`, add
     {
         global $wpdb;
 
-        return $wpdb->prefix . 'wsa_chunks';
+        return $wpdb->prefix . 'ibraai_chunks';
     }
 ```
 and a third `CREATE TABLE` in `install()`:
@@ -859,7 +859,7 @@ Index class:
  * is fine up to a few thousand chunks; the design says revisit only past that.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -867,9 +867,9 @@ if (! defined('ABSPATH')) {
 
 class Index
 {
-    public const HOOK = 'wsa_index_batch';
+    public const HOOK = 'ibraai_index_batch';
 
-    private const QUEUE = 'wsa_index_queue';
+    private const QUEUE = 'ibraai_index_queue';
 
     private const BATCH_POSTS = 20;
 
@@ -880,7 +880,7 @@ class Index
         add_action('deleted_post', [self::class, 'remove_post']);
         add_action('trashed_post', [self::class, 'remove_post']);
         add_action('transition_post_status', [self::class, 'on_status'], 10, 3);
-        add_action('update_option_wsa_settings', [self::class, 'on_settings'], 10, 2);
+        add_action('update_option_ibraai_settings', [self::class, 'on_settings'], 10, 2);
     }
 
     // ------------------------------------------------------------ state
@@ -1074,7 +1074,7 @@ class Index
 ```
 In `Content`, rename `keyword_search` to a public `search_keyword_fallback(string $query, int $limit)` (the index falls back to it when the embed call fails) and have `search()` call it.
 
-Bootstrap: `require_once` the index after content; call `Index::boot();` next to `Widget::boot();`. Uninstall: drop `wsa_chunks`, `delete_option('wsa_index_queue')`, `wp_clear_scheduled_hook('wsa_index_batch')` is not available in uninstall without loading the plugin, so delete the cron entry through `wp_unschedule_hook('wsa_index_batch')` (core function, available).
+Bootstrap: `require_once` the index after content; call `Index::boot();` next to `Widget::boot();`. Uninstall: drop `ibraai_chunks`, `delete_option('ibraai_index_queue')`, `wp_clear_scheduled_hook('ibraai_index_batch')` is not available in uninstall without loading the plugin, so delete the cron entry through `wp_unschedule_hook('ibraai_index_batch')` (core function, available).
 
 **Step 4: Lint, run `tests/test-index.php` and re-run `tests/test-content-search.php`, both PASS. Commit** `git commit -m "Embeddings index: chunk table, queue, batches, hooks, cosine search"`
 
@@ -1083,10 +1083,10 @@ Bootstrap: `require_once` the index after content; call `Index::boot();` next to
 ### Task 9: Tools, prompt and agent adapt to the site
 
 **Files:**
-- Modify: `includes/class-wsa-tools.php` (`definitions()`, `run()`)
-- Modify: `includes/class-wsa-prompt.php` (`system_message()` takes `array $context = []`)
-- Modify: `includes/class-wsa-agent.php` (`answer(array $history, array $context = [])`)
-- Modify: `includes/class-wsa-rest.php` (accept `page` and pass context; pass thread id)
+- Modify: `includes/class-ibraai-tools.php` (`definitions()`, `run()`)
+- Modify: `includes/class-ibraai-prompt.php` (`system_message()` takes `array $context = []`)
+- Modify: `includes/class-ibraai-agent.php` (`answer(array $history, array $context = [])`)
+- Modify: `includes/class-ibraai-rest.php` (accept `page` and pass context; pass thread id)
 - Test: `tests/test-tools-prompt.php`
 
 **Step 1: Write the failing test**
@@ -1095,45 +1095,45 @@ Bootstrap: `require_once` the index after content; call `Index::boot();` next to
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Prompt;
-use WSA\Settings;
-use WSA\Tools;
+use Ibracodes\AI_Assistant\Prompt;
+use Ibracodes\AI_Assistant\Settings;
+use Ibracodes\AI_Assistant\Tools;
 
 Settings::update(['retrieval' => 'search', 'content_scope' => 'all', 'content_post_types' => ['page', 'post'], 'leads_enabled' => false]);
 $names = static fn () => array_column(array_column(Tools::definitions(), 'function'), 'name');
 
 $with = $names();
-wsa_assert(in_array('search_content', $with, true) && in_array('get_page', $with, true), 'content tools always present');
-wsa_assert(in_array('search_products', $with, true), 'product tools present with WooCommerce');
-wsa_assert(! in_array('capture_lead', $with, true), 'no lead tool while leads are off');
+ibraai_assert(in_array('search_content', $with, true) && in_array('get_page', $with, true), 'content tools always present');
+ibraai_assert(in_array('search_products', $with, true), 'product tools present with WooCommerce');
+ibraai_assert(! in_array('capture_lead', $with, true), 'no lead tool while leads are off');
 
-add_filter('wsa_has_commerce', '__return_false');
+add_filter('ibraai_has_commerce', '__return_false');
 $without = $names();
-wsa_assert(! in_array('search_products', $without, true) && ! in_array('get_categories', $without, true) && ! in_array('get_product_details', $without, true), 'no product tools without WooCommerce');
+ibraai_assert(! in_array('search_products', $without, true) && ! in_array('get_categories', $without, true) && ! in_array('get_product_details', $without, true), 'no product tools without WooCommerce');
 $prompt = Prompt::system_message()['content'];
-wsa_assert(! str_contains($prompt, 'Product cards are rendered'), 'shop paragraphs absent without WooCommerce');
-wsa_assert(str_contains($prompt, 'search_content'), 'content rule present');
-wsa_assert(str_contains($prompt, 'written by the site owner'), 'content injection rule present');
-remove_filter('wsa_has_commerce', '__return_false');
+ibraai_assert(! str_contains($prompt, 'Product cards are rendered'), 'shop paragraphs absent without WooCommerce');
+ibraai_assert(str_contains($prompt, 'search_content'), 'content rule present');
+ibraai_assert(str_contains($prompt, 'written by the site owner'), 'content injection rule present');
+remove_filter('ibraai_has_commerce', '__return_false');
 
 $prompt = Prompt::system_message()['content'];
-wsa_assert(str_contains($prompt, 'Product cards are rendered'), 'shop paragraphs present with WooCommerce');
+ibraai_assert(str_contains($prompt, 'Product cards are rendered'), 'shop paragraphs present with WooCommerce');
 
-$page = wsa_make_post('Gold package', 'The gold package includes four cameras, an NVR and installation.');
+$page = ibraai_make_post('Gold package', 'The gold package includes four cameras, an NVR and installation.');
 $prompt = Prompt::system_message(['page_id' => $page])['content'];
-wsa_assert(str_contains($prompt, 'Gold package') && str_contains($prompt, 'four cameras'), 'current page title and text injected');
-$draft = wsa_make_post('Private', 'never', 'page', 'draft');
-wsa_assert(! str_contains(Prompt::system_message(['page_id' => $draft])['content'], 'never'), 'a draft is not injected even when its id is sent');
+ibraai_assert(str_contains($prompt, 'Gold package') && str_contains($prompt, 'four cameras'), 'current page title and text injected');
+$draft = ibraai_make_post('Private', 'never', 'page', 'draft');
+ibraai_assert(! str_contains(Prompt::system_message(['page_id' => $draft])['content'], 'never'), 'a draft is not injected even when its id is sent');
 
 $cards = [];
 $out = Tools::run('search_content', ['query' => 'gold package cameras'], $cards);
-wsa_assert_same($page, $out['results'][0]['id'], 'search_content finds the page');
-wsa_assert(isset($out['results'][0]['passage'], $out['results'][0]['url']), 'result carries passage and url');
+ibraai_assert_same($page, $out['results'][0]['id'], 'search_content finds the page');
+ibraai_assert(isset($out['results'][0]['passage'], $out['results'][0]['url']), 'result carries passage and url');
 $one = Tools::run('get_page', ['id' => $page], $cards);
-wsa_assert(str_contains($one['text'], 'installation'), 'get_page returns the text');
-wsa_assert_same(['error' => 'not_found'], Tools::run('get_page', ['id' => $draft], $cards), 'get_page refuses a draft');
+ibraai_assert(str_contains($one['text'], 'installation'), 'get_page returns the text');
+ibraai_assert_same(['error' => 'not_found'], Tools::run('get_page', ['id' => $draft], $cards), 'get_page refuses a draft');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure.**
@@ -1200,12 +1200,12 @@ with
 ### Task 10: Leads
 
 **Files:**
-- Create: `includes/class-wsa-leads.php`
-- Modify: `includes/class-wsa-db.php` (`DB_VERSION = '1.2.0'`, `leads_table()`, `CREATE TABLE`, purge leads in `purge()`)
-- Modify: `includes/class-wsa-tools.php` (`capture_lead` definition and run)
-- Modify: `includes/class-wsa-prompt.php` (lead paragraph)
-- Modify: `includes/class-wsa-agent.php` (pass thread id and page id to the tool)
-- Modify: `uninstall.php` (drop `wsa_leads`)
+- Create: `includes/class-ibraai-leads.php`
+- Modify: `includes/class-ibraai-db.php` (`DB_VERSION = '1.2.0'`, `leads_table()`, `CREATE TABLE`, purge leads in `purge()`)
+- Modify: `includes/class-ibraai-tools.php` (`capture_lead` definition and run)
+- Modify: `includes/class-ibraai-prompt.php` (lead paragraph)
+- Modify: `includes/class-ibraai-agent.php` (pass thread id and page id to the tool)
+- Modify: `uninstall.php` (drop `ibraai_leads`)
 - Test: `tests/test-leads.php`
 
 **Step 1: Write the failing test**
@@ -1214,16 +1214,16 @@ with
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Leads;
-use WSA\Settings;
-use WSA\Tools;
+use Ibracodes\AI_Assistant\Leads;
+use Ibracodes\AI_Assistant\Settings;
+use Ibracodes\AI_Assistant\Tools;
 
 Settings::update(['leads_enabled' => true, 'leads_when' => 'when someone wants a quote', 'leads_email' => 'owner@example.com']);
 global $wpdb;
-wsa_assert_same($wpdb->prefix . 'wsa_leads', $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wsa_leads'"), 'leads table exists');
+ibraai_assert_same($wpdb->prefix . 'ibraai_leads', $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}ibraai_leads'"), 'leads table exists');
 
 $names = array_column(array_column(Tools::definitions(), 'function'), 'name');
-wsa_assert(in_array('capture_lead', $names, true), 'lead tool offered when enabled');
+ibraai_assert(in_array('capture_lead', $names, true), 'lead tool offered when enabled');
 
 $sent = [];
 add_filter('pre_wp_mail', static function ($pre, array $atts) use (&$sent) {
@@ -1232,31 +1232,31 @@ add_filter('pre_wp_mail', static function ($pre, array $atts) use (&$sent) {
 }, 10, 2);
 
 $bad = Leads::capture(['name' => 'Dana', 'contact' => 'call me', 'request' => 'quote'], 0, 0);
-wsa_assert_same('invalid_contact', $bad['error'] ?? '', 'a contact that is neither phone nor email is rejected');
+ibraai_assert_same('invalid_contact', $bad['error'] ?? '', 'a contact that is neither phone nor email is rejected');
 $short = Leads::capture(['name' => 'D', 'contact' => '0501234567', 'request' => 'quote'], 0, 0);
-wsa_assert_same('invalid_name', $short['error'] ?? '', 'one-letter names are rejected');
+ibraai_assert_same('invalid_name', $short['error'] ?? '', 'one-letter names are rejected');
 
 $ok = Leads::capture(['name' => 'Dana Levi', 'contact' => '050-123-4567', 'request' => str_repeat('x', 900)], 77, 0);
-wsa_assert_same(true, $ok['saved'], 'phone lead saved');
+ibraai_assert_same(true, $ok['saved'], 'phone lead saved');
 $row = Leads::find((int) $ok['id']);
-wsa_assert_same('050-123-4567', $row['contact'], 'contact stored as typed');
-wsa_assert_same(500, mb_strlen($row['request']), 'request trimmed to 500');
-wsa_assert_same(1, count($sent), 'owner emailed once');
-wsa_assert_same('owner@example.com', $sent[0]['to'], 'email goes to the configured address');
-wsa_assert(str_contains($sent[0]['message'], 'Dana Levi'), 'email carries the name');
+ibraai_assert_same('050-123-4567', $row['contact'], 'contact stored as typed');
+ibraai_assert_same(500, mb_strlen($row['request']), 'request trimmed to 500');
+ibraai_assert_same(1, count($sent), 'owner emailed once');
+ibraai_assert_same('owner@example.com', $sent[0]['to'], 'email goes to the configured address');
+ibraai_assert(str_contains($sent[0]['message'], 'Dana Levi'), 'email carries the name');
 
 $again = Leads::capture(['name' => 'Dana Levi', 'contact' => 'dana@example.com', 'request' => 'updated'], 77, 0);
-wsa_assert_same((int) $ok['id'], (int) $again['id'], 'second capture on the same thread updates the first');
-wsa_assert_same('dana@example.com', Leads::find((int) $ok['id'])['contact'], 'update applied');
-wsa_assert_same(2, count($sent), 'owner emailed again on update');
+ibraai_assert_same((int) $ok['id'], (int) $again['id'], 'second capture on the same thread updates the first');
+ibraai_assert_same('dana@example.com', Leads::find((int) $ok['id'])['contact'], 'update applied');
+ibraai_assert_same(2, count($sent), 'owner emailed again on update');
 
 $rows = Leads::list(1, 20);
-wsa_assert($rows['total'] >= 1, 'listing works');
+ibraai_assert($rows['total'] >= 1, 'listing works');
 Leads::delete((int) $ok['id']);
-wsa_assert_same(null, Leads::find((int) $ok['id']), 'delete removes the row');
+ibraai_assert_same(null, Leads::find((int) $ok['id']), 'delete removes the row');
 
 Settings::update(['leads_enabled' => false, 'leads_when' => '']);
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure.**
@@ -1291,7 +1291,7 @@ Leads class:
  * by asking again, never by claiming success.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -1356,8 +1356,8 @@ class Leads
             sprintf(__('Request: %s', 'ibracodes-ai-assistant'), $lead['request'] ?: '-'),
             sprintf(__('Page: %s', 'ibracodes-ai-assistant'), $lead['page_id'] ? get_permalink((int) $lead['page_id']) : '-'),
             '',
-            sprintf(__('Conversation: %s', 'ibracodes-ai-assistant'), $lead['thread_id'] ? admin_url('admin.php?page=wsa&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
-            sprintf(__('All leads: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=wsa&tab=leads')),
+            sprintf(__('Conversation: %s', 'ibracodes-ai-assistant'), $lead['thread_id'] ? admin_url('admin.php?page=ibracodes-ai-assistant&tab=conversations&thread=' . (int) $lead['thread_id']) : '-'),
+            sprintf(__('All leads: %s', 'ibracodes-ai-assistant'), admin_url('admin.php?page=ibracodes-ai-assistant&tab=leads')),
         ];
 
         return (bool) wp_mail($to, $subject, implode("\n", $lines));
@@ -1441,7 +1441,7 @@ Prompt, when leads are enabled:
 
 **Files:**
 - Create: `assets/ibracodes.svg` (fetch: `curl -sL https://ibracodes.com/app/themes/ibracodes/public/build/assets/logo-DK_8YSi9.svg -o assets/ibracodes.svg`, then open it and confirm it is the wordmark SVG, roughly 117 by 18 units, with no script elements)
-- Modify: `includes/class-wsa-widget.php` (config: `pageId`, `privacyNote`, `brand`; enqueue `wc-add-to-cart` only with commerce)
+- Modify: `includes/class-ibraai-widget.php` (config: `pageId`, `privacyNote`, `brand`; enqueue `wc-add-to-cart` only with commerce)
 - Modify: `assets/widget.js` (send `page`, render `.wsa-foot`)
 - Modify: `assets/widget.css` (footer styles)
 - Modify: `tests/harness/page.html` and `tests/harness/run.mjs`
@@ -1467,7 +1467,7 @@ Widget config additions:
             'brand' => [
                 'url' => 'https://ibracodes.com/?utm_source=ai-assistant&utm_medium=widget',
                 'label' => __('Developed by Ibracodes', 'ibracodes-ai-assistant'),
-                'logo' => WSA_URL . 'assets/ibracodes.svg',
+                'logo' => IBRAAI_URL . 'assets/ibracodes.svg',
             ],
 ```
 Enqueue `wc-add-to-cart` only inside `if (Capabilities::has_commerce())`.
@@ -1524,8 +1524,8 @@ widget.css, after the form block:
 ### Task 12: Admin: content group, leads group, leads tab, index controls
 
 **Files:**
-- Modify: `includes/class-wsa-admin.php` (`TABS`, `save()`, `band()`, `render()`, `tab_agent()`, new `tab_leads()`, `tab_overview()` leads count, catalogue conditional)
-- Modify: `includes/class-wsa-rest.php` (admin-only `/rebuild-index`)
+- Modify: `includes/class-ibraai-admin.php` (`TABS`, `save()`, `band()`, `render()`, `tab_agent()`, new `tab_leads()`, `tab_overview()` leads count, catalogue conditional)
+- Modify: `includes/class-ibraai-rest.php` (admin-only `/rebuild-index`)
 - Modify: `assets/admin.js` (rebuild button)
 - Test: `tests/test-admin-render.php`
 
@@ -1535,7 +1535,7 @@ widget.css, after the form block:
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Admin;
+use Ibracodes\AI_Assistant\Admin;
 
 wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]);
 $render = static function (string $tab): string {
@@ -1546,23 +1546,23 @@ $render = static function (string $tab): string {
 };
 
 $agent = $render('agent');
-wsa_assert(str_contains($agent, 'name="content_post_types[]"'), 'content post types field on the agent tab');
-wsa_assert(str_contains($agent, 'name="retrieval"'), 'retrieval mode field');
-wsa_assert(str_contains($agent, 'name="leads_enabled"'), 'leads toggle');
-wsa_assert(str_contains($agent, 'name="privacy_note"'), 'privacy note field');
+ibraai_assert(str_contains($agent, 'name="content_post_types[]"'), 'content post types field on the agent tab');
+ibraai_assert(str_contains($agent, 'name="retrieval"'), 'retrieval mode field');
+ibraai_assert(str_contains($agent, 'name="leads_enabled"'), 'leads toggle');
+ibraai_assert(str_contains($agent, 'name="privacy_note"'), 'privacy note field');
 
 $leads = $render('leads');
-wsa_assert(str_contains($leads, 'wsa-card-title'), 'leads tab renders');
+ibraai_assert(str_contains($leads, 'wsa-card-title'), 'leads tab renders');
 
 $overview = $render('overview');
-wsa_assert(str_contains($overview, 'Leads'), 'overview mentions leads');
+ibraai_assert(str_contains($overview, 'Leads'), 'overview mentions leads');
 
-add_filter('wsa_has_commerce', '__return_false');
+add_filter('ibraai_has_commerce', '__return_false');
 $band = $render('overview');
-wsa_assert(! str_contains($band, 'tab=catalogue'), 'no catalogue tab without WooCommerce');
-remove_filter('wsa_has_commerce', '__return_false');
+ibraai_assert(! str_contains($band, 'tab=catalogue'), 'no catalogue tab without WooCommerce');
+remove_filter('ibraai_has_commerce', '__return_false');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect failure.**
@@ -1571,7 +1571,7 @@ wsa_done(__FILE__);
 
 - `TABS` gains `'leads'`. `band()` labels gain `'leads' => [__('Leads', ...), $leads_month ? number_format_i18n($leads_month) : '']` placed after conversations; catalogue removed without commerce (Task 3).
 - `render()` match gains `'leads' => self::tab_leads($s)`.
-- `save()`: toggles map `'agent' => ['enabled', 'ask_first', 'leads_enabled']`; when `$tab === 'agent'` and `content_post_types` is absent from POST, set `$input['content_post_types'] = []` and likewise `content_pages`. Handle `delete_lead` (nonce `wsa_save` already checked) on the leads tab: `Leads::delete(absint($posted['delete_lead']))`. Handle `export_leads`: stream a CSV (`header('Content-Type: text/csv')`, `fputcsv` of id, created_at, name, contact, request, page url) and `exit`.
+- `save()`: toggles map `'agent' => ['enabled', 'ask_first', 'leads_enabled']`; when `$tab === 'agent'` and `content_post_types` is absent from POST, set `$input['content_post_types'] = []` and likewise `content_pages`. Handle `delete_lead` (nonce `ibraai_save` already checked) on the leads tab: `Leads::delete(absint($posted['delete_lead']))`. Handle `export_leads`: stream a CSV (`header('Content-Type: text/csv')`, `fputcsv` of id, created_at, name, contact, request, page url) and `exit`.
 - `tab_agent()` gains two cards after House rules:
 
 Content card: checkboxes for `content_post_types[]` from `Settings::indexable_post_types()` (label with the type's `labels->name`), radios `content_scope` all/selected, a textarea `content_pages` accepting comma-separated ids with help "Page ids, comma separated; find them in the page list URL" (sanitiser already handles arrays: split the string on commas in `save()` before `Settings::update`), radios `retrieval` with the cost note: `__('Building the index costs about one cent per hundred pages once, then a fraction of that per question. Uses your OpenAI key and counts against your monthly limit.', ...)`, and when embeddings are on: a status line from `Index::status()` (`indexed X of Y pages, Z waiting`) plus `<button type="button" class="wsa-btn is-ghost" id="wsa-rebuild">Rebuild index</button><span id="wsa-rebuild-result"></span>`.
@@ -1580,9 +1580,9 @@ Leads card: toggle `leads_enabled`, text `leads_when` (help: "One line: when sho
 
 - `tab_leads()`: list from `Leads::list($page, 20, $search)` with a search field (`GET s`), columns When, Name, Contact, Request (truncated), Page, Email (pill sent/failed), Delete button (form post with `delete_lead`), Export CSV button (form post with `export_leads`), pagination like conversations. Empty state: `__('No leads yet. Turn on lead capture on the Agent tab.', ...)`.
 - `tab_overview()`: add a stat tile `__('Leads, 30 days', ...)` with `Leads::count_since(30)`.
-- REST `/rebuild-index`: `permission_callback => current_user_can(Capabilities::admin_cap())`, callback drops and queues all, returns `['ok' => true, 'pending' => Index::status()['pending']]`. admin.js: wire `#wsa-rebuild` exactly like the test button (nonce from `wsaAdmin.nonce`, endpoint `wsaAdmin.rebuildEndpoint`), result text `__('Rebuilding, %d pages queued.', ...)` passed through `wsaAdmin.rebuilding` with `%d` replaced in JS.
+- REST `/rebuild-index`: `permission_callback => current_user_can(Capabilities::admin_cap())`, callback drops and queues all, returns `['ok' => true, 'pending' => Index::status()['pending']]`. admin.js: wire `#wsa-rebuild` exactly like the test button (nonce from `ibraaiAdmin.nonce`, endpoint `ibraaiAdmin.rebuildEndpoint`), result text `__('Rebuilding, %d pages queued.', ...)` passed through `ibraaiAdmin.rebuilding` with `%d` replaced in JS.
 
-**Step 4: Lint, run the test, PASS. Open `http://shop.test/wp/wp-admin/admin.php?page=wsa&tab=agent` in Chrome if a logged-in tab exists and eyeball the two new cards; otherwise rely on the render test. Commit** `git commit -m "Admin: content and leads settings, leads tab, index rebuild"`
+**Step 4: Lint, run the test, PASS. Open `http://shop.test/wp/wp-admin/admin.php?page=ibracodes-ai-assistant&tab=agent` in Chrome if a logged-in tab exists and eyeball the two new cards; otherwise rely on the render test. Commit** `git commit -m "Admin: content and leads settings, leads tab, index rebuild"`
 
 ---
 
@@ -1590,9 +1590,9 @@ Leads card: toggle `leads_enabled`, text `leads_when` (help: "One line: when sho
 ### Task 13: Live chat data, settings and the Live class
 
 **Files:**
-- Modify: `includes/class-wsa-db.php` (`DB_VERSION = '1.3.0'`, thread and message columns, helpers)
-- Modify: `includes/class-wsa-settings.php` (defaults and sanitiser)
-- Create: `includes/class-wsa-live.php`
+- Modify: `includes/class-ibraai-db.php` (`DB_VERSION = '1.3.0'`, thread and message columns, helpers)
+- Modify: `includes/class-ibraai-settings.php` (defaults and sanitiser)
+- Create: `includes/class-ibraai-live.php`
 - Modify: `ibracodes-ai-assistant.php` (require)
 - Test: `tests/test-live.php`
 
@@ -1602,19 +1602,19 @@ Leads card: toggle `leads_enabled`, text `leads_when` (help: "One line: when sho
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\DB;
-use WSA\Live;
-use WSA\Settings;
-use WSA\Threads;
+use Ibracodes\AI_Assistant\DB;
+use Ibracodes\AI_Assistant\Live;
+use Ibracodes\AI_Assistant\Settings;
+use Ibracodes\AI_Assistant\Threads;
 
 Settings::update(['log_threads' => true, 'live_enabled' => true, 'live_wait_minutes' => 3, 'live_email' => 'desk@example.com']);
 global $wpdb;
 $cols = array_column($wpdb->get_results('SHOW COLUMNS FROM ' . DB::threads_table(), ARRAY_A), 'Field');
 foreach (['status', 'requested_at', 'claimed_at', 'closed_at', 'manager_id', 'last_visitor_at', 'last_manager_at'] as $c) {
-    wsa_assert(in_array($c, $cols, true), "threads column {$c}");
+    ibraai_assert(in_array($c, $cols, true), "threads column {$c}");
 }
 $mcols = array_column($wpdb->get_results('SHOW COLUMNS FROM ' . DB::messages_table(), ARRAY_A), 'Field');
-wsa_assert(in_array('is_read', $mcols, true), 'messages column is_read');
+ibraai_assert(in_array('is_read', $mcols, true), 'messages column is_read');
 
 $sent = [];
 add_filter('pre_wp_mail', static function ($pre, array $atts) use (&$sent) { $sent[] = $atts; return true; }, 10, 2);
@@ -1624,52 +1624,52 @@ DB::log_turn($thread, 'Can I talk to someone?', 'Sure, one moment.', [], false);
 $token = Threads::token($thread);
 
 $state = Live::request($thread, 12);
-wsa_assert_same('waiting', $state['status'], 'request marks the thread waiting');
-wsa_assert_same(1, count($sent), 'manager emailed once');
-wsa_assert_same('desk@example.com', $sent[0]['to'], 'to the live-chat address');
-wsa_assert(str_contains($sent[0]['message'], 'thread=' . $thread), 'email links to the conversation');
-wsa_assert_same('waiting', Live::request($thread, 12)['status'], 'a second request is idempotent');
-wsa_assert_same(1, count($sent), 'and does not email again');
+ibraai_assert_same('waiting', $state['status'], 'request marks the thread waiting');
+ibraai_assert_same(1, count($sent), 'manager emailed once');
+ibraai_assert_same('desk@example.com', $sent[0]['to'], 'to the live-chat address');
+ibraai_assert(str_contains($sent[0]['message'], 'thread=' . $thread), 'email links to the conversation');
+ibraai_assert_same('waiting', Live::request($thread, 12)['status'], 'a second request is idempotent');
+ibraai_assert_same(1, count($sent), 'and does not email again');
 
 $id = Live::visitor_message($thread, 'Hello? Anyone there?');
-wsa_assert($id > 0, 'visitor message stored while waiting');
+ibraai_assert($id > 0, 'visitor message stored while waiting');
 $poll = Live::poll_visitor($thread, 0);
-wsa_assert_same('waiting', $poll['status'], 'visitor poll reports waiting');
-wsa_assert_same(0, count($poll['messages']), 'no manager messages yet');
+ibraai_assert_same('waiting', $poll['status'], 'visitor poll reports waiting');
+ibraai_assert_same(0, count($poll['messages']), 'no manager messages yet');
 
 $admin = (int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0];
 $list = Live::open_threads();
-wsa_assert_same($thread, (int) $list[0]['id'], 'waiting thread listed first');
-wsa_assert_same(1, (int) $list[0]['unread'], 'one unread visitor message');
+ibraai_assert_same($thread, (int) $list[0]['id'], 'waiting thread listed first');
+ibraai_assert_same(1, (int) $list[0]['unread'], 'one unread visitor message');
 
-wsa_assert_same('live', Live::claim($thread, $admin)['status'], 'claim makes it live');
+ibraai_assert_same('live', Live::claim($thread, $admin)['status'], 'claim makes it live');
 $mid = Live::manager_reply($thread, $admin, 'Hi, this is Dana. How can I help?');
-wsa_assert($mid > 0, 'manager reply stored');
+ibraai_assert($mid > 0, 'manager reply stored');
 $poll = Live::poll_visitor($thread, 0);
-wsa_assert_same('live', $poll['status'], 'visitor sees live');
-wsa_assert_same('manager', $poll['messages'][0]['role'], 'manager message delivered');
-wsa_assert_same(get_userdata($admin)->display_name, $poll['manager'], 'manager name carried');
+ibraai_assert_same('live', $poll['status'], 'visitor sees live');
+ibraai_assert_same('manager', $poll['messages'][0]['role'], 'manager message delivered');
+ibraai_assert_same(get_userdata($admin)->display_name, $poll['manager'], 'manager name carried');
 $poll2 = Live::poll_visitor($thread, $mid);
-wsa_assert_same(0, count($poll2['messages']), 'since-id excludes delivered messages');
+ibraai_assert_same(0, count($poll2['messages']), 'since-id excludes delivered messages');
 
 $mp = Live::poll_manager($thread, 0);
-wsa_assert(count($mp['messages']) >= 3, 'manager poll returns the whole thread');
-wsa_assert_same(0, (int) Live::open_threads()[0]['unread'], 'polling as manager marks visitor messages read');
+ibraai_assert(count($mp['messages']) >= 3, 'manager poll returns the whole thread');
+ibraai_assert_same(0, (int) Live::open_threads()[0]['unread'], 'polling as manager marks visitor messages read');
 
-wsa_assert_same('closed', Live::close($thread, $admin)['status'], 'close');
-wsa_assert_same('ai', Live::poll_visitor($thread, 0)['status'], 'closed threads report ai to the widget');
+ibraai_assert_same('closed', Live::close($thread, $admin)['status'], 'close');
+ibraai_assert_same('ai', Live::poll_visitor($thread, 0)['status'], 'closed threads report ai to the widget');
 
 // missed: a waiting request older than the wait window
 $t2 = DB::start_thread('Person please', 'mobile');
 Live::request($t2, 0);
 $wpdb->update(DB::threads_table(), ['requested_at' => gmdate('Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS)], ['id' => $t2]);
-wsa_assert_same('missed', Live::poll_visitor($t2, 0)['status'], 'a stale wait becomes missed');
-wsa_assert_same('missed', Live::state($t2), 'and is persisted');
-wsa_assert_same('live', Live::claim($t2, $admin)['status'], 'a late claim revives a missed thread');
+ibraai_assert_same('missed', Live::poll_visitor($t2, 0)['status'], 'a stale wait becomes missed');
+ibraai_assert_same('missed', Live::state($t2), 'and is persisted');
+ibraai_assert_same('live', Live::claim($t2, $admin)['status'], 'a late claim revives a missed thread');
 
 foreach ([$thread, $t2] as $t) { $wpdb->delete(DB::messages_table(), ['thread_id' => $t]); $wpdb->delete(DB::threads_table(), ['id' => $t]); }
 Settings::update(['live_enabled' => false]);
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect FAIL** (columns missing).
@@ -1691,7 +1691,7 @@ Settings defaults:
 ```
 Sanitiser: `live_enabled` bool (and when it is true force `log_threads` true); `live_email` like `leads_email` but falling back to `leads_email` then admin email; `live_wait_minutes` 1 to 60; the four texts `sanitize_text_field`. Add `Settings::live_ready(): bool` = `live_enabled && log_threads`.
 
-Live class (`includes/class-wsa-live.php`), all static, all timestamps `current_time('mysql')`:
+Live class (`includes/class-ibraai-live.php`), all static, all timestamps `current_time('mysql')`:
 - `request(int $thread_id, int $page_id): array` sets status `waiting` and `requested_at` when status is `ai`, `missed` or `closed`; sends the email once (only on the transition into `waiting`) with the thread's first question, the page permalink, and `admin_url('admin.php?page=' . Admin::SLUG . '&tab=live&thread=' . $thread_id)`; returns `['status' => ...]`.
 - `visitor_message(int $thread_id, string $text): int` allowed in `waiting` and `live`; inserts role `user`, `is_read` 0, updates `last_visitor_at`.
 - `poll_visitor(int $thread_id, int $since_id): array` first applies the timeout (`waiting` older than `live_wait_minutes` becomes `missed`), then returns `['status' => status mapped for the widget (closed reads as ai), 'manager' => display name or '', 'messages' => manager and system messages with id > since_id as [id, role, text, at], 'texts' => the four texts with %s filled]`.
@@ -1710,8 +1710,8 @@ Every write uses `$wpdb->update`/`insert` with formats; every read `$wpdb->prepa
 ### Task 14: Live chat REST endpoints
 
 **Files:**
-- Modify: `includes/class-wsa-rest.php`
-- Modify: `includes/class-wsa-guards.php` (a cheap per-IP poll limit)
+- Modify: `includes/class-ibraai-rest.php`
+- Modify: `includes/class-ibraai-guards.php` (a cheap per-IP poll limit)
 - Test: `tests/test-live-rest.php`
 
 **Step 1: Write the failing test** (uses `rest_do_request` so no HTTP is needed)
@@ -1720,9 +1720,9 @@ Every write uses `$wpdb->update`/`insert` with formats; every read `$wpdb->prepa
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\DB;
-use WSA\Settings;
-use WSA\Threads;
+use Ibracodes\AI_Assistant\DB;
+use Ibracodes\AI_Assistant\Settings;
+use Ibracodes\AI_Assistant\Threads;
 
 Settings::update(['log_threads' => true, 'live_enabled' => true]);
 add_filter('pre_wp_mail', '__return_true');
@@ -1730,46 +1730,46 @@ $thread = DB::start_thread('Person please', 'desktop');
 $token = Threads::token($thread);
 $call = static function (string $method, string $route, array $params = [], bool $as_admin = false) {
     if ($as_admin) { wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]); } else { wp_set_current_user(0); }
-    $req = new WP_REST_Request($method, '/wsa/v1' . $route);
+    $req = new WP_REST_Request($method, '/ibraai/v1' . $route);
     foreach ($params as $k => $v) { $req->set_param($k, $v); }
     $res = rest_do_request($req);
     return [$res->get_status(), $res->get_data()];
 };
 
 [$code, $data] = $call('GET', '/live/thread', ['thread' => 'forged.token', 'since' => 0]);
-wsa_assert_same(403, $code, 'forged token rejected');
+ibraai_assert_same(403, $code, 'forged token rejected');
 [$code, $data] = $call('GET', '/live/thread', ['thread' => $token, 'since' => 0]);
-wsa_assert_same(200, $code, 'valid token polls');
-wsa_assert_same('ai', $data['status'], 'no request yet');
+ibraai_assert_same(200, $code, 'valid token polls');
+ibraai_assert_same('ai', $data['status'], 'no request yet');
 
 [$code] = $call('POST', '/live/thread/message', ['thread' => $token, 'text' => 'hello']);
-wsa_assert_same(409, $code, 'visitor messages refused while the AI owns the thread');
+ibraai_assert_same(409, $code, 'visitor messages refused while the AI owns the thread');
 
-\WSA\Live::request($thread, 0);
+\Ibracodes\AI_Assistant\Live::request($thread, 0);
 [$code, $data] = $call('POST', '/live/thread/message', ['thread' => $token, 'text' => str_repeat('a', 3000)]);
-wsa_assert_same(200, $code, 'visitor message accepted while waiting');
-$messages = \WSA\DB::thread($thread)['messages'];
-wsa_assert_same(1200, mb_strlen(end($messages)['content']), 'visitor message bounded to 1200 chars');
+ibraai_assert_same(200, $code, 'visitor message accepted while waiting');
+$messages = \Ibracodes\AI_Assistant\DB::thread($thread)['messages'];
+ibraai_assert_same(1200, mb_strlen(end($messages)['content']), 'visitor message bounded to 1200 chars');
 
 [$code] = $call('GET', '/live/open');
-wsa_assert_same(401, $code, 'manager list needs a login');
+ibraai_assert_same(401, $code, 'manager list needs a login');
 [$code, $data] = $call('GET', '/live/open', [], true);
-wsa_assert_same(200, $code, 'admin lists');
-wsa_assert_same($thread, (int) $data['threads'][0]['id'], 'waiting thread listed');
+ibraai_assert_same(200, $code, 'admin lists');
+ibraai_assert_same($thread, (int) $data['threads'][0]['id'], 'waiting thread listed');
 [$code, $data] = $call('POST', '/live/claim', ['id' => $thread], true);
-wsa_assert_same('live', $data['status'], 'claimed');
+ibraai_assert_same('live', $data['status'], 'claimed');
 [$code, $data] = $call('POST', '/live/reply', ['id' => $thread, 'text' => 'Hi there'], true);
-wsa_assert_same(200, $code, 'reply');
+ibraai_assert_same(200, $code, 'reply');
 [$code, $data] = $call('GET', '/live/thread', ['thread' => $token, 'since' => 0]);
 $texts = array_column($data['messages'], 'text');
-wsa_assert(in_array('Hi there', $texts, true), 'visitor receives the reply');
+ibraai_assert(in_array('Hi there', $texts, true), 'visitor receives the reply');
 [$code, $data] = $call('POST', '/live/close', ['id' => $thread], true);
-wsa_assert_same('closed', $data['status'], 'closed');
+ibraai_assert_same('closed', $data['status'], 'closed');
 
 global $wpdb;
 $wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
 Settings::update(['live_enabled' => false]);
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect FAIL** (404 routes).
@@ -1787,10 +1787,10 @@ wsa_done(__FILE__);
 ### Task 15: Hand-off becomes a live request; missed and closed states reach the agent
 
 **Files:**
-- Modify: `includes/class-wsa-tools.php` (`hand_off` description and run)
-- Modify: `includes/class-wsa-agent.php` (carry `live` state in the answer; missed instruction)
-- Modify: `includes/class-wsa-prompt.php` (live paragraphs)
-- Modify: `includes/class-wsa-rest.php` (`chat` refuses while a human owns the thread: 409 with the state, so the widget routes the message to the live endpoint instead)
+- Modify: `includes/class-ibraai-tools.php` (`hand_off` description and run)
+- Modify: `includes/class-ibraai-agent.php` (carry `live` state in the answer; missed instruction)
+- Modify: `includes/class-ibraai-prompt.php` (live paragraphs)
+- Modify: `includes/class-ibraai-rest.php` (`chat` refuses while a human owns the thread: 409 with the state, so the widget routes the message to the live endpoint instead)
 - Test: `tests/test-live-agent.php`
 
 **Step 1: Write the failing test**
@@ -1799,35 +1799,35 @@ wsa_done(__FILE__);
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\DB;
-use WSA\Live;
-use WSA\Prompt;
-use WSA\Settings;
-use WSA\Tools;
+use Ibracodes\AI_Assistant\DB;
+use Ibracodes\AI_Assistant\Live;
+use Ibracodes\AI_Assistant\Prompt;
+use Ibracodes\AI_Assistant\Settings;
+use Ibracodes\AI_Assistant\Tools;
 
 Settings::update(['log_threads' => true, 'live_enabled' => true, 'handoff_url' => 'https://wa.me/972500000000', 'handoff_label' => 'WhatsApp']);
 add_filter('pre_wp_mail', '__return_true');
 
 $defs = array_column(array_column(Tools::definitions(), 'function'), 'description', 'name');
-wsa_assert(str_contains($defs['hand_off'], 'person will join'), 'hand_off describes a live handoff when live chat is on');
+ibraai_assert(str_contains($defs['hand_off'], 'person will join'), 'hand_off describes a live handoff when live chat is on');
 
 $thread = DB::start_thread('Person please', 'desktop');
 $cards = [];
 $out = Tools::run('hand_off', [], $cards, ['thread_id' => $thread, 'page_id' => 0]);
-wsa_assert_same('waiting', $out['live'], 'hand_off requests a person');
-wsa_assert_same('waiting', Live::state($thread), 'thread is waiting');
+ibraai_assert_same('waiting', $out['live'], 'hand_off requests a person');
+ibraai_assert_same('waiting', Live::state($thread), 'thread is waiting');
 
 $prompt = Prompt::system_message(['thread_id' => $thread, 'live' => 'missed'])['content'];
-wsa_assert(str_contains($prompt, 'did not join'), 'missed instruction present');
+ibraai_assert(str_contains($prompt, 'did not join'), 'missed instruction present');
 
 Settings::update(['live_enabled' => false]);
 $defs = array_column(array_column(Tools::definitions(), 'function'), 'description', 'name');
-wsa_assert(! str_contains($defs['hand_off'], 'person will join'), 'without live chat hand_off is the contact button again');
+ibraai_assert(! str_contains($defs['hand_off'], 'person will join'), 'without live chat hand_off is the contact button again');
 
 global $wpdb;
 $wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
 Settings::update(['handoff_url' => '', 'handoff_label' => '']);
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect FAIL.**
@@ -1847,13 +1847,13 @@ wsa_done(__FILE__);
 
 **Files:**
 - Modify: `assets/widget.js`, `assets/widget.css`
-- Modify: `includes/class-wsa-widget.php` (config: `liveEndpoint`, `liveMessageEndpoint`, `livePoll` 4000)
+- Modify: `includes/class-ibraai-widget.php` (config: `liveEndpoint`, `liveMessageEndpoint`, `livePoll` 4000)
 - Modify: `tests/harness/page.html`, `tests/harness/run.mjs`
 
 **Step 1: Extend the harness (failing).** The stub gains an in-memory thread state: `POST /chat` with a message containing "נציג" returns `live: 'waiting'` and the reply text; `GET /live/thread?since=` returns `{status, manager, messages, texts}` from the stub's state; `POST /live/thread/message` stores the visitor line; a test hook `POST /__stub/manager` lets the test simulate the manager: claim (returns joined system line), reply, close. Checks: after asking for a person the widget shows the waiting text as a muted system line and starts polling (the stub counts polls); a visitor message typed now hits `/live/thread/message`, not `/chat`; after the stub claims and replies, a `.wsa-msg.is-manager` bubble with the manager's name appears within 5 seconds; the placeholder reads "Write to Dana"; after close, the closed system line appears and the next message goes to `/chat` again; reload the page mid-live and the polling resumes with the manager bubble replayed. Fold into `ok`.
 
 **Step 2: Implement**
-- Config: `liveEndpoint` = `rest_url('wsa/v1/live/thread')`, `liveMessageEndpoint` = `.../live/thread/message`, `livePoll` = 4000, only when `Settings::live_ready()`.
+- Config: `liveEndpoint` = `rest_url('ibraai/v1/live/thread')`, `liveMessageEndpoint` = `.../live/thread/message`, `livePoll` = 4000, only when `Settings::live_ready()`.
 - State: `live = { status: 'ai', manager: '', since: 0 }` persisted with the conversation. `ask()` routes to `liveMessageEndpoint` when status is waiting or live (no typing indicator, no history slice); a 409 from `/chat` switches into live mode with the returned status.
 - On a reply with `live: 'waiting'`: add the waiting text as `.wsa-system`, set status, start polling.
 - Poll loop: `setTimeout` chain, paused on `document.hidden`, resumed on `visibilitychange`; each poll passes `since`; new messages are appended (`manager` as `.wsa-msg.is-manager` with a `.wsa-msg-name` line, `system` as `.wsa-system`), `since` advances, status transitions handled: `live` sets placeholder `t.writeTo.replace('%s', manager)`; `missed` shows the missed text, the contact chip when configured, stops polling and returns to AI mode with `live.status = 'missed'` sent as context on the next `/chat` call; `ai` (closed) shows the closed text and stops polling.
@@ -1868,7 +1868,7 @@ wsa_done(__FILE__);
 ### Task 17: Admin Live chats tab
 
 **Files:**
-- Modify: `includes/class-wsa-admin.php` (`TABS`, band label with waiting count, `tab_live()`, live settings group on the Agent tab)
+- Modify: `includes/class-ibraai-admin.php` (`TABS`, band label with waiting count, `tab_live()`, live settings group on the Agent tab)
 - Create: `assets/live.js` and styles appended to `assets/admin.css`
 - Test: `tests/test-live-admin.php`
 
@@ -1878,33 +1878,33 @@ wsa_done(__FILE__);
 <?php
 require_once __DIR__ . '/lib.php';
 
-use WSA\Admin;
-use WSA\DB;
-use WSA\Settings;
+use Ibracodes\AI_Assistant\Admin;
+use Ibracodes\AI_Assistant\DB;
+use Ibracodes\AI_Assistant\Settings;
 
 Settings::update(['log_threads' => true, 'live_enabled' => true]);
 add_filter('pre_wp_mail', '__return_true');
 wp_set_current_user((int) get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID'])[0]);
 $thread = DB::start_thread('Person please', 'desktop');
-\WSA\Live::request($thread, 0);
+\Ibracodes\AI_Assistant\Live::request($thread, 0);
 
 $_GET['tab'] = 'live';
 ob_start(); Admin::render(); $html = (string) ob_get_clean();
-wsa_assert(str_contains($html, 'id="wsa-live"'), 'live tab renders its root');
-wsa_assert(str_contains($html, 'data-thread="' . $thread . '"'), 'waiting thread is in the initial list');
+ibraai_assert(str_contains($html, 'id="wsa-live"'), 'live tab renders its root');
+ibraai_assert(str_contains($html, 'data-thread="' . $thread . '"'), 'waiting thread is in the initial list');
 
 Settings::update(['live_enabled' => false]);
 ob_start(); Admin::render(); $html = (string) ob_get_clean();
-wsa_assert(! str_contains($html, 'id="wsa-live"'), 'with live chat off the tab does not render the console');
-wsa_assert(str_contains($html, 'tab=agent'), 'and points to the Agent tab to enable it');
+ibraai_assert(! str_contains($html, 'id="wsa-live"'), 'with live chat off the tab does not render the console');
+ibraai_assert(str_contains($html, 'tab=agent'), 'and points to the Agent tab to enable it');
 
 $_GET['tab'] = 'agent';
 ob_start(); Admin::render(); $html = (string) ob_get_clean();
-wsa_assert(str_contains($html, 'name="live_enabled"') && str_contains($html, 'name="live_wait_minutes"'), 'live settings on the Agent tab');
+ibraai_assert(str_contains($html, 'name="live_enabled"') && str_contains($html, 'name="live_wait_minutes"'), 'live settings on the Agent tab');
 
 global $wpdb;
 $wpdb->delete(DB::messages_table(), ['thread_id' => $thread]); $wpdb->delete(DB::threads_table(), ['id' => $thread]);
-wsa_done(__FILE__);
+ibraai_done(__FILE__);
 ```
 
 **Step 2: Run, expect FAIL.**
@@ -1912,7 +1912,7 @@ wsa_done(__FILE__);
 **Step 3: Implement**
 - `TABS` gains `live`; the band label `Live chats` carries the waiting count as its badge.
 - Agent tab: a Live chat card with the toggle, the notification address, the wait minutes, and the four texts, with the note that enabling it turns conversation logging on. `save()` toggles map: `'agent' => ['enabled', 'ask_first', 'leads_enabled', 'live_enabled']`.
-- `tab_live()`: when `! Settings::live_ready()`, a card explaining that live chat is off with a link to the Agent tab. When ready: `<div id="wsa-live" class="wsa-live">` with the list rendered server-side from `Live::open_threads()` (each `<button class="wsa-live-item" data-thread="ID">` with first question, state pill, waiting time, unread badge) and an empty pane; enqueue `assets/live.js` on this tab only and `wp_localize_script('wsa-live', 'wsaLive', [endpoints, nonce, poll: 3000, strings, currentUser display name])`.
+- `tab_live()`: when `! Settings::live_ready()`, a card explaining that live chat is off with a link to the Agent tab. When ready: `<div id="wsa-live" class="wsa-live">` with the list rendered server-side from `Live::open_threads()` (each `<button class="wsa-live-item" data-thread="ID">` with first question, state pill, waiting time, unread badge) and an empty pane; enqueue `assets/live.js` on this tab only and `wp_localize_script('ibraai-live', 'ibraaiLive', [endpoints, nonce, poll: 3000, strings, currentUser display name])`.
 - `assets/live.js`: polls `/live/open` every 3 seconds (paused when hidden) to refresh the list and set `document.title` to `(N) ...` when N waiting; clicking an item loads `/live/poll` with `since` 0, then polls that thread every 3 seconds appending messages; Claim button (hidden once live), reply form posting to `/live/reply`, Close button. All rendering through `textContent`; the manager sees visitor, assistant, manager and system messages in distinct styles.
 - Styles: a two-column grid (list 320px, pane), reusing the admin's existing card, pill and row classes where they fit; manager bubbles accent-tinted; visitor bubbles plain.
 
@@ -1924,15 +1924,15 @@ wsa_done(__FILE__);
 
 **Files:**
 - Modify: `languages/build-he.php` (every new msgid), regenerate `.pot`, `.po`, `.mo`
-- Modify: `uninstall.php` (already touched in Tasks 8 and 10; confirm `wsa_chunks`, `wsa_leads`, `wsa_index_queue`)
-- Modify: `README.md`, `ibracodes-ai-assistant.php` (`Version: 0.2.0`, `WSA_VERSION`)
+- Modify: `uninstall.php` (already touched in Tasks 8 and 10; confirm `ibraai_chunks`, `ibraai_leads`, `ibraai_index_queue`)
+- Modify: `README.md`, `ibracodes-ai-assistant.php` (`Version: 0.2.0`, `IBRAAI_VERSION`)
 
 **Step 0: Rename the slug to `ibracodes-ai-assistant` (owner decision, 2026-09-05; directory names starting with a trademarked term are rejected by WordPress.org).**
 - Main file becomes `ibracodes-ai-assistant.php`; `Text Domain: ibracodes-ai-assistant`; `Domain Path: /languages` stays; every `'woocommerce-shop-agent'` text-domain argument becomes `'ibracodes-ai-assistant'` (sed across `includes/`, the main file, `uninstall.php`; then grep to confirm none remain); `languages/` files renamed to `ibracodes-ai-assistant.pot`, `ibracodes-ai-assistant-he_IL.po/.mo` and `build-he.php` updated to the new names; `tests/README.md`, `README.md` and `docs/` references updated.
-- The repo directory and the GitHub repo are renamed to `ibracodes-ai-assistant` (`gh repo rename ibracodes-ai-assistant` in the Ibracodes-agency org, then `git remote set-url`), and the xswitch symlink `web/app/plugins/woocommerce-shop-agent` is replaced by `web/app/plugins/ibracodes-ai-assistant` pointing at the renamed checkout. The old symlink goes away. Option names, table names and the `WSA` prefix stay: they are internal, and existing installs keep their data. Because the plugin basename changes, an existing install must be reactivated once; say so in the README.
+- The repo directory and the GitHub repo are renamed to `ibracodes-ai-assistant` (`gh repo rename ibracodes-ai-assistant` in the Ibracodes-agency org, then `git remote set-url`), and the xswitch symlink `web/app/plugins/woocommerce-shop-agent` is replaced by `web/app/plugins/ibracodes-ai-assistant` pointing at the renamed checkout. The old symlink goes away. Option names, table names and the internal prefix stay for now: existing installs keep their data. (They were all renamed to `ibraai` in 0.2.0 for the WordPress.org review, with a migration.) Because the plugin basename changes, an existing install must be reactivated once; say so in the README.
 - Test scripts and the harness reference the new paths (`tests/README.md`, the ground rules above). Run the full sweep afterwards.
 
-**Step 0b: Double-load guard.** At the top of the main file, before the `define()` calls: `if (defined('WSA_VERSION')) { add_action('admin_notices', function () { echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'ibracodes-ai-assistant') . '</p></div>'; }); return; }` so a second copy (a manual upload next to the store install) can never redefine the constants and break the site. Test: `tests/test-bootstrap.php` includes the main file a second time inside an output buffer and asserts no warning and that `WSA_VERSION` is unchanged.
+**Step 0b: Double-load guard.** At the top of the main file, before the `define()` calls: `if (defined('IBRAAI_VERSION')) { add_action('admin_notices', function () { echo '<div class="notice notice-error"><p>' . esc_html__('Another copy of IbraCodes AI Assistant is already active. Deactivate one of them.', 'ibracodes-ai-assistant') . '</p></div>'; }); return; }` so a second copy (a manual upload next to the store install) can never redefine the constants and break the site. Test: `tests/test-bootstrap.php` includes the main file a second time inside an output buffer and asserts no warning and that `IBRAAI_VERSION` is unchanged.
 
 **Step 0c: `readme.txt` in the WordPress.org format** at the plugin root: `=== IbraCodes AI Assistant ===`, `Contributors: ibracodes`, `Tags: ai, chat, assistant, woocommerce, leads`, `Requires at least: 6.0`, `Tested up to:` the current WordPress on shop.test (`wp core version`), `Requires PHP: 8.1`, `Stable tag: 0.2.0`, `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, a short description under 150 characters, `== Description ==` (what it does, for any site and for WooCommerce stores), a **Third-party services** paragraph in Description stating that the plugin sends the visitor's messages, the matching page passages and, when enabled, page text for indexing to OpenAI's API (https://openai.com/) under the owner's own key, with links to OpenAI's terms and privacy policy, and that nothing is sent until the owner enters a key, `== Installation ==`, `== Frequently Asked Questions ==` (cost, privacy, WooCommerce optional, leads, live chat), `== Screenshots ==` (placeholders numbered 1 to 4 with captions; the PNGs are added to the SVN assets later), `== Changelog ==` with `= 0.2.0 =`. No em-dashes. Keep `README.md` for GitHub.
 

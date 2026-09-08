@@ -10,14 +10,17 @@ msgstr ""
 msgid "IbraCodes AI Assistant"
 msgstr "IbraCodes AI Assistant"
 
-msgid "https://ibracodes.com"
-msgstr "https://ibracodes.com"
+msgid "https://ibracodes.com/resources/ibracodes-ai-assistant/"
+msgstr "https://ibracodes.com/resources/ibracodes-ai-assistant/"
 
 msgid "An AI assistant for any WordPress site. It answers from your pages and posts and the facts you write, captures leads, and on WooCommerce stores recommends products the customer can add to cart. Uses your own OpenAI key."
 msgstr "עוזר AI לכל אתר וורדפרס. עונה מתוך העמודים והפוסטים שלכם ומתוך עובדות שאתם כותבים, אוסף לידים, ובחנויות ווקומרס ממליץ על מוצרים שהלקוח יכול להוסיף לסל. עובד עם מפתח OpenAI שלכם."
 
 msgid "Ibracodes"
 msgstr "Ibracodes"
+
+msgid "https://ibracodes.com"
+msgstr "https://ibracodes.com"
 
 msgid "Another copy of IbraCodes AI Assistant is already active. Deactivate one of them."
 msgstr "עותק נוסף של IbraCodes AI Assistant כבר פעיל. כבו אחד מהם."
@@ -298,11 +301,11 @@ msgstr "מפתח API של OpenAI"
 msgid "Set in wp-config.php"
 msgstr "מוגדר ב-wp-config.php"
 
-msgid "WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden."
-msgstr "הקבוע WSA_OPENAI_KEY מוגדר, ולכן הוא גובר והשדה הזה מוסתר."
+msgid "IBRAAI_OPENAI_KEY is defined, so the constant wins and this field is hidden."
+msgstr "הקבוע IBRAAI_OPENAI_KEY מוגדר, ולכן הוא גובר והשדה הזה מוסתר."
 
-msgid "Stored in this site's database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead."
-msgstr "נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת WSA_OPENAI_KEY ב-wp-config.php."
+msgid "Stored in this site's database, so any administrator can read it. Where that matters, define IBRAAI_OPENAI_KEY in wp-config.php instead."
+msgstr "נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת IBRAAI_OPENAI_KEY ב-wp-config.php."
 
 msgid "Test connection"
 msgstr "בדיקת חיבור"

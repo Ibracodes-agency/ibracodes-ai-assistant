@@ -6,7 +6,7 @@
  * by asking again, never by claiming success.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;

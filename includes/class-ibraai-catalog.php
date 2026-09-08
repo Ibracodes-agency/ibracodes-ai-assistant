@@ -13,7 +13,7 @@
  * SKU matching runs alongside, because WordPress search never looks at it.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 use WC_Product;
 use WP_Query;
@@ -29,7 +29,7 @@ class Catalog
     /** Hooks the catalog into the content features; the callback checks for commerce itself, at call time. */
     public static function boot(): void
     {
-        add_filter('wsa_content_excluded_ids', [self::class, 'exclude_commerce_pages']);
+        add_filter('ibraai_content_excluded_ids', [self::class, 'exclude_commerce_pages']);
     }
 
     /** The cart, checkout and account pages are UI, not content: keep them out of the assistant's reading. */

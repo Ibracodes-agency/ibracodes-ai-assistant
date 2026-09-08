@@ -7,7 +7,7 @@
  * found inside them, and nothing here is ever executed.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -52,7 +52,7 @@ class Content
         }
         // page builders and ACF sites store content outside post_content and
         // can supply text here
-        $text = (string) apply_filters('wsa_content_text', $text, $post);
+        $text = (string) apply_filters('ibraai_content_text', $text, $post);
 
         return self::fence_safe(mb_substr(trim($text), 0, self::MAX_CHARS));
     }
@@ -60,7 +60,7 @@ class Content
     /**
      * A line that is exactly a fence marker would end the fence the prompt
      * puts around page text early; a space inside it (">> >") keeps it plain
-     * text. Runs last, so text added through the wsa_content_text filter is
+     * text. Runs last, so text added through the ibraai_content_text filter is
      * covered as well as the rendered content.
      */
     private static function fence_safe(string $text): string
@@ -119,7 +119,7 @@ class Content
      */
     public static function excluded_ids(): array
     {
-        return array_values(array_unique(array_map('intval', (array) apply_filters('wsa_content_excluded_ids', []))));
+        return array_values(array_unique(array_map('intval', (array) apply_filters('ibraai_content_excluded_ids', []))));
     }
 
     /** Published, public, unprotected, not excluded, and inside the owner's scope. */
@@ -162,7 +162,7 @@ class Content
             $pages = array_map('intval', (array) Settings::get('content_pages'));
             $args['post__in'] = array_values(array_diff($pages, $excluded)) ?: [0];
         } elseif ($excluded) {
-            $args['post__not_in'] = $excluded; // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- a short list of ids excluded through the wsa_content_excluded_ids filter
+            $args['post__not_in'] = $excluded; // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- a short list of ids excluded through the ibraai_content_excluded_ids filter
         }
 
         return $args;
@@ -190,8 +190,8 @@ class Content
     {
         // get_posts() suppresses the posts_* SQL filters, so search plugins and
         // language filters are bypassed on purpose: results stay predictable on
-        // any site. A site that wants them can opt in through wsa_search_args.
-        $args = apply_filters('wsa_search_args', array_merge(self::scope_args(), [
+        // any site. A site that wants them can opt in through ibraai_search_args.
+        $args = apply_filters('ibraai_search_args', array_merge(self::scope_args(), [
             's' => $query,
             'posts_per_page' => $limit,
             'fields' => 'ids',

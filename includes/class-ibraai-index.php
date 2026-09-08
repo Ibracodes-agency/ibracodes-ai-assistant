@@ -6,7 +6,7 @@
  * says revisit only past that.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 if (! defined('ABSPATH')) {
     exit;
@@ -16,19 +16,19 @@ if (! defined('ABSPATH')) {
 
 class Index
 {
-    public const HOOK = 'wsa_index_batch';
+    public const HOOK = 'ibraai_index_batch';
 
-    public const RECONCILE_HOOK = 'wsa_index_reconcile';
+    public const RECONCILE_HOOK = 'ibraai_index_reconcile';
 
-    private const QUEUE = 'wsa_index_queue';
+    private const QUEUE = 'ibraai_index_queue';
 
     /** Failed batches in a row; drives the exponential backoff. */
-    private const BACKOFF = 'wsa_index_backoff';
+    private const BACKOFF = 'ibraai_index_backoff';
 
     /** model:dims the stored vectors were made with; a change means a rebuild, never a mix. */
-    private const MODEL = 'wsa_index_model';
+    private const MODEL = 'ibraai_index_model';
 
-    private const LOCK = 'wsa_index_lock';
+    private const LOCK = 'ibraai_index_lock';
 
     private const BATCH_POSTS = 20;
 
@@ -44,9 +44,9 @@ class Index
         add_action('deleted_post', [self::class, 'remove_post']);
         add_action('trashed_post', [self::class, 'remove_post']);
         add_action('transition_post_status', [self::class, 'on_status'], 10, 3);
-        add_action('update_option_wsa_settings', [self::class, 'on_settings'], 10, 2);
+        add_action('update_option_ibraai_settings', [self::class, 'on_settings'], 10, 2);
         // a never-saved option goes through add_option, not update_option
-        add_action('add_option_wsa_settings', [self::class, 'on_first_save'], 10, 2);
+        add_action('add_option_ibraai_settings', [self::class, 'on_first_save'], 10, 2);
     }
 
     // ------------------------------------------------------------ state
@@ -197,11 +197,11 @@ class Index
     private static function back_off(string $code): void
     {
         wp_clear_scheduled_hook(self::HOOK);
-        if ($code === 'wsa_no_key') {
+        if ($code === 'ibraai_no_key') {
             return;
         }
         // the code Guards::busy() puts on every rate-limit error
-        if ($code === 'wsa_rate_limited') {
+        if ($code === 'ibraai_rate_limited') {
             $midnight = ((int) floor(time() / DAY_IN_SECONDS) + 1) * DAY_IN_SECONDS;
             self::schedule($midnight + MINUTE_IN_SECONDS - time());
 
@@ -222,7 +222,7 @@ class Index
             return $vectors;
         }
         if (count($vectors) !== count($chunks)) {
-            return new \WP_Error('wsa_embed_shape', __('The embeddings service returned the wrong number of vectors.', 'ibracodes-ai-assistant'));
+            return new \WP_Error('ibraai_embed_shape', __('The embeddings service returned the wrong number of vectors.', 'ibracodes-ai-assistant'));
         }
         global $wpdb;
         $table = DB::chunks_table();

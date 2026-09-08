@@ -9,10 +9,10 @@ if (! function_exists('set_current_screen')) {
     require_once ABSPATH . 'wp-admin/includes/screen.php';
 }
 
-use WSA\Admin;
+use Ibracodes\AI_Assistant\Admin;
 
 $administrator = get_users(['role' => 'administrator', 'number' => 1])[0] ?? null;
-wsa_assert($administrator !== null, 'an administrator exists to register the menu as');
+ibraai_assert($administrator !== null, 'an administrator exists to register the menu as');
 wp_set_current_user($administrator->ID);
 set_current_screen('dashboard');
 
@@ -22,30 +22,30 @@ $reset_menu = static function (): void {
     foreach (['menu', 'submenu', 'admin_page_hooks', '_registered_pages', '_parent_pages'] as $global) {
         $GLOBALS[$global] = [];
     }
-    wp_dequeue_script('wsa-admin');
+    wp_dequeue_script('ibraai-admin');
 };
 
-add_filter('wsa_has_commerce', '__return_false');
+add_filter('ibraai_has_commerce', '__return_false');
 $reset_menu();
 Admin::menu();
 $captured = $hook->getValue();
-wsa_assert_same('toplevel_page_shop-agent', $captured, 'without WooCommerce the page is a top-level entry');
-wsa_assert(isset($GLOBALS['admin_page_hooks']['shop-agent']), 'the top-level entry is registered with WordPress');
+ibraai_assert_same('toplevel_page_ibracodes-ai-assistant', $captured, 'without WooCommerce the page is a top-level entry');
+ibraai_assert(isset($GLOBALS['admin_page_hooks']['ibracodes-ai-assistant']), 'the top-level entry is registered with WordPress');
 Admin::assets('edit.php');
-wsa_assert(! wp_script_is('wsa-admin', 'enqueued'), 'assets() leaves other screens alone (no commerce)');
+ibraai_assert(! wp_script_is('ibraai-admin', 'enqueued'), 'assets() leaves other screens alone (no commerce)');
 Admin::assets($captured);
-wsa_assert(wp_script_is('wsa-admin', 'enqueued'), 'assets() enqueues admin.js on the captured hook (no commerce)');
-remove_filter('wsa_has_commerce', '__return_false');
+ibraai_assert(wp_script_is('ibraai-admin', 'enqueued'), 'assets() enqueues admin.js on the captured hook (no commerce)');
+remove_filter('ibraai_has_commerce', '__return_false');
 
 // WooCommerce registers its parent menu before ours runs
 $reset_menu();
 add_menu_page('WooCommerce', 'WooCommerce', 'manage_woocommerce', 'woocommerce');
 Admin::menu();
 $captured = $hook->getValue();
-wsa_assert_same('woocommerce_page_shop-agent', $captured, 'with WooCommerce the page sits under its menu');
+ibraai_assert_same('woocommerce_page_ibracodes-ai-assistant', $captured, 'with WooCommerce the page sits under its menu');
 Admin::assets('edit.php');
-wsa_assert(! wp_script_is('wsa-admin', 'enqueued'), 'assets() leaves other screens alone (commerce)');
+ibraai_assert(! wp_script_is('ibraai-admin', 'enqueued'), 'assets() leaves other screens alone (commerce)');
 Admin::assets($captured);
-wsa_assert(wp_script_is('wsa-admin', 'enqueued'), 'assets() enqueues admin.js on the captured hook (commerce)');
+ibraai_assert(wp_script_is('ibraai-admin', 'enqueued'), 'assets() enqueues admin.js on the captured hook (commerce)');
 
-wsa_done(__FILE__);
+ibraai_done(__FILE__);

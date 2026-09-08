@@ -14,6 +14,7 @@
 $dict = [
     // plugin header
     'Shop Agent for WooCommerce' => 'Shop Agent for WooCommerce',
+    'https://ibracodes.com/resources/ibracodes-ai-assistant/' => 'https://ibracodes.com/resources/ibracodes-ai-assistant/',
     'https://ibracodes.com' => 'https://ibracodes.com',
     'An AI shop assistant for the storefront. It searches the real catalog, recommends products the customer can add to cart, and answers store questions from facts you write. Uses your own OpenAI key.' => 'עוזר חנות חכם לאתר. מחפש מוצרים אמיתיים בקטלוג, ממליץ על מוצרים שהלקוח יכול להוסיף לסל, ועונה על שאלות מתוך עובדות שאתם כותבים. עובד עם מפתח OpenAI שלכם.',
     'Ibracodes' => 'Ibracodes',
@@ -84,8 +85,8 @@ $dict = [
     'It only appears once a working key is saved.' => 'מופיע רק אחרי שנשמר מפתח תקין.',
     'OpenAI API key' => 'מפתח API של OpenAI',
     'Set in wp-config.php' => 'מוגדר ב-wp-config.php',
-    'WSA_OPENAI_KEY is defined, so the constant wins and this field is hidden.' => 'הקבוע WSA_OPENAI_KEY מוגדר, ולכן הוא גובר והשדה הזה מוסתר.',
-    'Stored in this site\'s database, so any administrator can read it. Where that matters, define WSA_OPENAI_KEY in wp-config.php instead.' => 'נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת WSA_OPENAI_KEY ב-wp-config.php.',
+    'IBRAAI_OPENAI_KEY is defined, so the constant wins and this field is hidden.' => 'הקבוע IBRAAI_OPENAI_KEY מוגדר, ולכן הוא גובר והשדה הזה מוסתר.',
+    'Stored in this site\'s database, so any administrator can read it. Where that matters, define IBRAAI_OPENAI_KEY in wp-config.php instead.' => 'נשמר במסד הנתונים של האתר, כך שכל מנהל יכול לקרוא אותו. אם זה משנה לכם, הגדירו במקום זאת IBRAAI_OPENAI_KEY ב-wp-config.php.',
     'Model' => 'מודל',
     'Shop questions rarely need the expensive model. Start cheap and move up only if answers disappoint.' => 'שאלות של לקוחות כמעט אף פעם לא צריכות את המודל היקר. התחילו בזול ועלו רק אם התשובות מאכזבות.',
     'House rules' => 'כללי הבית',

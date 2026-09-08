@@ -7,7 +7,7 @@
  * billed API calls if the model keeps asking for tools.
  */
 
-namespace WSA;
+namespace Ibracodes\AI_Assistant;
 
 use WP_Error;
 
@@ -30,7 +30,7 @@ class Agent
         $messages = [Prompt::system_message($context), ...Scrubber::sanitize_history($history)];
 
         if (count($messages) < 2 || end($messages)['role'] !== 'user') {
-            return new WP_Error('wsa_bad_request', __('No message received.', 'ibracodes-ai-assistant'), ['status' => 400]);
+            return new WP_Error('ibraai_bad_request', __('No message received.', 'ibracodes-ai-assistant'), ['status' => 400]);
         }
 
         $tools = Tools::definitions();

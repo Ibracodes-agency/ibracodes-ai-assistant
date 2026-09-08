@@ -9,7 +9,7 @@
 ( function () {
 	'use strict';
 
-	var cfg = window.wsaLive;
+	var cfg = window.ibraaiLive;
 	if ( ! cfg ) {
 		return;
 	}
