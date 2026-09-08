@@ -11,8 +11,6 @@ node_modules
 .distignore
 .DS_Store
 README.md
-# translation sources stay in the repo; the compiled he_IL .mo ships until
-# translate.wordpress.org carries the plugin
-languages/build-he.php
-languages/*.po
-languages/*.pot
+# translations come from translate.wordpress.org as language packs, so nothing
+# in here ships; the folder stays in the repo as the source to import there
+languages

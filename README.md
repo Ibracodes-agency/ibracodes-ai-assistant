@@ -27,7 +27,7 @@ Built by [Ibracodes](https://ibracodes.com).
 - **Recommends products on a WooCommerce store.** Every product it mentions comes from a tool
   call against live catalog data, so it cannot invent a product, a price or stock.
 - **Speaks the site's language** automatically, from the site locale. RTL supported; the admin
-  and the widget ship translated in Hebrew.
+  and the widget are translated through WordPress.org language packs.
 - **Reports what visitors asked**, including the questions it could not answer.
 
 ## What it deliberately does not do
@@ -187,6 +187,20 @@ the banners, icon and screenshots from `.wordpress-org/`. Changes to those files
 One-time setup after WordPress.org approves the plugin: add the repository secrets
 `SVN_USERNAME` and `SVN_PASSWORD` (the wordpress.org login) under Settings, Secrets and
 variables, Actions. Details in `docs/wordpress-org-submission.md`.
+
+## Translations
+
+Every locale is served by WordPress.org, as a language pack built from
+[translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/ibracodes-ai-assistant/).
+WordPress loads it for a directory-hosted plugin on its own, so nothing in `languages/` is
+shipped in the zip and the plugin makes no `load_plugin_textdomain()` call.
+
+The folder stays in the repo as the source for that site. `languages/ibracodes-ai-assistant-he_IL.po`
+is the Hebrew to import there; `languages/build-he.php` rebuilds it from the POT and fails loudly
+on any string it has no translation for:
+
+    wp i18n make-pot . languages/ibracodes-ai-assistant.pot --exclude=docs,tests,node_modules
+    php languages/build-he.php
 
 ## Tests
 

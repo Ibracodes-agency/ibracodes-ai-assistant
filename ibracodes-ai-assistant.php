@@ -66,11 +66,6 @@ register_deactivation_hook(__FILE__, function (): void {
 });
 
 add_action('plugins_loaded', function (): void {
-    // The Hebrew catalogue ships inside the plugin: WordPress.org only serves a
-    // language pack once a locale is fully translated there, and until then
-    // this call is what loads the bundled files.
-    load_plugin_textdomain('ibracodes-ai-assistant', false, dirname(plugin_basename(__FILE__)) . '/languages'); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- the plugin ships its own he_IL catalogue in /languages
-
     require_once IBRAAI_PATH . 'includes/class-ibraai-settings.php';
     require_once IBRAAI_PATH . 'includes/class-ibraai-capabilities.php';
     require_once IBRAAI_PATH . 'includes/class-ibraai-db.php';
