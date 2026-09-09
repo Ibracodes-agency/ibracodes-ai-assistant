@@ -237,8 +237,12 @@ class Admin
                 $input['content_post_types'] = [];
             }
             if (isset($posted['content_pages'])) {
-                // typed as "12, 40 41": ids separated by commas or spaces
-                $input['content_pages'] = preg_split('/[\s,]+/', (string) $posted['content_pages'], -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                // typed as "12, 40 41": ids separated by commas or spaces. A
+                // malformed submission can send an array here, which would cast
+                // to the string "Array"; keep the saved list instead.
+                $input['content_pages'] = is_array($posted['content_pages'])
+                    ? (array) Settings::get('content_pages')
+                    : (preg_split('/[\s,]+/', (string) $posted['content_pages'], -1, PREG_SPLIT_NO_EMPTY) ?: []);
             }
         }
 
