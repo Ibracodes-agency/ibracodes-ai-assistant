@@ -55,7 +55,9 @@
 
 	wire( 'wsa-test', 'wsa-test-result', ibraaiAdmin.endpoint, ibraaiAdmin.testing, function () {
 		var keyField = document.getElementById( 'wsa-key' );
-		var modelField = document.getElementById( 'wsa-model' );
+		// the model is a radio group, so the tested model is whichever is picked
+		// right now, not whatever was saved last
+		var modelField = document.querySelector( 'input[name="model"]:checked' );
 		return { key: keyField ? keyField.value : '', model: modelField ? modelField.value : '' };
 	} );
 	wire( 'wsa-rebuild', 'wsa-rebuild-result', ibraaiAdmin.rebuildEndpoint, ibraaiAdmin.rebuilding, function () {

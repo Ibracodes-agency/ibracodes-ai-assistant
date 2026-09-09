@@ -76,6 +76,7 @@ A visitor who asks for a person waits in the Live chats screen. You get an email
 * Everything the plugin declares or stores is now prefixed ibraai. Settings, conversations and leads migrate automatically on first load. Two consequences: an old bookmark to the settings screen no longer resolves, and a chat open in a visitor's browser starts fresh.
 * The usage counters and rate limits are now atomic: every increment is a single database statement, so requests arriving together cannot slip past a daily, monthly, per-visitor or concurrency limit.
 * A page saved while the embeddings index was working could be dropped from the queue and silently never indexed. Queue changes now take a lock, so nothing is lost.
+* A settings submission that arrived in the wrong shape could leave an administrator on a white screen. A field that comes in malformed is now ignored and its saved value kept.
 * Works on any WordPress site: answers from pages and posts, with an optional embeddings index.
 * Knows the page the visitor is on.
 * Lead capture with owner email and its own retention.

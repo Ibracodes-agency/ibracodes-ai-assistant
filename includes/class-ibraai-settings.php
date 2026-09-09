@@ -21,6 +21,9 @@ class Settings
 
     private const KEY_OPTION = 'ibraai_openai_key';
 
+    /** The only settings that hold a list. Every other key takes a scalar. */
+    private const LIST_KEYS = ['excluded_cats', 'content_post_types', 'content_pages'];
+
     /** Cached per request: the widget and the agent both read these. */
     private static ?array $cache = null;
 
@@ -135,6 +138,16 @@ class Settings
                 continue;
             }
             $value = $input[$key];
+
+            // An array on a key that holds a scalar is a malformed submission,
+            // not something to coerce: casting it would store the word "Array",
+            // and the model check would raise a TypeError on the way there. Keep
+            // what is stored and move on.
+            if (is_array($value) && ! in_array($key, self::LIST_KEYS, true)) {
+                $clean[$key] = $current[$key] ?? $default;
+
+                continue;
+            }
 
             $clean[$key] = match ($key) {
                 'enabled', 'only_in_stock', 'ask_first', 'log_threads', 'show_launcher_label', 'show_credit', 'leads_enabled', 'live_enabled' => (bool) $value,

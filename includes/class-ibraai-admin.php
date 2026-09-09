@@ -188,7 +188,7 @@ class Admin
         }
         check_admin_referer('ibraai_save');
 
-        $posted = wp_unslash($_POST);
+        $posted = wp_unslash($_POST); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked against the nonce and the capability above, then sanitised per field here and in Settings::update()
         $tab = self::valid_tab(isset($posted['tab']) ? sanitize_key($posted['tab']) : 'overview');
 
         // the leads tab holds no settings: its forms delete one lead or export them all
@@ -310,7 +310,16 @@ class Admin
                 <div class="wsa-band-actions">
                     <span class="wsa-live <?php echo $ready ? 'is-on' : 'is-off'; ?>">
                         <span class="wsa-live-dot"></span>
-                        <?php echo esc_html($ready ? __('Live on the storefront', 'ibracodes-ai-assistant') : __('Not live', 'ibracodes-ai-assistant')); ?>
+                        <?php
+                        if (! $ready) {
+                            $live_label = __('Not live', 'ibracodes-ai-assistant');
+                        } elseif (Capabilities::has_commerce()) {
+                            $live_label = __('Live on the storefront', 'ibracodes-ai-assistant');
+                        } else {
+                            $live_label = __('Live on the site', 'ibracodes-ai-assistant');
+                        }
+                        echo esc_html($live_label);
+                        ?>
                     </span>
                 </div>
             </div>
@@ -455,7 +464,10 @@ class Admin
                     <div class="wsa-card-head">
                         <div>
                             <h2 class="wsa-card-title"><?php esc_html_e('Questions the agent could not answer', 'ibracodes-ai-assistant'); ?></h2>
-                            <p class="wsa-card-sub"><?php esc_html_e('The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use.', 'ibracodes-ai-assistant'); ?></p>
+                            <?php // the sentence only means something where there is a catalogue to search ?>
+                            <?php if (Capabilities::has_commerce()) : ?>
+                                <p class="wsa-card-sub"><?php esc_html_e('The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use.', 'ibracodes-ai-assistant'); ?></p>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php if (! $unanswered) : ?>
@@ -814,30 +826,35 @@ class Admin
                 <div class="wsa-card-head">
                     <div><h2 class="wsa-card-title"><?php esc_html_e('Behaviour', 'ibracodes-ai-assistant'); ?></h2></div>
                 </div>
-                <div class="wsa-field">
-                    <label class="wsa-label" for="wsa-max-products"><?php esc_html_e('Products per reply', 'ibracodes-ai-assistant'); ?></label>
-                    <input class="fld" style="max-width:110px;" type="number" min="1" max="4" id="wsa-max-products" name="max_products" value="<?php echo esc_attr((string) $s['max_products']); ?>">
-                    <p class="wsa-help"><?php esc_html_e('Three or fewer keeps a reply readable on a phone.', 'ibracodes-ai-assistant'); ?></p>
-                </div>
+                <?php // product cards and their prices only exist on a shop ?>
+                <?php if (Capabilities::has_commerce()) : ?>
+                    <div class="wsa-field">
+                        <label class="wsa-label" for="wsa-max-products"><?php esc_html_e('Products per reply', 'ibracodes-ai-assistant'); ?></label>
+                        <input class="fld" style="max-width:110px;" type="number" min="1" max="4" id="wsa-max-products" name="max_products" value="<?php echo esc_attr((string) $s['max_products']); ?>">
+                        <p class="wsa-help"><?php esc_html_e('Three or fewer keeps a reply readable on a phone.', 'ibracodes-ai-assistant'); ?></p>
+                    </div>
+                <?php endif; ?>
                 <?php
                 self::toggle('ask_first', (bool) $s['ask_first'], __('Ask one question before recommending', 'ibracodes-ai-assistant'), __('On a vague request the agent asks a single clarifying question first. Better matches, one extra exchange.', 'ibracodes-ai-assistant'));
                 ?>
-                <div class="wsa-field" style="margin-top:16px;">
-                    <span class="wsa-label"><?php esc_html_e('Prices in the reply text', 'ibracodes-ai-assistant'); ?></span>
-                    <div class="wsa-choices">
-                        <label class="wsa-choice">
-                            <input type="radio" name="price_policy" value="cards_only" <?php checked($s['price_policy'], 'cards_only'); ?>>
-                            <span class="wsa-choice-t"><?php esc_html_e('Card only', 'ibracodes-ai-assistant'); ?></span>
-                            <span class="wsa-choice-d"><?php esc_html_e('recommended', 'ibracodes-ai-assistant'); ?></span>
-                        </label>
-                        <label class="wsa-choice">
-                            <input type="radio" name="price_policy" value="allow" <?php checked($s['price_policy'], 'allow'); ?>>
-                            <span class="wsa-choice-t"><?php esc_html_e('Allow in text', 'ibracodes-ai-assistant'); ?></span>
-                            <span class="wsa-choice-d"><?php esc_html_e('may go stale', 'ibracodes-ai-assistant'); ?></span>
-                        </label>
+                <?php if (Capabilities::has_commerce()) : ?>
+                    <div class="wsa-field" style="margin-top:16px;">
+                        <span class="wsa-label"><?php esc_html_e('Prices in the reply text', 'ibracodes-ai-assistant'); ?></span>
+                        <div class="wsa-choices">
+                            <label class="wsa-choice">
+                                <input type="radio" name="price_policy" value="cards_only" <?php checked($s['price_policy'], 'cards_only'); ?>>
+                                <span class="wsa-choice-t"><?php esc_html_e('Card only', 'ibracodes-ai-assistant'); ?></span>
+                                <span class="wsa-choice-d"><?php esc_html_e('recommended', 'ibracodes-ai-assistant'); ?></span>
+                            </label>
+                            <label class="wsa-choice">
+                                <input type="radio" name="price_policy" value="allow" <?php checked($s['price_policy'], 'allow'); ?>>
+                                <span class="wsa-choice-t"><?php esc_html_e('Allow in text', 'ibracodes-ai-assistant'); ?></span>
+                                <span class="wsa-choice-d"><?php esc_html_e('may go stale', 'ibracodes-ai-assistant'); ?></span>
+                            </label>
+                        </div>
+                        <p class="wsa-help"><?php esc_html_e('The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed.', 'ibracodes-ai-assistant'); ?></p>
                     </div>
-                    <p class="wsa-help"><?php esc_html_e('The card price is rendered from WooCommerce and is always correct. A price written into a sentence can be repeated later after it changed.', 'ibracodes-ai-assistant'); ?></p>
-                </div>
+                <?php endif; ?>
             </div>
 
             <div class="wsa-card">

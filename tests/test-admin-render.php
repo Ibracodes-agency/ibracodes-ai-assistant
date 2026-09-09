@@ -107,12 +107,28 @@ $overview = $render('overview');
 ibraai_assert(str_contains($overview, 'tab=leads'), 'the band links to the leads tab');
 ibraai_assert_same(5, substr_count($overview, 'class="wsa-kpi"'), 'five tiles with WooCommerce: conversations, replies, products, carts, leads');
 
+// the shop copy and controls are the exception to the labels rule above: they
+// are what a non-shop site must not be shown, so they are matched translated
+$catalogue_copy = esc_html__('The catalogue search came back empty. Each one is a product you do not stock, or a word your product titles never use.', 'ibracodes-ai-assistant');
+ibraai_assert(str_contains($overview, $catalogue_copy), 'the overview explains an empty catalogue search on a shop');
+$agent = $render('agent');
+ibraai_assert(str_contains($agent, 'name="price_policy"'), 'the price policy is offered on a shop');
+ibraai_assert(str_contains($agent, 'name="max_products"'), 'products per reply is offered on a shop');
+
 add_filter('ibraai_has_commerce', '__return_false');
 $band = $render('overview');
 ibraai_assert(! str_contains($band, 'tab=catalogue'), 'no catalogue tab without WooCommerce');
 ibraai_assert(str_contains($band, 'tab=leads'), 'the leads tab stays without WooCommerce');
 ibraai_assert_same(3, substr_count($band, 'class="wsa-kpi"'), 'without WooCommerce the product and cart tiles go');
+ibraai_assert(! str_contains($band, $catalogue_copy), 'without WooCommerce the overview says nothing about a catalogue');
+$agent = $render('agent');
+ibraai_assert(! str_contains($agent, 'name="price_policy"'), 'without WooCommerce there is no price policy to set');
+ibraai_assert(! str_contains($agent, 'name="max_products"'), 'without WooCommerce there is no products per reply to set');
+$config = Widget::config();
+ibraai_assert(! isset($config['cartEndpoint']), 'without WooCommerce the widget is handed no cart endpoint');
+ibraai_assert(! isset($config['i18n']['addToCart']), 'without WooCommerce the widget is handed no product card strings');
 remove_filter('ibraai_has_commerce', '__return_false');
+ibraai_assert(isset(Widget::config()['cartEndpoint']), 'the cart endpoint comes back with WooCommerce');
 
 // ---- CSV injection guard
 $cell = new ReflectionMethod(Admin::class, 'csv_cell');

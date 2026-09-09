@@ -33,5 +33,38 @@ ibraai_assert_same(365, $saved['leads_retention_days'], 'lead retention capped a
 ibraai_assert_same('when someone wants a quote', $saved['leads_when'], 'leads_when stripped of tags');
 ibraai_assert_same('Your details go to the owner', $saved['privacy_note'], 'privacy note stripped of tags');
 
+// ---- a malformed submission posts an array where a scalar belongs
+$before = Settings::all();
+$raised = [];
+set_error_handler(static function (int $level, string $message) use (&$raised): bool {
+    if ($level & (E_WARNING | E_NOTICE | E_USER_WARNING)) {
+        $raised[] = $message;
+    }
+
+    return true;
+});
+try {
+    $saved = Settings::update([
+        'model' => ['gpt-5'],
+        'title' => ['y'],
+        'store_facts' => ['a', 'b'],
+    ]);
+    $threw = '';
+} catch (Throwable $e) {
+    $threw = get_class($e) . ': ' . $e->getMessage();
+    $saved = Settings::all();
+} finally {
+    restore_error_handler();
+}
+ibraai_assert_same('', $threw, 'an array on a scalar field raises nothing');
+ibraai_assert_same([], $raised, 'an array on a scalar field warns about nothing');
+ibraai_assert_same($before['model'], $saved['model'], 'the stored model survives an array posted for it');
+ibraai_assert_same($before['title'], $saved['title'], 'the stored title survives an array posted for it');
+ibraai_assert_same($before['store_facts'], $saved['store_facts'], 'the stored store facts survive an array posted for them');
+
+// the three list fields are the ones that do take an array
+$saved = Settings::update(['content_post_types' => ['page', 'post']]);
+ibraai_assert_same(['page', 'post'], $saved['content_post_types'], 'the list fields still take a list');
+
 Settings::update($snapshot);
 ibraai_done(__FILE__);

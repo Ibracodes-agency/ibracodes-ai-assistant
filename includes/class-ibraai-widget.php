@@ -50,7 +50,6 @@ class Widget
     {
         $config = [
             'endpoint' => esc_url_raw(rest_url('ibraai/v1/chat')),
-            'cartEndpoint' => Settings::get('log_threads') ? esc_url_raw(rest_url('ibraai/v1/cart-event')) : '',
             'accent' => (string) Settings::get('accent'),
             'position' => (string) Settings::get('position'),
             'isRtl' => is_rtl(),
@@ -77,16 +76,24 @@ class Widget
                 'placeholder' => __('Type your question', 'ibracodes-ai-assistant'),
                 'send' => __('Send', 'ibracodes-ai-assistant'),
                 'thinking' => __('Typing', 'ibracodes-ai-assistant'),
-                'addToCart' => __('Add to cart', 'ibracodes-ai-assistant'),
-                'viewProduct' => __('View product', 'ibracodes-ai-assistant'),
-                'outOfStock' => __('Out of stock', 'ibracodes-ai-assistant'),
-                'onSale' => __('Sale', 'ibracodes-ai-assistant'),
                 'error' => __('Something went wrong. Please try again.', 'ibracodes-ai-assistant'),
                 'conversation' => __('Chat conversation', 'ibracodes-ai-assistant'),
                 /* translators: %s: the name of the person who joined the chat */
                 'writeTo' => __('Write to %s', 'ibracodes-ai-assistant'),
             ],
         ];
+
+        // product cards are the only thing that adds to a cart or carries a
+        // stock line, so without commerce none of this would ever be read
+        if (Capabilities::has_commerce()) {
+            $config['cartEndpoint'] = Settings::get('log_threads') ? esc_url_raw(rest_url('ibraai/v1/cart-event')) : '';
+            $config['i18n'] += [
+                'addToCart' => __('Add to cart', 'ibracodes-ai-assistant'),
+                'viewProduct' => __('View product', 'ibracodes-ai-assistant'),
+                'outOfStock' => __('Out of stock', 'ibracodes-ai-assistant'),
+                'onSale' => __('Sale', 'ibracodes-ai-assistant'),
+            ];
+        }
 
         // the live routes only exist for the widget when a person can actually be asked for
         if (Settings::live_ready()) {
