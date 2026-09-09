@@ -30,6 +30,9 @@ class Index
 
     private const LOCK = 'ibraai_index_lock';
 
+    /** Seconds a queue write waits for its turn before going ahead unserialised. */
+    private const QUEUE_LOCK_WAIT = 3;
+
     private const BATCH_POSTS = 20;
 
     private const BATCH_DELAY = 5;
@@ -113,7 +116,9 @@ class Index
     public static function queue_all(int $delay = self::BATCH_DELAY): void
     {
         $ids = get_posts(array_merge(Content::scope_args(), ['posts_per_page' => -1, 'fields' => 'ids']));
-        update_option(self::QUEUE, array_values(array_unique(array_map('intval', $ids))), false);
+        self::write_queue(static function () use ($ids): void {
+            update_option(self::QUEUE, array_values(array_unique(array_map('intval', $ids))), false);
+        });
         self::schedule($delay);
     }
 
@@ -125,9 +130,45 @@ class Index
     /** Appends to the queue without duplicates and makes sure a batch is coming. */
     private static function push(array $ids): void
     {
-        $queue = array_merge((array) get_option(self::QUEUE, []), $ids);
-        update_option(self::QUEUE, array_values(array_unique(array_map('intval', $queue))), false);
+        self::write_queue(static function () use ($ids): void {
+            $queue = array_merge((array) get_option(self::QUEUE, []), $ids);
+            update_option(self::QUEUE, array_values(array_unique(array_map('intval', $queue))), false);
+        });
         self::schedule();
+    }
+
+    /**
+     * Runs one queue mutation while holding a MySQL advisory lock. The queue
+     * is a single option and every change to it reads, edits and writes it
+     * back, so two requests inside that sequence at once lose one another's
+     * work: a post published while a batch is being spliced would drop either
+     * the new post or the batch's put-back, and the symptom is a page that
+     * silently never gets indexed. save_post fires from any request, so the
+     * batch's own transient lock cannot cover this.
+     *
+     * The lock name carries the database and table prefix, the way
+     * DB::maybe_upgrade() builds its own, so two sites on one server never
+     * queue behind each other.
+     *
+     * A lock that does not come free in time does not cancel the write. An
+     * unserialised change is a rare lost update; a skipped one is a post that
+     * is never indexed and never asks again.
+     *
+     * Returns whatever the write returned, for the splice that has to hand
+     * back the batch it took.
+     */
+    private static function write_queue(callable $write): mixed
+    {
+        global $wpdb;
+        $lock = 'ibraai_queue_' . substr(md5(DB_NAME . $wpdb->prefix), 0, 8);
+        $held = (bool) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lock, self::QUEUE_LOCK_WAIT));
+        try {
+            return $write();
+        } finally {
+            if ($held) {
+                $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+            }
+        }
     }
 
     private static function schedule(int $delay = self::BATCH_DELAY): void
@@ -161,9 +202,13 @@ class Index
         set_transient(self::LOCK, 1, self::BATCH_POSTS * Provider::TIMEOUT + MINUTE_IN_SECONDS);
         try {
             self::rebuild_on_model_change();
-            $queue = array_map('intval', (array) get_option(self::QUEUE, []));
-            $batch = array_splice($queue, 0, self::BATCH_POSTS);
-            update_option(self::QUEUE, $queue, false);
+            $batch = (array) self::write_queue(static function (): array {
+                $queue = array_map('intval', (array) get_option(self::QUEUE, []));
+                $taken = array_splice($queue, 0, self::BATCH_POSTS);
+                update_option(self::QUEUE, $queue, false);
+
+                return $taken;
+            });
 
             foreach ($batch as $k => $post_id) {
                 if (! Content::is_allowed($post_id)) {
@@ -174,7 +219,12 @@ class Index
                 $result = self::index_post($post_id);
                 if ($result instanceof \WP_Error) {
                     // put back this post and everything after it, and stop: the key or the cap is the problem, not the post
-                    update_option(self::QUEUE, array_values(array_unique(array_merge(array_slice($batch, $k), $queue))), false);
+                    $rest = array_slice($batch, $k);
+                    // the queue is read again rather than reused from the splice, so a post queued while the batch ran comes back too
+                    self::write_queue(static function () use ($rest): void {
+                        $queue = array_map('intval', (array) get_option(self::QUEUE, []));
+                        update_option(self::QUEUE, array_values(array_unique(array_merge($rest, $queue))), false);
+                    });
                     self::back_off($result->get_error_code());
 
                     return;

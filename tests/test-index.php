@@ -125,6 +125,53 @@ delete_transient('ibraai_index_lock');
 $drain();
 ibraai_assert_same(0, Index::status()['pending'], 'the batch runs once the lock is gone');
 
+// every queue mutation is serialised on an advisory lock: the queue is one
+// option, and a post published while a batch splices it would otherwise drop
+// either the new post or the batch's put-back
+$lock_name = 'ibraai_queue_' . substr(md5(DB_NAME . $wpdb->prefix), 0, 8); // mirrors Index::write_queue()
+update_option('ibraai_index_queue', [$p1, $p2, $p3], false);
+$queries = [];
+$spy = static function ($query) use (&$queries) {
+    $queries[] = (string) $query;
+
+    return $query;
+};
+add_filter('query', $spy);
+Index::queue_post($p4);
+remove_filter('query', $spy);
+$at = static function (string $needle) use ($queries): int {
+    foreach ($queries as $i => $query) {
+        if (str_contains($query, $needle)) {
+            return $i;
+        }
+    }
+
+    return -1;
+};
+$taken = $at("GET_LOCK('{$lock_name}'");
+$written = $at("'ibraai_index_queue'");
+$freed = $at("RELEASE_LOCK('{$lock_name}'");
+ibraai_assert($taken >= 0 && $written > $taken, 'the queue lock is taken before the queue is written');
+ibraai_assert($freed > $written, 'and released after');
+ibraai_assert_same([$p1, $p2, $p3, $p4], array_map('intval', (array) get_option('ibraai_index_queue')), 'the post joins the queue');
+
+// held from another connection, the write waits its turn and then goes ahead
+// anyway: a post that is never queued is a page that is never indexed
+$other = new wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
+if ($other->ready) {
+    ibraai_assert_same('1', (string) $other->get_var($other->prepare('SELECT GET_LOCK(%s, %d)', $lock_name, 5)), 'another connection takes the queue lock');
+    ibraai_assert_same('0', (string) $wpdb->get_var($wpdb->prepare('SELECT IS_FREE_LOCK(%s)', $lock_name)), 'and this one sees it held, so the lock really is exclusive');
+    update_option('ibraai_index_queue', [$p1, $p2, $p3], false);
+    Index::queue_post($p4);
+    ibraai_assert_same([$p1, $p2, $p3, $p4], array_map('intval', (array) get_option('ibraai_index_queue')), 'a post queued while the lock is held is still accounted for');
+    $other->query($other->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+    $other->close();
+    ibraai_assert_same('1', (string) $wpdb->get_var($wpdb->prepare('SELECT IS_FREE_LOCK(%s)', $lock_name)), 'the lock is free again once the other connection lets go');
+} else {
+    echo "  note: no second database connection available, the contention check was skipped\n";
+}
+delete_option('ibraai_index_queue');
+
 // drop() clears the daily reconcile; init re-arms it on the next request while embeddings are on
 ibraai_assert(has_action('init', [Index::class, 'schedule_reconcile']) !== false, 'the daily reconcile is armed from init');
 Index::drop();
