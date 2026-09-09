@@ -27,7 +27,7 @@ class DB
 {
     public const PURGE_HOOK = 'ibraai_purge_threads';
 
-    private const DB_VERSION = '1.3.0';
+    private const DB_VERSION = '1.4.0';
 
     /** The prefix every option, table and cron hook used before 0.2.0. */
     private const LEGACY_PREFIX = 'wsa_';
@@ -75,6 +75,14 @@ class DB
         return $wpdb->prefix . 'ibraai_leads';
     }
 
+    /** Usage counters and rate limits: one row each, moved by a single statement (see Guards). */
+    public static function counters_table(): string
+    {
+        global $wpdb;
+
+        return $wpdb->prefix . 'ibraai_counters';
+    }
+
     public static function install(): void
     {
         global $wpdb;
@@ -85,6 +93,7 @@ class DB
         $messages = self::messages_table();
         $chunks = self::chunks_table();
         $leads = self::leads_table();
+        $counters = self::counters_table();
 
         // Live chat columns on threads: status is one of ai, waiting, live,
         // missed, closed. requested_at alone is stored in GMT
@@ -153,6 +162,14 @@ class DB
             PRIMARY KEY  (id),
             KEY thread_id (thread_id),
             KEY created_at (created_at)
+        ) {$charset};
+
+        CREATE TABLE {$counters} (
+            name VARCHAR(191) NOT NULL,
+            value BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            expires_at DATETIME NOT NULL,
+            PRIMARY KEY  (name),
+            KEY expires_at (expires_at)
         ) {$charset};");
 
         update_option('ibraai_db_version', self::DB_VERSION, false);
@@ -172,7 +189,9 @@ class DB
         try {
             self::adopt_legacy_names();
             if (get_option('ibraai_db_version') !== self::DB_VERSION) {
+                $from = (string) get_option('ibraai_db_version');
                 self::install();
+                self::adopt_counter_rows($from);
             }
         } finally {
             $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
@@ -236,6 +255,62 @@ class DB
         foreach (self::LEGACY_HOOKS as $hook) {
             wp_unschedule_hook($old_prefix . $hook);
         }
+    }
+
+    /**
+     * 1.4.0 moved the usage counters out of options and transients into a
+     * table, where one statement can increment them and a cap holds even when
+     * requests arrive together. What an older install already counted comes
+     * with it: every monthly counter, and today's own counter, each with the
+     * absolute expiry the new rows use.
+     *
+     * The burst, per-visitor day, poll and concurrency counters are left
+     * behind rather than migrated: they are minutes old, and a fresh window
+     * costs the store nothing.
+     *
+     * Runs inside maybe_upgrade()'s lock and straight after install() has
+     * created the table, and only for a version stamp older than that table,
+     * so it cannot run twice. An existing row always wins: on a second pass
+     * the live counter is the truth and the leftover option is stale.
+     */
+    private static function adopt_counter_rows(string $from): void
+    {
+        if ($from === '' || version_compare($from, '1.4.0', '>=')) {
+            return;
+        }
+        global $wpdb;
+        $counters = self::counters_table();
+        $prefix = 'ibraai_calls_month_';
+
+        // one option per month of API usage, so the set is only known at runtime
+        $months = $wpdb->get_col($wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $wpdb->esc_like($prefix) . '%',
+        ));
+        foreach ($months as $option) {
+            $wpdb->query($wpdb->prepare(
+                'INSERT IGNORE INTO %i (name, value, expires_at) VALUES (%s, %d, %s)',
+                $counters,
+                $option,
+                (int) get_option($option, 0),
+                Guards::month_expiry(substr($option, strlen($prefix))),
+            ));
+            delete_option($option);
+        }
+
+        $date = gmdate('Y-m-d');
+        $today = 'ibraai_calls_' . $date;
+        $counted = (int) get_transient($today);
+        if ($counted > 0) {
+            $wpdb->query($wpdb->prepare(
+                'INSERT IGNORE INTO %i (name, value, expires_at) VALUES (%s, %d, %s)',
+                $counters,
+                $today,
+                $counted,
+                Guards::day_expiry($date),
+            ));
+        }
+        delete_transient($today);
     }
 
     // -----------------------------------------------------------------------
@@ -482,6 +557,14 @@ class DB
             $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE thread_id IN ({$placeholders})", $messages, ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
             $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE id IN ({$placeholders})", $threads, ...$ids)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one %d per id, built from the id list at runtime
         }
+
+        // usage counters are read by their own expiry, so clearing the passed
+        // ones is housekeeping rather than correctness
+        $wpdb->query($wpdb->prepare(
+            'DELETE FROM %i WHERE expires_at < %s',
+            self::counters_table(),
+            gmdate('Y-m-d H:i:s'),
+        ));
 
         Leads::purge();
     }

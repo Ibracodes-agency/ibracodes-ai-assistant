@@ -46,6 +46,40 @@ function ibraai_cleanup(): void
     $GLOBALS['ibraai_test_posts'] = [];
 }
 
+/**
+ * The rate limits and usage counters live in the plugin's counters table (see
+ * Guards), one row per name. Tests seed a row so they can stand a window in
+ * the past, read the raw value past its expiry, and remove what they created.
+ */
+function ibraai_counter_set(string $name, int $value, string $expires_at): void
+{
+    global $wpdb;
+    $wpdb->replace(\Ibracodes\AI_Assistant\DB::counters_table(), [
+        'name' => $name,
+        'value' => $value,
+        'expires_at' => $expires_at,
+    ], ['%s', '%d', '%s']);
+}
+
+/** The row as stored, expired or not, or null when there is none. */
+function ibraai_counter_row(string $name): ?array
+{
+    global $wpdb;
+    $row = $wpdb->get_row($wpdb->prepare(
+        'SELECT value, expires_at FROM %i WHERE name = %s',
+        \Ibracodes\AI_Assistant\DB::counters_table(),
+        $name,
+    ), ARRAY_A);
+
+    return $row ?: null;
+}
+
+function ibraai_counter_forget(string $name): void
+{
+    global $wpdb;
+    $wpdb->delete(\Ibracodes\AI_Assistant\DB::counters_table(), ['name' => $name], ['%s']);
+}
+
 function ibraai_done(string $file): void
 {
     ibraai_cleanup();

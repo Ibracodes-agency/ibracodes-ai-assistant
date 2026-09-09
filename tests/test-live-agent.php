@@ -20,14 +20,18 @@ $GLOBALS['ibraai_test_threads'] = [];
 // one address for the run, so the chat gates have one counter each to clear afterwards
 $_SERVER['REMOTE_ADDR'] = '203.0.113.77';
 $ip = md5('ibraai|203.0.113.77'); // mirrors Guards::client_ip_hash()
-register_shutdown_function(static function () use ($snapshot, $ip): void {
+// the concurrency counter is the store's own: a failed assertion inside the
+// model filter would otherwise leave a slot taken, so it goes back as it was
+$slot = ibraai_counter_row('ibraai_busy');
+register_shutdown_function(static function () use ($snapshot, $ip, $slot): void {
     foreach ($GLOBALS['ibraai_test_threads'] as $id) {
         DB::delete_thread((int) $id);
     }
-    delete_transient('ibraai_rl_' . $ip);
-    delete_transient('ibraai_rld_' . $ip);
-    // a failed assertion inside the model filter would otherwise leave the concurrency slot taken
-    delete_transient('ibraai_busy');
+    ibraai_counter_forget('ibraai_rl_' . $ip);
+    ibraai_counter_forget('ibraai_rld_' . $ip);
+    $slot === null
+        ? ibraai_counter_forget('ibraai_busy')
+        : ibraai_counter_set('ibraai_busy', (int) $slot['value'], (string) $slot['expires_at']);
     Settings::update($snapshot);
 });
 $start = static function (string $question): int {

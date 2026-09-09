@@ -14,15 +14,15 @@ $ip_key = 'ibraai_pollip_' . md5('ibraai|203.0.113.9'); // mirrors Guards::remot
 add_filter('pre_wp_mail', '__return_true');
 $thread = DB::start_thread('Person please', 'desktop');
 $poll_key = 'ibraai_poll_' . $thread;
-delete_transient($poll_key);
-delete_transient($ip_key);
+ibraai_counter_forget($poll_key);
+ibraai_counter_forget($ip_key);
 $GLOBALS['ibraai_test_threads'] = [$thread];
 register_shutdown_function(static function () use ($snapshot, $poll_key, $ip_key): void {
     foreach ($GLOBALS['ibraai_test_threads'] as $id) {
         DB::delete_thread((int) $id);
     }
-    delete_transient($poll_key);
-    delete_transient($ip_key);
+    ibraai_counter_forget($poll_key);
+    ibraai_counter_forget($ip_key);
     Settings::update($snapshot);
 });
 
@@ -91,7 +91,7 @@ if ($subscriber) {
 }
 
 // the poll gate is keyed on the thread: forty a minute, whatever address the caller claims
-delete_transient($poll_key);
+ibraai_counter_forget($poll_key);
 $allowed = 0;
 for ($i = 0; $i < 41; $i++) {
     if (Guards::poll_allowed($thread)) {
@@ -107,12 +107,12 @@ foreach ([1, 2, 3] as $i) {
 unset($_SERVER['HTTP_CF_CONNECTING_IP']);
 [$code] = $call('GET', '/live/thread', ['thread' => $token, 'since' => 0]);
 ibraai_assert_same(429, $code, 'the visitor route relays a shut gate as 429');
-set_transient($poll_key, ['count' => 40, 'until' => time() - 1], MINUTE_IN_SECONDS);
+ibraai_counter_set($poll_key, 40, gmdate('Y-m-d H:i:s', time() - 1));
 ibraai_assert_same(true, Guards::poll_allowed($thread), 'a counter past its minute starts over');
 // the per-address backstop, on REMOTE_ADDR alone, bounds one machine polling many threads
-set_transient($ip_key, ['count' => 300, 'until' => time() + MINUTE_IN_SECONDS], MINUTE_IN_SECONDS);
+ibraai_counter_set($ip_key, 300, gmdate('Y-m-d H:i:s', time() + MINUTE_IN_SECONDS));
 ibraai_assert_same(false, Guards::poll_allowed($thread), 'the per-address backstop refuses at its limit');
-delete_transient($ip_key);
+ibraai_counter_forget($ip_key);
 ibraai_assert_same(true, Guards::poll_allowed($thread), 'and allows again once it clears');
 
 ibraai_done(__FILE__);

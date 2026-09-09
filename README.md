@@ -122,6 +122,10 @@ concurrency cap that protects the server rather than the wallet. Usage for today
 is shown at the top of the settings screen. One visitor message can use two or three API calls,
 because the assistant searches before answering, and index builds count against the same caps.
 
+Every counter is one row in the `ibraai_counters` table, moved by a single
+`INSERT ... ON DUPLICATE KEY UPDATE`, so requests that arrive together queue behind the row
+lock instead of all reading the same number: no increment is lost and no cap can be raced.
+
 ## Hooks
 
 | Filter | Purpose |

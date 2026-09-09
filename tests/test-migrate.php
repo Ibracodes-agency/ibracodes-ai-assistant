@@ -9,11 +9,13 @@
 require_once __DIR__ . '/lib.php';
 
 use Ibracodes\AI_Assistant\DB;
+use Ibracodes\AI_Assistant\Guards;
 
 global $wpdb;
 
 $old_prefix = 'wsa_';
-$counter = 'calls_month_2026-09';
+// a month of its own, never the current one: the live month counter is the store's
+$counter = 'calls_month_2019-01';
 $seeded = ['enabled' => false, 'model' => 'gpt-5-mini', 'title' => 'carried over'];
 $names = ['settings', 'db_version', $counter];
 
@@ -23,11 +25,12 @@ $snapshot = [];
 foreach ($names as $name) {
     $snapshot[$name] = get_option('ibraai_' . $name);
 }
-register_shutdown_function(static function () use ($snapshot, $old_prefix): void {
+register_shutdown_function(static function () use ($snapshot, $old_prefix, $counter): void {
     foreach ($snapshot as $name => $value) {
         $value === false ? delete_option('ibraai_' . $name) : update_option('ibraai_' . $name, $value);
         delete_option($old_prefix . $name);
     }
+    ibraai_counter_forget('ibraai_' . $counter);
 });
 
 foreach ($names as $name) {
@@ -40,8 +43,13 @@ update_option($old_prefix . $counter, 7, false);
 DB::maybe_upgrade();
 
 ibraai_assert_same($seeded, get_option('ibraai_settings'), 'the settings arrive under the new name');
-ibraai_assert_same('1.3.0', get_option('ibraai_db_version'), 'the schema version arrives under the new name');
-ibraai_assert_same('7', (string) get_option('ibraai_' . $counter), 'a monthly counter is found by query and carried over');
+// the carried-over stamp is what tells the schema step which upgrades still owe work, and it ends on the current version
+ibraai_assert(version_compare((string) get_option('ibraai_db_version'), '1.4.0', '>='), 'the schema version arrives under the new name and is brought up to date');
+// the counters left options for a table in 1.4.0, so a carried-over month lands as a row
+$row = ibraai_counter_row('ibraai_' . $counter);
+ibraai_assert_same(7, (int) ($row['value'] ?? 0), 'a monthly counter is found by query and carried over into the counters table');
+ibraai_assert_same(Guards::month_expiry('2019-01'), (string) ($row['expires_at'] ?? ''), 'with the absolute expiry of the month it counts');
+ibraai_assert_same(false, get_option('ibraai_' . $counter), 'and the option it came from is gone');
 
 foreach ($names as $name) {
     ibraai_assert_same(false, get_option($old_prefix . $name), "the old {$name} option is gone");
